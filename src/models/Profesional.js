@@ -7,7 +7,8 @@ class Profesional {
 		telefono,
 		email,
 		direccion,
-        horario
+        diaDisponible,
+		horario
 	}) {
 		this.id = id;
 		this.nombre = nombre;
@@ -16,6 +17,7 @@ class Profesional {
 		this.telefono = telefono;
 		this.email = email;
 		this.direccion = direccion;
+		this.diaDisponible = diaDisponible;
         this.horario = horario;
 	}
 }

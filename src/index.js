@@ -8,13 +8,17 @@ const turnosRoutes = require('./routes/turnosRoutes');
 
 app.use(express.json());
 
-app.use('/clientes', clientesRoutes);
+// app.use('/clientes', clientesRoutes);
 app.use('/profesionales', profesionalesRoutes);
-app.use('/turnos', turnosRoutes);
+// app.use('/turnos', turnosRoutes);
 
 app.get('/', (req, res) => {
   res.send('Bienvenido a la turnera de TurnoFlex');
 });
+
+//app.get('/.*/', function (req, res) {
+//    res.send('Ruta inexistente');
+//});
 
 app.listen(PORT, () => {
   console.log(`El servidor de node corriendo en http://localhost:${PORT}`);
