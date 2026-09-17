@@ -4,6 +4,7 @@ class Cliente {
     nombre,
     apellido,
     dni,
+    // No obligatorios
     telefono = null,
     email = null,
     direccion = null,
