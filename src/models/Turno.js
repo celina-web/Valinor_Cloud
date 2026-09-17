@@ -1,8 +1,8 @@
 class Turno {
 	constructor({
 		id,
-		cliente,
-		profesional,
+		idCliente,
+		idProfesional,
 		fecha,
 		hora,
         estado,
@@ -11,8 +11,8 @@ class Turno {
         fechaModificacion
 	}) {
 		this.id = id;
-		this.cliente = cliente;
-		this.profesional = profesional;
+		this.idCliente = idCliente;
+		this.idProfesional = idProfesional;
 		this.fecha = fecha;
 		this.hora = hora;
         this.estado = estado;

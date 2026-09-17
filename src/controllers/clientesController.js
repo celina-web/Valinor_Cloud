@@ -1,123 +1,112 @@
 const fs = require('fs');
 const path = require('path');
 
-const Cliente = path.join(__dirname, '../models/Cliente.json');
+const Profesional = path.join(__dirname, '../models/Profesional.js');
 
 const rutaArchivo = path.join(__dirname, '../../data/db.json');
 
-const obtenerClientes = (req, res) => {
-  fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error al leer el archivo:', err);
-      return res.status(500).json({ error: 'Error al leer el archivo' });
-    }
-
-    const clientes = JSON.parse(data);
-    res.json(clientes);
+// Helpers para no leer y escribir
+const leerDB = () =>
+  new Promise((resolve, reject) => {
+    fs.readFile(rutaArchivo, 'utf8', (err, data) => {
+      if (err) return reject(err);
+      try {
+        resolve(JSON.parse(data));
+      } catch (e) {
+        reject(e);
+      }
+    });
   });
+
+const escribirDB = (db) =>
+  new Promise((resolve, reject) => {
+    fs.writeFile(rutaArchivo, JSON.stringify(db, null, 2), 'utf8', (err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+
+const obtenerClientes = async (req, res) => {
+  try {
+    const db = await leerDB();
+    res.json(db.clientes);
+  } catch (err) {
+    console.error('Error al leer el archivo:', err);
+    res.status(500).json({ error: 'Error al leer el archivo' });
+  }
 };
 
-const obtenerClientePorId = (req, res) => {
-  const clienteId = req.params.id;
-
-  fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error al leer el archivo:', err);
-      return res.status(500).json({ error: 'Error al leer el archivo' });
-    }
-
-    const clientes = JSON.parse(data);
-    const cliente = clientes.find((c) => c.id === parseInt(clienteId));
+const obtenerClientePorId = async (req, res) => {
+  try {
+    const db = await leerDB();
+    const cliente = db.clientes.find((c) => c.id === parseInt(req.params.id));
 
     if (!cliente) {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
     res.json(cliente);
-  });
+  } catch (err) {
+    console.error('Error al leer el archivo:', err);
+    res.status(500).json({ error: 'Error al leer el archivo' });
+  }
 };
 
-const crearCliente = (req, res) => {
-  const nuevoCliente = req.body;
+const crearCliente = async (req, res) => {
+  try {
+    const db = await leerDB();
 
-  fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error al leer el archivo:', err);
-      return res.status(500).json({ error: 'Error al leer el archivo' });
-    }
+    const nuevoId = db.clientes.length
+      ? Math.max(...db.clientes.map((c) => c.id)) + 1
+      : 1;
 
-    const clientes = JSON.parse(data);
-    nuevoCliente.id = clientes.length + 1; // Asignar un ID único
-    clientes.push(nuevoCliente);
+    const nuevoCliente = { id: nuevoId, ...req.body };
+    db.clientes.push(nuevoCliente);
 
-    fs.writeFile(rutaArchivo, JSON.stringify(clientes, null, 2), (err) => {
-      if (err) {
-        console.error('Error al escribir en el archivo:', err);
-        return res.status(500).json({ error: 'Error al escribir en el archivo' });
-      }
-
-      res.status(201).json(nuevoCliente);
-    });
-  });
+    await escribirDB(db);
+    res.status(201).json(nuevoCliente);
+  } catch (err) {
+    console.error('Error al crear cliente:', err);
+    res.status(500).json({ error: 'Error al crear el cliente' });
+  }
 };
 
-const actualizarCliente = (req, res) => {
-  const clienteId = req.params.id;
-  const datosActualizados = req.body;
+const actualizarCliente = async (req, res) => {
+  try {
+    const db = await leerDB();
+    const index = db.clientes.findIndex((c) => c.id === parseInt(req.params.id));
 
-  fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error al leer el archivo:', err);
-      return res.status(500).json({ error: 'Error al leer el archivo' });
-    }
-
-    const clientes = JSON.parse(data);
-    const clienteIndex = clientes.findIndex((c) => c.id === parseInt(clienteId));
-
-    if (clienteIndex === -1) {
+    if (index === -1) {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
-    clientes[clienteIndex] = { ...clientes[clienteIndex], ...datosActualizados };
+    db.clientes[index] = { ...db.clientes[index], ...req.body };
 
-    fs.writeFile(rutaArchivo, JSON.stringify(clientes, null, 2), (err) => {
-      if (err) {
-        console.error('Error al escribir en el archivo:', err);
-        return res.status(500).json({ error: 'Error al escribir en el archivo' });
-      }
-
-      res.json(clientes[clienteIndex]);
-    });
-  });
+    await escribirDB(db);
+    res.json(db.clientes[index]);
+  } catch (err) {
+    console.error('Error al actualizar cliente:', err);
+    res.status(500).json({ error: 'Error al actualizar el cliente' });
+  }
 };
 
-const eliminarCliente = (req, res) => {
-  const clienteId = req.params.id;
+const eliminarCliente = async (req, res) => {
+  try {
+    const db = await leerDB();
+    const index = db.clientes.findIndex((c) => c.id === parseInt(req.params.id));
 
-  fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error al leer el archivo:', err);
-      return res.status(500).json({ error: 'Error al leer el archivo' });
-    }
-
-    let clientes = JSON.parse(data);
-    const clienteIndex = clientes.findIndex((c) => c.id === parseInt(clienteId));
-
-    if (clienteIndex === -1) {
+    if (index === -1) {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
-    clientes.splice(clienteIndex, 1);
+    db.clientes.splice(index, 1);
 
-    fs.writeFile(rutaArchivo, JSON.stringify(clientes, null, 2), (err) => {
-      if (err) {
-        console.error('Error al escribir en el archivo:', err);
-        return res.status(500).json({ error: 'Error al escribir en el archivo' });
-      }
-
-      res.json({ message: 'Cliente eliminado correctamente' });
-    });
-  });
+    await escribirDB(db);
+    res.json({ message: 'Cliente eliminado correctamente' });
+  } catch (err) {
+    console.error('Error al eliminar cliente:', err);
+    res.status(500).json({ error: 'Error al eliminar el cliente' });
+  }
 };
 
 module.exports = {
@@ -125,5 +114,5 @@ module.exports = {
   obtenerClientePorId,
   crearCliente,
   actualizarCliente,
-  eliminarCliente
+  eliminarCliente,
 };

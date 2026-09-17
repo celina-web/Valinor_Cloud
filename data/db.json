@@ -82,7 +82,8 @@
       "telefono": "1145678901",
       "email": "roberto.alvarez@consultorio.com",
       "direccion": "Av. Callao 1234, CABA",
-      "horario": "Lunes a Viernes 09:00 - 17:00"
+      "diaDisponible": "Lunes a Viernes",
+      "horario": "09:00 - 17:00"
     },
     {
       "id": 2,
@@ -92,7 +93,8 @@
       "telefono": "1156789012",
       "email": "patricia.morales@consultorio.com",
       "direccion": "Calle Sarmiento 567, CABA",
-      "horario": "Lunes, Miércoles y Viernes 14:00 - 20:00"
+      "diaDisponible": "Lunes, Miércoles y Viernes",
+      "horario": "14:00 - 20:00"
     },
     {
       "id": 3,
@@ -102,7 +104,8 @@
       "telefono": "1167890123",
       "email": "diego.herrera@consultorio.com",
       "direccion": "Av. Santa Fe 3456, CABA",
-      "horario": "Martes y Jueves 08:00 - 12:00"
+      "diaDisponible": "Martes y Jueves",
+      "horario": "08:00 - 12:00"
     },
     {
       "id": 4,
@@ -122,7 +125,8 @@
       "telefono": "1189012345",
       "email": "fernando.silva@consultorio.com",
       "direccion": "Av. Cabildo 2345, CABA",
-      "horario": "Lunes a Viernes 09:00 - 13:00"
+      "diaDisponible": "Lunes a Viernes",
+      "horario": "09:00 - 13:00"
     },
     {
       "id": 6,
@@ -132,7 +136,21 @@
       "telefono": null,
       "email": "gabriela.ortiz@consultorio.com",
       "direccion": "Calle Lavalle 678, CABA",
-      "horario": "Martes, Jueves y Sábado 15:00 - 19:00"
+      "diaDisponible": "Martes, Jueves y Sábado",
+      "horario": "15:00 - 19:00"
+    }
+  ],
+  "turnos": [
+    {
+      "id": 1,
+      "idCliente": 1,
+      "idProfesional": 2,
+      "fecha": "2026-09-20",
+      "hora": "14:30",
+      "estado": "reservado",
+      "precio": 5000,
+      "fechaCreacion": "2026-09-17T20:26:04.477Z",
+      "fechaModificacion": "2026-09-17T20:26:04.477Z"
     }
   ]
 }
