@@ -74,15 +74,8 @@
   {
     "id": 9,
     "nombre": "Brenda",
-    "apellido": "Velezz",
+    "apellido": "Velez",
     "dni": "654321",
     "telefono": "1235"
-  },
-  {
-    "id": 10,
-    "nombre": "Bsd",
-    "apellido": "ghjsdds",
-    "dni": "542323",
-    "telefono": ""
   }
 ]
