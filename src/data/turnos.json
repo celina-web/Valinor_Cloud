@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "id": 1,
+    "clienteId": 1,
+    "profesionalId": 1,
+    "fecha": "2026-03-17",
+    "hora": "14:00",
+    "estado": "cancelado"
+  },
+  {
+    "id": 2,
+    "clienteId": 1,
+    "profesionalId": 1,
+    "fecha": "2026-09-17",
+    "hora": "14:00",
+    "estado": "atendido"
+  },
+  {
+    "id": 3,
+    "clienteId": 1,
+    "profesionalId": 1,
+    "fecha": "2026-09-17",
+    "hora": "14:05",
+    "estado": "cancelado"
+  },
+  {
+    "id": 4,
+    "clienteId": 1,
+    "profesionalId": 1,
+    "fecha": "2026-09-14",
+    "hora": "09:00",
+    "estado": "cancelado"
+  },
+  {
+    "id": 5,
+    "clienteId": 1,
+    "profesionalId": 1,
+    "fecha": "2026-09-14",
+    "hora": "19:21",
+    "estado": "atendido"
+  },
+  {
+    "id": 6,
+    "clienteId": 1,
+    "profesionalId": 2,
+    "fecha": "2026-04-08",
+    "hora": "18:20",
+    "estado": "atendido"
+  }
+]

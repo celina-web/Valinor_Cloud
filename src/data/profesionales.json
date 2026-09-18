@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": 1,
+    "nombre": "Laura",
+    "apellido": "Rossi",
+    "especialidad": "Abogada",
+    "matricula": "123"
+  },
+  {
+    "id": 2,
+    "nombre": "Sergio",
+    "apellido": "Tagliani",
+    "especialidad": "Abogado",
+    "matricula": "334466"
+  }
+]
