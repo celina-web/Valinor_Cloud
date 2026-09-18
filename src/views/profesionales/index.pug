@@ -51,7 +51,7 @@ block content
             td= profesional.especialidad
             td= profesional.matricula
             td
-              button(type="button" style="background:#ffc107; color:black; margin-right:5px; padding: 5px 10px; border:none; border-radius:3px; cursor:pointer;" onclick=`abrirModalEditar(${JSON.stringify(profesional)})`) Editar
+              button.btn-editar-profesional(type="button" data-profesional=JSON.stringify(profesional) style="background:#ffc107; color:black; margin-right:5px; padding: 5px 10px; border:none; border-radius:3px; cursor:pointer;") Editar
               form(action=`/profesionales/${profesional.id}/eliminar` method="POST" style="display:inline;")
                 button.btn-danger(type="submit" onclick="return confirm('¿Seguro que deseas eliminar este profesional?')") Eliminar
   else
@@ -83,6 +83,12 @@ block content
           button(type="button" style="background:#6c757d;" onclick="cerrarModalEditar()") Cancelar
 
   script.
+    document.querySelectorAll('.btn-editar-profesional').forEach(function (boton) {
+      boton.addEventListener('click', function () {
+        abrirModalEditar(JSON.parse(boton.dataset.profesional));
+      });
+    });
+
     function abrirModalEditar(profesional) {
       document.getElementById('formEditar').action = `/profesionales/${profesional.id}/editar`;
       document.getElementById('edit_nombre').value = profesional.nombre;

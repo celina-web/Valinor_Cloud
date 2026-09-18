@@ -51,7 +51,7 @@ block content
             td= cliente.dni
             td= cliente.telefono || '-'
             td
-              button(type="button" style="background:#ffc107; color:black; margin-right:5px; padding: 5px 10px; border:none; border-radius:3px; cursor:pointer;" onclick=`abrirModalEditar(${JSON.stringify(cliente)})`) Editar
+              button.btn-editar-cliente(type="button" data-cliente=JSON.stringify(cliente) style="background:#ffc107; color:black; margin-right:5px; padding: 5px 10px; border:none; border-radius:3px; cursor:pointer;") Editar
               form(action=`/clientes/${cliente.id}/eliminar` method="POST" style="display:inline;")
                 button.btn-danger(type="submit" onclick="return confirm('¿Seguro que deseas eliminar este cliente?')") Eliminar
   else
@@ -59,7 +59,7 @@ block content
 
   // Modal de Edición
   #modalEditar(style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;")
-    div(style="background:white; width:400px; margin:100px auto; padding:200px; padding:20px; border-radius:5px; position:relative;")
+    div(style="background:white; width:400px; margin:100px auto; padding:20px; border-radius:5px; position:relative;")
       h3 Editar Cliente
       form#formEditar(method="POST")
         .form-group
@@ -83,6 +83,12 @@ block content
           button(type="button" style="background:#6c757d;" onclick="cerrarModalEditar()") Cancelar
 
   script.
+    document.querySelectorAll('.btn-editar-cliente').forEach(function (boton) {
+      boton.addEventListener('click', function () {
+        abrirModalEditar(JSON.parse(boton.dataset.cliente));
+      });
+    });
+
     function abrirModalEditar(cliente) {
       document.getElementById('formEditar').action = `/clientes/${cliente.id}/editar`;
       document.getElementById('edit_nombre').value = cliente.nombre;

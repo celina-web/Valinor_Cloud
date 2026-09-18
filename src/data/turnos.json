@@ -46,5 +46,45 @@
     "fecha": "2026-04-08",
     "hora": "18:20",
     "estado": "atendido"
+  },
+  {
+    "id": 7,
+    "clienteId": 6,
+    "profesionalId": 2,
+    "fecha": "2026-10-02",
+    "hora": "17:05",
+    "estado": "atendido"
+  },
+  {
+    "id": 8,
+    "clienteId": 6,
+    "profesionalId": 2,
+    "fecha": "2026-10-02",
+    "hora": "17:05",
+    "estado": "atendido"
+  },
+  {
+    "id": 9,
+    "clienteId": 4,
+    "profesionalId": 1,
+    "fecha": "2026-09-27",
+    "hora": "17:11",
+    "estado": "atendido"
+  },
+  {
+    "id": 10,
+    "clienteId": 9,
+    "profesionalId": 3,
+    "fecha": "2026-10-02",
+    "hora": "20:16",
+    "estado": "atendido"
+  },
+  {
+    "id": 11,
+    "clienteId": 7,
+    "profesionalId": 2,
+    "fecha": "2026-10-10",
+    "hora": "17:21",
+    "estado": "cancelado"
   }
 ]

@@ -70,5 +70,19 @@
     "telefono": "1190123456",
     "email": "lucia.romero@gmail.com",
     "direccion": "Calle Mitre 789, Córdoba"
+  },
+  {
+    "id": 9,
+    "nombre": "Brenda",
+    "apellido": "Velezz",
+    "dni": "654321",
+    "telefono": "1235"
+  },
+  {
+    "id": 10,
+    "nombre": "Bsd",
+    "apellido": "ghjsdds",
+    "dni": "542323",
+    "telefono": ""
   }
 ]

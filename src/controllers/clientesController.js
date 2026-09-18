@@ -104,8 +104,19 @@ const actualizarCliente = (req, res) => {
   const { nombre, apellido, dni, telefono } = req.body;
 
   // Validación de DNI duplicado al actualizar
-  if (dni && dni.toString().trim() !== cliente.dni.toString()) {
-    const dniExiste = clientes.some((c) => c.dni.toString().trim() === dni.toString().trim());
+  const dniNormalizado = dni === undefined || dni === null ? null : dni.toString().trim();
+  const dniActual = cliente.dni === undefined || cliente.dni === null
+    ? ""
+    : cliente.dni.toString().trim();
+
+    // Solo se realiza la validación si el DNI proporcionado es diferente al actual
+  if (dniNormalizado !== null && dniNormalizado !== dniActual) {
+    const dniExiste = clientes.some(
+      (c) => c.id !== cliente.id
+        && c.dni !== undefined
+        && c.dni !== null
+        && c.dni.toString().trim() === dniNormalizado
+    );
     if (dniExiste) {
       const errorMsg = `El DNI ${dni} ya pertenece a otro cliente.`;
       if (req.accepts("html")) {
@@ -120,8 +131,10 @@ const actualizarCliente = (req, res) => {
 
   cliente.nombre = nombre ? nombre.trim() : cliente.nombre;
   cliente.apellido = apellido ? apellido.trim() : cliente.apellido;
-  cliente.dni = dni ? dni.trim() : cliente.dni;
-  cliente.telefono = telefono !== undefined ? telefono.trim() : cliente.telefono;
+  cliente.dni = dniNormalizado || cliente.dni;
+  cliente.telefono = telefono !== undefined && telefono !== null
+    ? telefono.toString().trim()
+    : cliente.telefono;
 
   jsonHelper.guardar(clientes);
 
