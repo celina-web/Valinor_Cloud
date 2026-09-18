@@ -1,282 +1,199 @@
-const fs = require('fs');
-const path = require('path');
-const Turno = require('../models/Turno');
+const JsonHelper = require("../helpers/jsonHelper");
+const Turno = require("../models/Turno");
 
-const rutaArchivo = path.join(__dirname, '../../data/db.json');
+const jsonTurnos = new JsonHelper("turnos.json");
+const jsonClientes = new JsonHelper("clientes.json");
+const jsonProfesionales = new JsonHelper("profesionales.json");
 
-const ESTADOS_VALIDOS = ['reservado', 'cancelado', 'atendido'];
+// Helper para poblar datos de Clientes y Profesionales en el listado de turnos
+const enriquecerTurnos = (turnos, clientes, profesionales) => {
+  return turnos.map((t) => {
+    const cliente = clientes.find((c) => c.id === t.clienteId);
+    const profesional = profesionales.find((p) => p.id === t.profesionalId);
 
-// Helpers para leer y escribir
-const leerDB = () =>
-  new Promise((resolve, reject) => {
-    fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-      if (err) return reject(err);
-      try {
-        resolve(JSON.parse(data));
-      } catch (e) {
-        reject(e);
-      }
-    });
+    return {
+      ...t,
+      clienteNombre: cliente ? `${cliente.nombre} ${cliente.apellido}` : "Cliente No Encontrado",
+      profesionalNombre: profesional ? `${profesional.nombre} ${profesional.apellido}` : "Profesional No Encontrado",
+    };
   });
+};
 
-const escribirDB = (db) =>
-  new Promise((resolve, reject) => {
-    fs.writeFile(rutaArchivo, JSON.stringify(db, null, 2), 'utf8', (err) => {
-      if (err) return reject(err);
-      resolve();
+// GET ALL / Render Vista
+const obtenerTurnos = (req, res) => {
+  const turnos = jsonTurnos.leer();
+  const clientes = jsonClientes.leer();
+  const profesionales = jsonProfesionales.leer();
+
+  const turnosEnriquecidos = enriquecerTurnos(turnos, clientes, profesionales);
+
+  if (req.accepts("html")) {
+    return res.render("turnos/index", {
+      turnos: turnosEnriquecidos,
+      clientes,
+      profesionales,
     });
+  }
+
+  res.json(turnosEnriquecidos);
+};
+
+// GET BY ID
+const obtenerTurnoPorId = (req, res) => {
+  const turnos = jsonTurnos.leer();
+  const id = parseInt(req.params.id);
+
+  const turno = turnos.find((t) => t.id === id);
+
+  if (!turno) {
+    return res.status(404).json({ mensaje: "Turno no encontrado" });
+  }
+
+  res.json(turno);
+};
+
+// CREATE (Con todas las reglas de negocio integradas)
+const crearTurno = (req, res) => {
+  const turnos = jsonTurnos.leer();
+  const clientes = jsonClientes.leer();
+  const profesionales = jsonProfesionales.leer();
+
+  const { clienteId, profesionalId, fecha, hora } = req.body;
+
+  const cId = parseInt(clienteId);
+  const pId = parseInt(profesionalId);
+
+  // Helper para responder con error (render o JSON)
+  const responderError = (mensaje, status = 400) => {
+    if (req.accepts("html")) {
+      const turnosEnriquecidos = enriquecerTurnos(turnos, clientes, profesionales);
+      return res.status(status).render("turnos/index", {
+        turnos: turnosEnriquecidos,
+        clientes,
+        profesionales,
+        error: mensaje,
+        formData: req.body,
+      });
+    }
+    return res.status(status).json({ mensaje });
+  };
+
+  // 1. Campos obligatorios
+  if (!clienteId || !profesionalId || !fecha || !hora) {
+    return responderError("Todos los campos (Cliente, Profesional, Fecha y Hora) son obligatorios.");
+  }
+
+  // 2. Validación de existencia del Cliente
+  const clienteExiste = clientes.some((c) => c.id === cId);
+  if (!clienteExiste) {
+    return responderError("El cliente seleccionado no existe.");
+  }
+
+  // 3. Validación de existencia del Profesional
+  const profesionalExiste = profesionales.some((p) => p.id === pId);
+  if (!profesionalExiste) {
+    return responderError("El profesional seleccionado no existe.");
+  }
+
+  // 4. Regla de Negocio: Superposición horaria del Profesional (en turnos activos)
+  const profesionalOcupado = turnos.some(
+    (t) => t.profesionalId === pId && t.fecha === fecha && t.hora === hora && t.estado === "reservado"
+  );
+  if (profesionalOcupado) {
+    return responderError("El profesional ya tiene un turno reservado en esa misma fecha y hora.");
+  }
+
+  // 5. Regla de Negocio: Duplicidad del Cliente (en turnos activos)
+  const clienteOcupado = turnos.some(
+    (t) => t.clienteId === cId && t.fecha === fecha && t.hora === hora && t.estado === "reservado"
+  );
+  if (clienteOcupado) {
+    return responderError("El cliente ya tiene un turno reservado en esa misma fecha y hora.");
+  }
+
+  // Generar ID autoincremental y guardar
+  const nuevoId = turnos.length > 0 ? Math.max(...turnos.map((t) => t.id)) + 1 : 1;
+  const nuevoTurno = new Turno(nuevoId, cId, pId, fecha, hora, "reservado");
+
+  turnos.push(nuevoTurno);
+  jsonTurnos.guardar(turnos);
+
+  if (req.accepts("html")) {
+    const turnosEnriquecidos = enriquecerTurnos(turnos, clientes, profesionales);
+    return res.render("turnos/index", {
+      turnos: turnosEnriquecidos,
+      clientes,
+      profesionales,
+      exito: "Turno reservado exitosamente.",
+    });
+  }
+
+  res.status(201).json({
+    mensaje: "Turno creado exitosamente",
+    turno: nuevoTurno,
   });
-
-const siguienteId = (coleccion) =>
-  coleccion.length ? Math.max(...coleccion.map((x) => x.id)) + 1 : 1;
-
-// ---------- Reglas de negocio ----------
-const turnosActivos = (turnos) => turnos.filter((t) => t.estado !== 'cancelado');
-
-const profesionalOcupado = (turnos, idProfesional, fecha, hora, excluirId = null) =>
-  turnosActivos(turnos).some(
-    (t) =>
-      t.id !== excluirId &&
-      t.idProfesional === idProfesional &&
-      t.fecha === fecha &&
-      t.hora === hora
-  );
-
-const clienteOcupado = (turnos, idCliente, fecha, hora, excluirId = null) =>
-  turnosActivos(turnos).some(
-    (t) =>
-      t.id !== excluirId &&
-      t.idCliente === idCliente &&
-      t.fecha === fecha &&
-      t.hora === hora
-  );
-
-const obtenerTurnos = async (req, res) => {
-  try {
-    const db = await leerDB();
-    res.json(db.turnos);
-  } catch (err) {
-    console.error('Error al leer el archivo:', err);
-    res.status(500).json({ error: 'Error al leer el archivo' });
-  }
 };
 
-const obtenerTurnoPorId = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const turno = db.turnos.find((t) => t.id === parseInt(req.params.id));
+// CAMBIAR ESTADO (reservado -> atendido / cancelado)
+const cambiarEstadoTurno = (req, res) => {
+  const turnos = jsonTurnos.leer();
+  const id = parseInt(req.params.id);
+  const { estado } = req.body;
 
-    if (!turno) {
-      return res.status(404).json({ error: 'Turno no encontrado' });
-    }
+  const estadosValidos = ["reservado", "atendido", "cancelado"];
 
-    res.json(turno);
-  } catch (err) {
-    console.error('Error al leer el archivo:', err);
-    res.status(500).json({ error: 'Error al leer el archivo' });
+  if (!estado || !estadosValidos.includes(estado)) {
+    return res.status(400).json({ mensaje: "Estado no válido. Use: reservado, atendido o cancelado." });
   }
-};
 
-const crearTurno = async (req, res) => {
-  try {
-    const db = await leerDB();
+  const turno = turnos.find((t) => t.id === id);
 
-    const { idCliente, idProfesional, fecha, hora, precio } = req.body;
+  if (!turno) {
+    return res.status(404).json({ mensaje: "Turno no encontrado" });
+  }
 
-    // 1. Datos mínimos
-    if (!idCliente || !idProfesional || !fecha || !hora) {
-      return res.status(400).json({
-        error: 'idCliente, idProfesional, fecha y hora son obligatorios',
-      });
-    }
+  turno.estado = estado;
+  jsonTurnos.guardar(turnos);
 
-    // 2. Existen cliente y profesional
-    const clienteExiste = db.clientes.some((c) => c.id === idCliente);
-    if (!clienteExiste) {
-      return res.status(404).json({ error: 'Cliente no encontrado' });
-    }
+  if (req.accepts("html")) {
+    const clientes = jsonClientes.leer();
+    const profesionales = jsonProfesionales.leer();
+    const turnosEnriquecidos = enriquecerTurnos(turnos, clientes, profesionales);
 
-    const profesionalExiste = db.profesionales.some((p) => p.id === idProfesional);
-    if (!profesionalExiste) {
-      return res.status(404).json({ error: 'Profesional no encontrado' });
-    }
-
-    // 3. Regla: profesional libre en ese horario
-    if (profesionalOcupado(db.turnos, idProfesional, fecha, hora)) {
-      return res.status(409).json({
-        error: 'El profesional ya tiene un turno en ese horario',
-      });
-    }
-
-    // 4. Regla: cliente sin otro turno en el mismo horario
-    if (clienteOcupado(db.turnos, idCliente, fecha, hora)) {
-      return res.status(409).json({
-        error: 'El cliente ya tiene un turno en ese horario',
-      });
-    }
-
-    // 5. Construir turno
-    const ahora = new Date().toISOString();
-    const nuevoTurno = new Turno({
-      id: siguienteId(db.turnos),
-      idCliente,
-      idProfesional,
-      fecha,
-      hora,
-      estado: 'reservado',
-      precio: precio ?? 0,
-      fechaCreacion: ahora,
-      fechaModificacion: ahora,
+    return res.render("turnos/index", {
+      turnos: turnosEnriquecidos,
+      clientes,
+      profesionales,
+      exito: `El estado del turno #${id} fue cambiado a "${estado}".`,
     });
-
-    db.turnos.push(nuevoTurno);
-
-    await escribirDB(db);
-    res.status(201).json(nuevoTurno);
-  } catch (err) {
-    console.error('Error al crear turno:', err);
-    res.status(400).json({ error: err.message });
   }
+
+  res.json({
+    mensaje: `Estado del turno actualizado a ${estado}`,
+    turno,
+  });
 };
 
-// ---------- PUT /turnos/:id ----------
-const actualizarTurno = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const id = parseInt(req.params.id);
-    const index = db.turnos.findIndex((t) => t.id === id);
+// DELETE
+const eliminarTurno = (req, res) => {
+  const turnos = jsonTurnos.leer();
+  const id = parseInt(req.params.id);
 
-    if (index === -1) {
-      return res.status(404).json({ error: 'Turno no encontrado' });
-    }
+  const nuevosTurnos = turnos.filter((t) => t.id !== id);
 
-    const turnoActual = db.turnos[index];
-
-    if (turnoActual.estado === 'cancelado') {
-      return res.status(409).json({ error: 'No se puede modificar un turno cancelado' });
-    }
-
-    const { fecha, hora, precio } = req.body;
-
-    const nuevaFecha = fecha ?? turnoActual.fecha;
-    const nuevaHora = hora ?? turnoActual.hora;
-
-    // Revalidar si cambia fecha/hora
-    if (nuevaFecha !== turnoActual.fecha || nuevaHora !== turnoActual.hora) {
-      if (
-        profesionalOcupado(
-          db.turnos,
-          turnoActual.idProfesional,
-          nuevaFecha,
-          nuevaHora,
-          id
-        )
-      ) {
-        return res.status(409).json({
-          error: 'El profesional ya tiene un turno en ese horario',
-        });
-      }
-
-      if (clienteOcupado(db.turnos, turnoActual.idCliente, nuevaFecha, nuevaHora, id)) {
-        return res.status(409).json({
-          error: 'El cliente ya tiene un turno en ese horario',
-        });
-      }
-    }
-
-    db.turnos[index] = {
-      ...turnoActual,
-      fecha: nuevaFecha,
-      hora: nuevaHora,
-      precio: precio ?? turnoActual.precio,
-      fechaModificacion: new Date().toISOString(),
-    };
-
-    await escribirDB(db);
-    res.json(db.turnos[index]);
-  } catch (err) {
-    console.error('Error al actualizar turno:', err);
-    res.status(400).json({ error: err.message });
+  if (turnos.length === nuevosTurnos.length) {
+    return res.status(404).json({ mensaje: "Turno no encontrado" });
   }
-};
 
-const cambiarEstadoTurno = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const id = parseInt(req.params.id);
-    const index = db.turnos.findIndex((t) => t.id === id);
+  jsonTurnos.guardar(nuevosTurnos);
 
-    if (index === -1) {
-      return res.status(404).json({ error: 'Turno no encontrado' });
-    }
-
-    const { estado } = req.body;
-
-    if (!ESTADOS_VALIDOS.includes(estado)) {
-      return res.status(400).json({
-        error: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(', ')}`,
-      });
-    }
-
-    const turno = db.turnos[index];
-
-    const transiciones = {
-      reservado: ['cancelado', 'atendido'],
-      atendido: [],
-      cancelado: [],
-    };
-
-    if (!transiciones[turno.estado].includes(estado)) {
-      return res.status(409).json({
-        error: `No se puede pasar de "${turno.estado}" a "${estado}"`,
-      });
-    }
-
-    db.turnos[index] = {
-      ...turno,
-      estado,
-      fechaModificacion: new Date().toISOString(),
-    };
-
-    await escribirDB(db);
-    res.json(db.turnos[index]);
-  } catch (err) {
-    console.error('Error al cambiar estado:', err);
-    res.status(400).json({ error: err.message });
-  }
-};
-
-const eliminarTurno = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const id = parseInt(req.params.id);
-    const index = db.turnos.findIndex((t) => t.id === id);
-
-    if (index === -1) {
-      return res.status(404).json({ error: 'Turno no encontrado' });
-    }
-
-    if (db.turnos[index].estado !== 'cancelado') {
-      return res.status(409).json({
-        error: 'Solo se pueden eliminar turnos cancelados. Cancelalo primero.',
-      });
-    }
-
-    db.turnos.splice(index, 1);
-
-    await escribirDB(db);
-    res.json({ message: 'Turno eliminado correctamente' });
-  } catch (err) {
-    console.error('Error al eliminar turno:', err);
-    res.status(500).json({ error: 'Error al eliminar el turno' });
-  }
+  res.json({ mensaje: "Turno eliminado exitosamente" });
 };
 
 module.exports = {
   obtenerTurnos,
   obtenerTurnoPorId,
   crearTurno,
-  actualizarTurno,
   cambiarEstadoTurno,
   eliminarTurno,
 };

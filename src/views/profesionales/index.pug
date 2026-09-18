@@ -1,0 +1,97 @@
+extends ../layout
+
+block content
+  h1 Gestión de Profesionales
+
+  if error
+    .error= error
+
+  if exito
+    .success= exito
+
+  h2 Registrar Nuevo Profesional
+  form(action="/profesionales" method="POST")
+    .form-group
+      label(for="nombre") Nombre *
+      input#nombre(type="text" name="nombre" value=formData ? formData.nombre : '' required)
+    
+    .form-group
+      label(for="apellido") Apellido *
+      input#apellido(type="text" name="apellido" value=formData ? formData.apellido : '' required)
+    
+    .form-group
+      label(for="especialidad") Especialidad *
+      input#especialidad(type="text" name="especialidad" value=formData ? formData.especialidad : '' required)
+    
+    .form-group
+      label(for="matricula") Matrícula *
+      input#matricula(type="text" name="matricula" value=formData ? formData.matricula : '' required)
+    
+    button(type="submit") Guardar Profesional
+
+  hr
+
+  h2 Listado de Profesionales
+  if profesionales.length > 0
+    table
+      thead
+        tr
+          th ID
+          th Nombre
+          th Apellido
+          th Especialidad
+          th Matrícula
+          th Acciones
+      tbody
+        each profesional in profesionales
+          tr
+            td= profesional.id
+            td= profesional.nombre
+            td= profesional.apellido
+            td= profesional.especialidad
+            td= profesional.matricula
+            td
+              button(type="button" style="background:#ffc107; color:black; margin-right:5px; padding: 5px 10px; border:none; border-radius:3px; cursor:pointer;" onclick=`abrirModalEditar(${JSON.stringify(profesional)})`) Editar
+              form(action=`/profesionales/${profesional.id}/eliminar` method="POST" style="display:inline;")
+                button.btn-danger(type="submit" onclick="return confirm('¿Seguro que deseas eliminar este profesional?')") Eliminar
+  else
+    p No hay profesionales registrados actualmente.
+
+  // Modal de Edición
+  #modalEditar(style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;")
+    div(style="background:white; width:400px; margin:100px auto; padding:20px; border-radius:5px; position:relative;")
+      h3 Editar Profesional
+      form#formEditar(method="POST")
+        .form-group
+          label(for="edit_nombre") Nombre *
+          input#edit_nombre(type="text" name="nombre" required)
+        
+        .form-group
+          label(for="edit_apellido") Apellido *
+          input#edit_apellido(type="text" name="apellido" required)
+        
+        .form-group
+          label(for="edit_especialidad") Especialidad *
+          input#edit_especialidad(type="text" name="especialidad" required)
+        
+        .form-group
+          label(for="edit_matricula") Matrícula *
+          input#edit_matricula(type="text" name="matricula" required)
+        
+        div(style="display:flex; justify-content:space-between; margin-top:15px;")
+          button(type="submit") Guardar Cambios
+          button(type="button" style="background:#6c757d;" onclick="cerrarModalEditar()") Cancelar
+
+  script.
+    function abrirModalEditar(profesional) {
+      document.getElementById('formEditar').action = `/profesionales/${profesional.id}/editar`;
+      document.getElementById('edit_nombre').value = profesional.nombre;
+      document.getElementById('edit_apellido').value = profesional.apellido;
+      document.getElementById('edit_especialidad').value = profesional.especialidad;
+      document.getElementById('edit_matricula').value = profesional.matricula;
+      document.getElementById('modalEditar').style.display = 'block';
+    }
+
+    function cerrarModalEditar() {
+      document.getElementById('modalEditar').style.display = 'none';
+    }

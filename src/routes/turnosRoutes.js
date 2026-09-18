@@ -1,12 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const ctrl = require('../controllers/turnosController');
 
-router.get('/', ctrl.obtenerTurnos);
-router.get('/:id', ctrl.obtenerTurnoPorId);
-router.post('/', ctrl.crearTurno);
-router.put('/:id', ctrl.actualizarTurno);
-router.patch('/:id/estado', ctrl.cambiarEstadoTurno);
-router.delete('/:id', ctrl.eliminarTurno);
+const {
+  obtenerTurnos,
+  obtenerTurnoPorId,
+  crearTurno,
+  cambiarEstadoTurno,
+  eliminarTurno,
+} = require("../controllers/turnosController");
+
+// Endpoints
+router.get("/", obtenerTurnos);
+router.get("/:id", obtenerTurnoPorId);
+router.post("/", crearTurno);
+router.put("/:id/estado", cambiarEstadoTurno); // API REST
+router.post("/:id/estado", cambiarEstadoTurno); // Formulario HTML Pug
+router.delete("/:id", eliminarTurno);
 
 module.exports = router;
