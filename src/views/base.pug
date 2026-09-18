@@ -1,5 +1,10 @@
-h1 Centro de Atención TurnoFlex 
-ul
-  li: a(href='/clientes') Clientes
-  li: a(href='/profesionales') Profesionales
-  li: a(href='/turnos') Turnos
+extends layout
+
+block contenido
+  h2 Bienvenido/a a TurnoFlex
+  p Este es un sistema de gestión de turnos.
+  p Usá el menú para consultar clientes, profesionales y turnos.
+  ul
+    li: a(href='/clientes') Ver clientes
+    li: a(href='/profesionales') Ver profesionales
+    li: a(href='/turnos') Ver turnos

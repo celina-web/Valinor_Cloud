@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "nombre": "Roberto",
+    "apellido": "Álvarez",
+    "dni": "20123456",
+    "telefono": "1145678901",
+    "email": "roberto.alvarez@consultorio.com",
+    "direccion": "Av. Callao 1234, CABA",
+    "diaDisponible": "Lunes a Viernes",
+    "horario": "09:00 - 17:00"
+  },
+  {
+    "id": 2,
+    "nombre": "Patricia",
+    "apellido": "Morales",
+    "dni": "24567890",
+    "telefono": "1156789012",
+    "email": "patricia.morales@consultorio.com",
+    "direccion": "Calle Sarmiento 567, CABA",
+    "diaDisponible": "Lunes, Miércoles y Viernes",
+    "horario": "14:00 - 20:00"
+  },
+  {
+    "id": 3,
+    "nombre": "Diego",
+    "apellido": "Herrera",
+    "dni": "26789012",
+    "telefono": "1167890123",
+    "email": "diego.herrera@consultorio.com",
+    "direccion": "Av. Santa Fe 3456, CABA",
+    "diaDisponible": "Martes y Jueves",
+    "horario": "08:00 - 12:00"
+  },
+  {
+    "id": 4,
+    "nombre": "Verónica",
+    "apellido": "Castro",
+    "dni": "23456789",
+    "telefono": "1178901234",
+    "email": "veronica.castro@consultorio.com",
+    "direccion": "Calle Florida 890, CABA",
+    "diaDisponible": null,
+    "horario": "Lunes a Sábado 10:00 - 18:00"
+  },
+  {
+    "id": 5,
+    "nombre": "Fernando",
+    "apellido": "Silva",
+    "dni": "21234567",
+    "telefono": "1189012345",
+    "email": "fernando.silva@consultorio.com",
+    "direccion": "Av. Cabildo 2345, CABA",
+    "diaDisponible": "Lunes a Viernes",
+    "horario": "09:00 - 13:00"
+  },
+  {
+    "id": 6,
+    "nombre": "Gabriela",
+    "apellido": "Ortiz",
+    "dni": "25678901",
+    "telefono": null,
+    "email": "gabriela.ortiz@consultorio.com",
+    "direccion": "Calle Lavalle 678, CABA",
+    "diaDisponible": "Martes, Jueves y Sábado",
+    "horario": "15:00 - 19:00"
+  }
+]

@@ -9,12 +9,12 @@ const {
     eliminarCliente
 } = require('../controllers/clientesController');
 
-// Rutas CRUD
+const { validarCliente } = require('../middlewares/validaciones');
+
 router.get('/', obtenerClientes);
 router.get('/:id', obtenerClientePorId);
-router.post('/', crearCliente);
-router.put('/:id', actualizarCliente);
+router.post('/', validarCliente, crearCliente);
+router.put('/:id', validarCliente, actualizarCliente);
 router.delete('/:id', eliminarCliente);
-
 
 module.exports = router;

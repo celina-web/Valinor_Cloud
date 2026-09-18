@@ -1,4 +1,28 @@
-h1 Turnos
-ol
-  each turno in turnos
-    li= turno.fecha + ' - ' + turno.hora + turno.estado
+extends layout
+
+block contenido
+  h2 Turnos
+  table
+    thead
+      tr
+        th ID
+        th Fecha
+        th Hora
+        th Cliente
+        th Profesional
+        th Estado
+        th Precio
+    tbody
+      each turno in turnos
+        tr
+          td= turno.id
+          td= turno.fecha
+          td= turno.hora
+          td= turno.cliente
+          td= turno.profesional
+          td
+            span(class='estado estado-' + turno.estado)= turno.estado
+          td $#{turno.precio}
+      if !turnos.length
+        tr
+          td(colspan='7') No hay turnos cargados.

@@ -1,30 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
-const Profesional = path.join(__dirname, '../models/Profesional.js');
-
-const rutaArchivo = path.join(__dirname, '../../data/db.json');
-
-// Helpers para no leer y escribir
-const leerDB = () =>
-  new Promise((resolve, reject) => {
-    fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-      if (err) return reject(err);
-      try {
-        resolve(JSON.parse(data));
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
-
-const escribirDB = (db) =>
-  new Promise((resolve, reject) => {
-    fs.writeFile(rutaArchivo, JSON.stringify(db, null, 2), 'utf8', (err) => {
-      if (err) return reject(err);
-      resolve();
-    });
-  });
+const { leerDB, escribirDB, siguienteId } = require('../data/db');
+const Cliente = require('../models/Cliente');
 
 const obtenerClientes = async (req, res) => {
   try {
@@ -56,11 +31,11 @@ const crearCliente = async (req, res) => {
   try {
     const db = await leerDB();
 
-    const nuevoId = db.clientes.length
-      ? Math.max(...db.clientes.map((c) => c.id)) + 1
-      : 1;
+    const nuevoCliente = new Cliente({
+      id: siguienteId(db.clientes),
+      ...req.body,
+    });
 
-    const nuevoCliente = { id: nuevoId, ...req.body };
     db.clientes.push(nuevoCliente);
 
     await escribirDB(db);
@@ -80,10 +55,15 @@ const actualizarCliente = async (req, res) => {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
-    db.clientes[index] = { ...db.clientes[index], ...req.body };
+    const actualizado = new Cliente({
+      ...db.clientes[index],
+      ...req.body,
+      id: db.clientes[index].id,
+    });
+    db.clientes[index] = actualizado;
 
     await escribirDB(db);
-    res.json(db.clientes[index]);
+    res.json(actualizado);
   } catch (err) {
     console.error('Error al actualizar cliente:', err);
     res.status(500).json({ error: 'Error al actualizar el cliente' });

@@ -1,30 +1,39 @@
 const express = require('express');
-const app = express();
 const path = require('path');
-const PORT = 3100;
+const app = express();
+const PORT = process.env.PORT || 3100;
 
+// Routers de la API REST
 const clientesRoutes = require('./routes/clientesRoutes');
 const profesionalesRoutes = require('./routes/profesionalesRoutes');
 const turnosRoutes = require('./routes/turnosRoutes');
+// Router de las vistas con Pug
+const vistasRoutes = require('./routes/vistasRoutes');
+// Middlewares propios
+const logger = require('./middlewares/logger');
+const { notFound, errorHandler } = require('./middlewares/errores');
 
-app.use(express.json());
+// ----- Middlewares globales -----
+app.use(logger); // registra cada petición
+app.use(express.json()); // parsea body JSON
+app.use(express.urlencoded({ extended: true })); // parsea formularios
+app.use(express.static(path.join(__dirname, '../public'))); // archivos estáticos
 
+// ----- Motor de plantillas -----
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use('/clientes', clientesRoutes);
-app.use('/profesionales', profesionalesRoutes);
-app.use('/turnos', turnosRoutes);
+// ----- API REST (JSON) -----
+app.use('/api/clientes', clientesRoutes);
+app.use('/api/profesionales', profesionalesRoutes);
+app.use('/api/turnos', turnosRoutes);
 
-app.get('/', (req, res) => {
-  res.status(200).render('base');
-});
+// ----- Vistas (HTML) -----
+app.use('/', vistasRoutes);
 
-// Middleware para manejar rutas inexistentes
-const rutaInexistente = (request, response) => {
-    response.status(404).send({ error: 'Ruta inexistente' })
-}
-app.use(rutaInexistente)
+// ----- Manejo de errores -----
+app.use(notFound); // 404 para rutas inexistentes
+app.use(errorHandler); // 500 para errores no controlados
 
 app.listen(PORT, () => {
   console.log(`El servidor de node corriendo en http://localhost:${PORT}`);

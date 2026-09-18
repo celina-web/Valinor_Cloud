@@ -1,0 +1,360 @@
+{
+  "info": {
+    "name": "TurnoFlex API",
+    "description": "Colección de pruebas de la API REST de TurnoFlex. Base URL configurable con la variable base_url.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3100"
+    }
+  ],
+  "item": [
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "GET - Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes"]
+            }
+          }
+        },
+        {
+          "name": "GET - Cliente por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes", "1"]
+            }
+          }
+        },
+        {
+          "name": "GET - Cliente inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes", "999"]
+            }
+          }
+        },
+        {
+          "name": "POST - Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Valentina\",\n  \"apellido\": \"Sánchez\",\n  \"dni\": \"40123456\",\n  \"telefono\": \"1122334455\",\n  \"email\": \"valentina@ejemplo.com\",\n  \"direccion\": \"Av. Siempre Viva 742\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/clientes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes"]
+            }
+          }
+        },
+        {
+          "name": "POST - Crear cliente inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"SinApellidoNiDni\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/clientes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes"]
+            }
+          }
+        },
+        {
+          "name": "PUT - Actualizar cliente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Carlos\",\n  \"apellido\": \"Pérez\",\n  \"dni\": \"28456789\",\n  \"telefono\": \"1145678999\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/clientes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE - Eliminar cliente",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/8",
+              "host": ["{{base_url}}"],
+              "path": ["api", "clientes", "8"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profesionales",
+      "item": [
+        {
+          "name": "GET - Listar profesionales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/profesionales",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profesionales"]
+            }
+          }
+        },
+        {
+          "name": "GET - Profesional por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/profesionales/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profesionales", "1"]
+            }
+          }
+        },
+        {
+          "name": "POST - Crear profesional",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Laura\",\n  \"apellido\": \"Gómez\",\n  \"dni\": \"27890123\",\n  \"telefono\": \"1133445566\",\n  \"email\": \"laura.gomez@consultorio.com\",\n  \"direccion\": \"Av. Rivadavia 100, CABA\",\n  \"diaDisponible\": \"Lunes a Viernes\",\n  \"horario\": \"10:00 - 16:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profesionales",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profesionales"]
+            }
+          }
+        },
+        {
+          "name": "POST - Crear profesional inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin\",\n  \"apellido\": \"Dni\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profesionales",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profesionales"]
+            }
+          }
+        },
+        {
+          "name": "PUT - Actualizar profesional",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Roberto\",\n  \"apellido\": \"Álvarez\",\n  \"dni\": \"20123456\",\n  \"horario\": \"08:00 - 16:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profesionales/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profesionales", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE - Eliminar profesional",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/profesionales/6",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profesionales", "6"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Turnos",
+      "item": [
+        {
+          "name": "GET - Listar turnos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/turnos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos"]
+            }
+          }
+        },
+        {
+          "name": "GET - Turno por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/turnos/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos", "1"]
+            }
+          }
+        },
+        {
+          "name": "POST - Crear turno",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCliente\": 3,\n  \"idProfesional\": 3,\n  \"fecha\": \"2026-10-01\",\n  \"hora\": \"09:00\",\n  \"precio\": 4000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/turnos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos"]
+            }
+          }
+        },
+        {
+          "name": "POST - Turno superpuesto (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCliente\": 5,\n  \"idProfesional\": 3,\n  \"fecha\": \"2026-10-01\",\n  \"hora\": \"09:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/turnos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos"]
+            }
+          }
+        },
+        {
+          "name": "POST - Turno inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCliente\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/turnos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos"]
+            }
+          }
+        },
+        {
+          "name": "PUT - Actualizar turno",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora\": \"15:30\",\n  \"precio\": 5500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/turnos/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos", "1"]
+            }
+          }
+        },
+        {
+          "name": "PATCH - Cambiar estado (atendido)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"atendido\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/turnos/1/estado",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos", "1", "estado"]
+            }
+          }
+        },
+        {
+          "name": "DELETE - Eliminar turno",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/turnos/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "turnos", "2"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ruta inexistente (404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/nada",
+          "host": ["{{base_url}}"],
+          "path": ["api", "nada"]
+        }
+      }
+    }
+  ]
+}

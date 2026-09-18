@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "nombre": "Juan",
+    "apellido": "Pérez",
+    "dni": "28456789",
+    "telefono": "1145678901",
+    "email": "juan.perez@gmail.com",
+    "direccion": "Av. Corrientes 1234, CABA"
+  },
+  {
+    "id": 2,
+    "nombre": "María",
+    "apellido": "González",
+    "dni": "31234567",
+    "telefono": "1156789012",
+    "email": "maria.gonzalez@hotmail.com",
+    "direccion": "Calle Belgrano 567, Rosario"
+  },
+  {
+    "id": 3,
+    "nombre": "Pedro",
+    "apellido": "Rodríguez",
+    "dni": "25678901",
+    "telefono": null,
+    "email": "pedro.rodriguez@yahoo.com",
+    "direccion": null
+  },
+  {
+    "id": 4,
+    "nombre": "Ana",
+    "apellido": "Martínez",
+    "dni": "33987654",
+    "telefono": "1167890123",
+    "email": null,
+    "direccion": "Av. San Martín 890, Mendoza"
+  },
+  {
+    "id": 5,
+    "nombre": "Luis",
+    "apellido": "Fernández",
+    "dni": "22345678",
+    "telefono": "1178901234",
+    "email": "luis.fernandez@gmail.com",
+    "direccion": "Calle Rivadavia 234, La Plata"
+  },
+  {
+    "id": 6,
+    "nombre": "Sofía",
+    "apellido": "López",
+    "dni": "35678901",
+    "telefono": "1189012345",
+    "email": "sofia.lopez@outlook.com",
+    "direccion": "Av. Libertador 4567, CABA"
+  },
+  {
+    "id": 7,
+    "nombre": "Carlos",
+    "apellido": "Sánchez",
+    "dni": "29876543",
+    "telefono": null,
+    "email": "carlos.sanchez@gmail.com",
+    "direccion": null
+  },
+  {
+    "id": 8,
+    "nombre": "Lucía",
+    "apellido": "Romero",
+    "dni": "36789012",
+    "telefono": "1190123456",
+    "email": "lucia.romero@gmail.com",
+    "direccion": "Calle Mitre 789, Córdoba"
+  }
+]

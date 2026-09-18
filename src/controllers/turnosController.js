@@ -1,36 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+const { leerDB, escribirDB, siguienteId } = require('../data/db');
 const Turno = require('../models/Turno');
-
-const rutaArchivo = path.join(__dirname, '../../data/db.json');
 
 const ESTADOS_VALIDOS = ['reservado', 'cancelado', 'atendido'];
 
-// Helpers para leer y escribir
-const leerDB = () =>
-  new Promise((resolve, reject) => {
-    fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-      if (err) return reject(err);
-      try {
-        resolve(JSON.parse(data));
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
-
-const escribirDB = (db) =>
-  new Promise((resolve, reject) => {
-    fs.writeFile(rutaArchivo, JSON.stringify(db, null, 2), 'utf8', (err) => {
-      if (err) return reject(err);
-      resolve();
-    });
-  });
-
-const siguienteId = (coleccion) =>
-  coleccion.length ? Math.max(...coleccion.map((x) => x.id)) + 1 : 1;
-
-// ---------- Reglas de negocio ----------
 const turnosActivos = (turnos) => turnos.filter((t) => t.estado !== 'cancelado');
 
 const profesionalOcupado = (turnos, idProfesional, fecha, hora, excluirId = null) =>

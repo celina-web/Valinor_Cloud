@@ -1,30 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
-const Profesional = path.join(__dirname, '../models/Profesional.js');
-
-const rutaArchivo = path.join(__dirname, '../../data/db.json');
-
-// Helpers para leer y escribir en el archivo JSON
-const leerDB = () =>
-  new Promise((resolve, reject) => {
-    fs.readFile(rutaArchivo, 'utf8', (err, data) => {
-      if (err) return reject(err);
-      try {
-        resolve(JSON.parse(data));
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
-
-const escribirDB = (db) =>
-  new Promise((resolve, reject) => {
-    fs.writeFile(rutaArchivo, JSON.stringify(db, null, 2), 'utf8', (err) => {
-      if (err) return reject(err);
-      resolve();
-    });
-  });
+const { leerDB, escribirDB, siguienteId } = require('../data/db');
+const Profesional = require('../models/Profesional');
 
 const obtenerProfesionales = async (req, res) => {
   try {
@@ -54,11 +29,11 @@ const crearProfesional = async (req, res) => {
   try {
     const db = await leerDB();
 
-    const nuevoId = db.profesionales.length
-      ? Math.max(...db.profesionales.map((p) => p.id)) + 1
-      : 1;
+    const nuevoProfesional = new Profesional({
+      id: siguienteId(db.profesionales),
+      ...req.body,
+    });
 
-    const nuevoProfesional = { id: nuevoId, ...req.body };
     db.profesionales.push(nuevoProfesional);
 
     await escribirDB(db);
@@ -78,10 +53,15 @@ const actualizarProfesional = async (req, res) => {
       return res.status(404).json({ error: 'Profesional no encontrado' });
     }
 
-    db.profesionales[index] = { ...db.profesionales[index], ...req.body };
+    const actualizado = new Profesional({
+      ...db.profesionales[index],
+      ...req.body,
+      id: db.profesionales[index].id,
+    });
+    db.profesionales[index] = actualizado;
 
     await escribirDB(db);
-    res.json(db.profesionales[index]);
+    res.json(actualizado);
   } catch (err) {
     console.error('Error al actualizar profesional:', err);
     res.status(500).json({ error: 'Error al actualizar el profesional' });

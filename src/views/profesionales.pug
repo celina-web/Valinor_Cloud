@@ -1,0 +1,27 @@
+extends layout
+
+block contenido
+  h2 Profesionales
+  table
+    thead
+      tr
+        th ID
+        th Nombre
+        th Apellido
+        th DNI
+        th Días disponibles
+        th Horario
+        th Email
+    tbody
+      each profesional in profesionales
+        tr
+          td= profesional.id
+          td= profesional.nombre
+          td= profesional.apellido
+          td= profesional.dni
+          td= profesional.diaDisponible || '-'
+          td= profesional.horario || '-'
+          td= profesional.email || '-'
+      if !profesionales.length
+        tr
+          td(colspan='7') No hay profesionales cargados.

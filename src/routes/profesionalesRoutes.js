@@ -9,11 +9,12 @@ const {
     eliminarProfesional
 } = require('../controllers/profesionalesController');
 
-// Rutas CRUD
+const { validarProfesional } = require('../middlewares/validaciones');
+
 router.get('/', obtenerProfesionales);
 router.get('/:id', obtenerProfesionalPorId);
-router.post('/', crearProfesional);
-router.put('/:id', actualizarProfesional);
+router.post('/', validarProfesional, crearProfesional);
+router.put('/:id', validarProfesional, actualizarProfesional);
 router.delete('/:id', eliminarProfesional);
 
 module.exports = router;
