@@ -38,9 +38,9 @@ npm run dev          # inicia el servidor con nodemon (recarga automática)
 npm start            # inicia el servidor con node
 ```
 
-El servidor queda disponible en **http://localhost:3100**.
+El servidor queda disponible en **http://localhost:3000**.
 
-- Interfaz web (HTML con Pug): `http://localhost:3100/`
+- Interfaz web (HTML con Pug): `http://localhost:3000/`
 - API REST (JSON): `http://localhost:3100/api/...`
 
 ## Estructura del proyecto
@@ -135,17 +135,6 @@ Base URL: `http://localhost:3100`
 | `/turnos`        | Tabla de turnos (muestra nombre de cliente y profesional) |
 
 Todas las vistas heredan de `layout.pug` mediante `extends` / `block contenido`.
-
-## Pruebas con Postman
-
-1. Levantar el servidor: `npm run dev`.
-2. En Postman: **Import** → seleccionar `docs/TurnoFlex.postman_collection.json`.
-3. La colección trae la variable `base_url` (`http://localhost:3100`) y las carpetas
-   **Clientes**, **Profesionales** y **Turnos** con todos los requests listos, incluyendo
-   casos de error (validación → 400, turno superpuesto → 409, ruta inexistente → 404).
-4. Ejecutar los requests y capturar la evidencia de al menos una prueba.
-
-> La captura de evidencia y el informe del trabajo se entregan en un documento aparte.
 
 ## Roles y responsabilidades
 
