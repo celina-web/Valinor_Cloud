@@ -86,5 +86,13 @@
     "fecha": "2026-10-10",
     "hora": "17:21",
     "estado": "cancelado"
+  },
+  {
+    "id": 12,
+    "clienteId": 4,
+    "profesionalId": 2,
+    "fecha": "2026-10-02",
+    "hora": "13:03",
+    "estado": "reservado"
   }
 ]
