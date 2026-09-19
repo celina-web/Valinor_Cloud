@@ -14,6 +14,7 @@ router.get("/", obtenerProfesionales);
 router.get("/:id", obtenerProfesionalPorId);
 router.post("/", crearProfesional);
 router.put("/:id", actualizarProfesional);
+router.patch("/:id", actualizarProfesional);
 router.delete("/:id", eliminarProfesional);
 
 // Ruta para eliminación desde formulario HTML (Vista Pug)

@@ -14,6 +14,7 @@ router.get("/", obtenerClientes);
 router.get("/:id", obtenerClientePorId);
 router.post("/", crearCliente);
 router.put("/:id", actualizarCliente);
+router.patch("/:id", actualizarCliente);
 router.delete("/:id", eliminarCliente);
 
 // Ruta para eliminación desde formulario HTML (Vista Pug)
