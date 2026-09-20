@@ -38,7 +38,20 @@ const crearCliente = (req, res) => {
   // 1. Validaciones manuales de campos requeridos
   if (!nombre || !apellido || !dni) {
     const errorMsg = "Los campos Nombre, Apellido y DNI son obligatorios.";
-    
+  
+    if (req.accepts("html")) {
+      return res.status(400).render("clientes/index", {
+        clientes,
+        error: errorMsg,
+        formData: req.body,
+      });
+    }
+    return res.status(400).json({ mensaje: errorMsg });
+  }
+
+  if (!/^\d+$/.test(dni.toString().trim())){
+    const errorMsg = "El DNI debe contener solo números.";
+
     if (req.accepts("html")) {
       return res.status(400).render("clientes/index", {
         clientes,
