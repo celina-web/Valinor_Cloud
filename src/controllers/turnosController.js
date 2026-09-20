@@ -25,7 +25,15 @@ const obtenerTurnos = (req, res) => {
   const clientes = jsonClientes.leer();
   const profesionales = jsonProfesionales.leer();
 
-  const turnosEnriquecidos = enriquecerTurnos(turnos, clientes, profesionales);
+  let turnosFiltrados = turnos;
+  const { estado, clienteId, profesionalId, fecha} = req.query;
+
+  if (estado) turnosFiltrados = turnosFiltrados.filter((t) => t.estado === estado);
+  if (clienteId) turnosFiltrados = turnosFiltrados.filter((t) => t.clienteId === parseInt(clienteId));
+  if (profesionalId) turnosFiltrados = turnosFiltrados.filter((t) => t.profesionalId === parseInt(profesionalId));
+  if (fecha) turnosFiltrados = turnosFiltrados.filter((t) => t.fecha === fecha);
+
+  const turnosEnriquecidos = enriquecerTurnos(turnosFiltrados, clientes, profesionales);
 
   if (req.accepts("html")) {
     return res.render("turnos/index", {
@@ -111,6 +119,15 @@ const crearTurno = (req, res) => {
     return responderError("El cliente ya tiene un turno reservado en esa misma fecha y hora.");
   }
 
+  // 6. Validación de formato de fecha y hora
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){
+    return responderError("La fecha debe tener el formato YYYY-MM-DD.");
+  }
+
+  if (!/^\d{2}:\d{2}$/.test(hora)){
+  return responderError("La hora debe tener el formato HH:mm.");
+  }
+
   // Generar ID autoincremental y guardar
   const nuevoId = turnos.length > 0 ? Math.max(...turnos.map((t) => t.id)) + 1 : 1;
   const nuevoTurno = new Turno(nuevoId, cId, pId, fecha, hora, "reservado");
@@ -152,6 +169,10 @@ const cambiarEstadoTurno = (req, res) => {
     return res.status(404).json({ mensaje: "Turno no encontrado" });
   }
 
+  if (turno.estado != "reservado"){
+    return res.status(400).json({mensaje: `El turno ya está en estado "${turno.estado}" y no puede modificarse.`});
+  }
+
   turno.estado = estado;
   jsonTurnos.guardar(turnos);
 
@@ -179,12 +200,17 @@ const eliminarTurno = (req, res) => {
   const turnos = jsonTurnos.leer();
   const id = parseInt(req.params.id);
 
-  const nuevosTurnos = turnos.filter((t) => t.id !== id);
+  const turno = turnos.find((t) => t.id === id);
 
-  if (turnos.length === nuevosTurnos.length) {
-    return res.status(404).json({ mensaje: "Turno no encontrado" });
+  if (!turno) {
+    return res.status(404).json({mensaje: "Turno no encontrado."});
   }
 
+  if (turno.estado !== "cancelado") {
+    return res.status(400).json({ mensaje: "Solo se pueden eliminar turnos cancelados." });
+  }
+
+  const nuevosTurnos = turnos.filter((t) => t.id !== id);
   jsonTurnos.guardar(nuevosTurnos);
 
   res.json({ mensaje: "Turno eliminado exitosamente" });
