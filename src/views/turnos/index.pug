@@ -1,0 +1,74 @@
+extends ../layout
+
+block content
+  h1 Gestión de Turnos
+
+  if error
+    .error= error
+
+  if exito
+    .success= exito
+
+  h2 Reservar Nuevo Turno
+  form(action="/turnos" method="POST")
+    .form-group
+      label(for="clienteId") Cliente *
+      select#clienteId(name="clienteId" required)
+        option(value="") -- Seleccionar Cliente --
+        each cliente in clientes
+          option(value=cliente.id selected=formData && formData.clienteId == cliente.id) #{cliente.nombre} #{cliente.apellido} (DNI: #{cliente.dni})
+    
+    .form-group
+      label(for="profesionalId") Profesional *
+      select#profesionalId(name="profesionalId" required)
+        option(value="") -- Seleccionar Profesional --
+        each profesional in profesionales
+          option(value=profesional.id selected=formData && formData.profesionalId == profesional.id) #{profesional.nombre} #{profesional.apellido} (#{profesional.especialidad})
+    
+    .form-group
+      label(for="fecha") Fecha *
+      input#fecha(type="date" name="fecha" value=formData ? formData.fecha : '' required)
+    
+    .form-group
+      label(for="hora") Hora (HH:mm) *
+      input#hora(type="time" name="hora" value=formData ? formData.hora : '' required)
+    
+    button(type="submit") Reservar Turno
+
+  hr
+
+  h2 Listado de Turnos
+  if turnos.length > 0
+    table
+      thead
+        tr
+          th ID
+          th Fecha
+          th Hora
+          th Cliente
+          th Profesional
+          th Estado
+          th Acciones
+      tbody
+        each turno in turnos
+          tr
+            td= turno.id
+            td= turno.fecha
+            td= turno.hora
+            td= turno.clienteNombre
+            td= turno.profesionalNombre
+            td
+              strong(style=turno.estado === 'reservado' ? 'color: blue;' : (turno.estado === 'atendido' ? 'color: green;' : 'color: red;')) #{turno.estado.toUpperCase()}
+            td
+              if turno.estado === 'reservado'
+                form(action=`/turnos/${turno.id}/estado` method="POST" style="display:inline; margin-right: 5px;")
+                  input(type="hidden" name="estado" value="atendido")
+                  button(type="submit" style="background: #17a2b8; padding: 4px 8px; font-size: 12px;") Atender
+                
+                form(action=`/turnos/${turno.id}/estado` method="POST" style="display:inline; margin-right: 5px;")
+                  input(type="hidden" name="estado" value="cancelado")
+                  button.btn-danger(type="submit" style="padding: 4px 8px; font-size: 12px;") Cancelar
+              else
+                span Sin acciones disponibles
+  else
+    p No hay turnos registrados actualmente.

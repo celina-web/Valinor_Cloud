@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
-const app = express();
-const PORT = process.env.PORT || 3100;
+const PORT = process.env.PORT || 3000;
 
 // Routers de la API REST
 const clientesRoutes = require('./routes/clientesRoutes');
@@ -13,23 +12,28 @@ const vistasRoutes = require('./routes/vistasRoutes');
 const logger = require('./middlewares/logger');
 const { notFound, errorHandler } = require('./middlewares/errores');
 
-// ----- Middlewares globales -----
-app.use(logger); // registra cada petición
-app.use(express.json()); // parsea body JSON
-app.use(express.urlencoded({ extended: true })); // parsea formularios
-app.use(express.static(path.join(__dirname, '../public'))); // archivos estáticos
+app.use(express.json());
+// Middleware para leer datos de formularios
+app.use(express.urlencoded({ extended: true }));
 
-// ----- Motor de plantillas -----
+// Configura el motor de plantillas Pug
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
-// ----- API REST (JSON) -----
-app.use('/api/clientes', clientesRoutes);
-app.use('/api/profesionales', profesionalesRoutes);
-app.use('/api/turnos', turnosRoutes);
+// Permite servir archivos estáticos desde la carpeta "public" (CSS en nuestro caso)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ----- Vistas (HTML) -----
-app.use('/', vistasRoutes);
+// Rutas
+app.use('/clientes', clientesRoutes);
+app.use('/profesionales', profesionalesRoutes);
+app.use('/turnos', turnosRoutes);
+
+app.get("/", (req, res) => {
+  if (req.accepts("html")) {
+    return res.render("home");
+  }
+  res.json({ mensaje: "Bienvenido al sistema TurnoFlex" });
+});
 
 // ----- Manejo de errores -----
 app.use(notFound); // 404 para rutas inexistentes

@@ -1,20 +1,26 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 const {
-    obtenerProfesionales,
-    obtenerProfesionalPorId,
-    crearProfesional,
-    actualizarProfesional,
-    eliminarProfesional
-} = require('../controllers/profesionalesController');
+  obtenerProfesionales,
+  obtenerProfesionalPorId,
+  crearProfesional,
+  actualizarProfesional,
+  eliminarProfesional,
+} = require("../controllers/profesionalesController");
 
-const { validarProfesional } = require('../middlewares/validaciones');
+// Endpoints CRUD
+router.get("/", obtenerProfesionales);
+router.get("/:id", obtenerProfesionalPorId);
+router.post("/", crearProfesional);
+router.put("/:id", actualizarProfesional);
+router.patch("/:id", actualizarProfesional);
+router.delete("/:id", eliminarProfesional);
 
-router.get('/', obtenerProfesionales);
-router.get('/:id', obtenerProfesionalPorId);
-router.post('/', validarProfesional, crearProfesional);
-router.put('/:id', validarProfesional, actualizarProfesional);
-router.delete('/:id', eliminarProfesional);
+// Ruta para eliminación desde formulario HTML (Vista Pug)
+router.post("/:id/eliminar", eliminarProfesional);
+
+// Formulario HTML Pug (Modal)
+router.post("/:id/editar", actualizarProfesional);
 
 module.exports = router;

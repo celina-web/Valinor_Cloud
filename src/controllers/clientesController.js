@@ -1,92 +1,196 @@
-const { leerDB, escribirDB, siguienteId } = require('../data/db');
-const Cliente = require('../models/Cliente');
+const JsonHelper = require("../helpers/jsonHelper");
+const Cliente = require("../models/Cliente");
 
-const obtenerClientes = async (req, res) => {
-  try {
-    const db = await leerDB();
-    res.json(db.clientes);
-  } catch (err) {
-    console.error('Error al leer el archivo:', err);
-    res.status(500).json({ error: 'Error al leer el archivo' });
+const jsonHelper = new JsonHelper("clientes.json");
+
+// GET ALL / Render Vista
+const obtenerClientes = (req, res) => {
+  const clientes = jsonHelper.leer();
+
+  // Si la petición acepta HTML (navegador) renderiza la vista
+  if (req.accepts("html")) {
+    return res.render("clientes/index", { clientes });
   }
+
+  // De lo contrario responde JSON para Postman / ThunderClient
+  res.json(clientes);
 };
 
-const obtenerClientePorId = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const cliente = db.clientes.find((c) => c.id === parseInt(req.params.id));
+// GET BY ID
+const obtenerClientePorId = (req, res) => {
+  const clientes = jsonHelper.leer();
+  const id = parseInt(req.params.id);
 
-    if (!cliente) {
-      return res.status(404).json({ error: 'Cliente no encontrado' });
+  const cliente = clientes.find((c) => c.id === id);
+
+  if (!cliente) {
+    return res.status(404).json({ mensaje: "Cliente no encontrado" });
+  }
+
+  res.json(cliente);
+};
+
+// CREATE (Soporta API y Formulario HTML)
+const crearCliente = (req, res) => {
+  const clientes = jsonHelper.leer();
+  const { nombre, apellido, dni, telefono } = req.body;
+
+  // 1. Validaciones manuales de campos requeridos
+  if (!nombre || !apellido || !dni) {
+    const errorMsg = "Los campos Nombre, Apellido y DNI son obligatorios.";
+  
+    if (req.accepts("html")) {
+      return res.status(400).render("clientes/index", {
+        clientes,
+        error: errorMsg,
+        formData: req.body,
+      });
     }
-
-    res.json(cliente);
-  } catch (err) {
-    console.error('Error al leer el archivo:', err);
-    res.status(500).json({ error: 'Error al leer el archivo' });
+    return res.status(400).json({ mensaje: errorMsg });
   }
-};
 
-const crearCliente = async (req, res) => {
-  try {
-    const db = await leerDB();
+  if (!/^\d+$/.test(dni.toString().trim())){
+    const errorMsg = "El DNI debe contener solo números.";
 
-    const nuevoCliente = new Cliente({
-      id: siguienteId(db.clientes),
-      ...req.body,
+    if (req.accepts("html")) {
+      return res.status(400).render("clientes/index", {
+        clientes,
+        error: errorMsg,
+        formData: req.body,
+      });
+    }
+    return res.status(400).json({ mensaje: errorMsg });
+  }
+
+  // 2. Validación manual de duplicado por DNI
+  const dniExiste = clientes.some((c) => c.dni.toString().trim() === dni.toString().trim());
+  if (dniExiste) {
+    const errorMsg = `Ya existe un cliente registrado con el DNI ${dni}.`;
+    
+    if (req.accepts("html")) {
+      return res.status(400).render("clientes/index", {
+        clientes,
+        error: errorMsg,
+        formData: req.body,
+      });
+    }
+    return res.status(400).json({ mensaje: errorMsg });
+  }
+
+  // Generar ID autoincremental
+  const nuevoId = clientes.length > 0 ? Math.max(...clientes.map((c) => c.id)) + 1 : 1;
+  const nuevoCliente = new Cliente(nuevoId, nombre.trim(), apellido.trim(), dni.trim(), telefono ? telefono.trim() : "");
+
+  clientes.push(nuevoCliente);
+  jsonHelper.guardar(clientes);
+
+  if (req.accepts("html")) {
+    return res.render("clientes/index", {
+      clientes,
+      exito: "Cliente registrado exitosamente.",
     });
-
-    db.clientes.push(nuevoCliente);
-
-    await escribirDB(db);
-    res.status(201).json(nuevoCliente);
-  } catch (err) {
-    console.error('Error al crear cliente:', err);
-    res.status(500).json({ error: 'Error al crear el cliente' });
   }
+
+  res.status(201).json({
+    mensaje: "Cliente creado exitosamente",
+    cliente: nuevoCliente,
+  });
 };
 
-const actualizarCliente = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const index = db.clientes.findIndex((c) => c.id === parseInt(req.params.id));
+// UPDATE / PATCH (Soporta API JSON y Formulario HTML)
+const actualizarCliente = (req, res) => {
+  const clientes = jsonHelper.leer();
+  const id = parseInt(req.params.id);
 
-    if (index === -1) {
-      return res.status(404).json({ error: 'Cliente no encontrado' });
+  const cliente = clientes.find((c) => c.id === id);
+
+  if (!cliente) {
+    if (req.accepts("html")) {
+      return res.status(404).render("clientes/index", {
+        clientes,
+        error: "Cliente no encontrado.",
+      });
     }
+    return res.status(404).json({ mensaje: "Cliente no encontrado" });
+  }
 
-    const actualizado = new Cliente({
-      ...db.clientes[index],
-      ...req.body,
-      id: db.clientes[index].id,
+  const { nombre, apellido, dni, telefono } = req.body;
+
+  // Validación de DNI duplicado al actualizar
+  const dniNormalizado = dni === undefined || dni === null ? null : dni.toString().trim();
+  const dniActual = cliente.dni === undefined || cliente.dni === null
+    ? ""
+    : cliente.dni.toString().trim();
+
+    // Solo se realiza la validación si el DNI proporcionado es diferente al actual
+  if (dniNormalizado !== null && dniNormalizado !== dniActual) {
+    const dniExiste = clientes.some(
+      (c) => c.id !== cliente.id
+        && c.dni !== undefined
+        && c.dni !== null
+        && c.dni.toString().trim() === dniNormalizado
+    );
+    if (dniExiste) {
+      const errorMsg = `El DNI ${dni} ya pertenece a otro cliente.`;
+      if (req.accepts("html")) {
+        return res.status(400).render("clientes/index", {
+          clientes,
+          error: errorMsg,
+        });
+      }
+      return res.status(400).json({ mensaje: errorMsg });
+    }
+  }
+
+  cliente.nombre = nombre ? nombre.trim() : cliente.nombre;
+  cliente.apellido = apellido ? apellido.trim() : cliente.apellido;
+  cliente.dni = dniNormalizado || cliente.dni;
+  cliente.telefono = telefono !== undefined && telefono !== null
+    ? telefono.toString().trim()
+    : cliente.telefono;
+
+  jsonHelper.guardar(clientes);
+
+  if (req.accepts("html")) {
+    return res.render("clientes/index", {
+      clientes,
+      exito: "Cliente actualizado exitosamente.",
     });
-    db.clientes[index] = actualizado;
-
-    await escribirDB(db);
-    res.json(actualizado);
-  } catch (err) {
-    console.error('Error al actualizar cliente:', err);
-    res.status(500).json({ error: 'Error al actualizar el cliente' });
   }
+
+  res.json({
+    mensaje: "Cliente actualizado exitosamente",
+    cliente,
+  });
 };
 
-const eliminarCliente = async (req, res) => {
-  try {
-    const db = await leerDB();
-    const index = db.clientes.findIndex((c) => c.id === parseInt(req.params.id));
+// DELETE (Soporta eliminación desde formulario Pug)
+const eliminarCliente = (req, res) => {
+  const clientes = jsonHelper.leer();
+  const id = parseInt(req.params.id);
 
-    if (index === -1) {
-      return res.status(404).json({ error: 'Cliente no encontrado' });
+  const nuevosClientes = clientes.filter((c) => c.id !== id);
+
+  if (clientes.length === nuevosClientes.length) {
+    if (req.accepts("html")) {
+      return res.status(404).render("clientes/index", {
+        clientes,
+        error: "El cliente a eliminar no fue encontrado.",
+      });
     }
-
-    db.clientes.splice(index, 1);
-
-    await escribirDB(db);
-    res.json({ message: 'Cliente eliminado correctamente' });
-  } catch (err) {
-    console.error('Error al eliminar cliente:', err);
-    res.status(500).json({ error: 'Error al eliminar el cliente' });
+    return res.status(404).json({ mensaje: "Cliente no encontrado" });
   }
+
+  jsonHelper.guardar(nuevosClientes);
+
+  if (req.accepts("html")) {
+    return res.render("clientes/index", {
+      clientes: nuevosClientes,
+      exito: "Cliente eliminado exitosamente.",
+    });
+  }
+
+  res.json({ mensaje: "Cliente eliminado exitosamente" });
 };
 
 module.exports = {

@@ -1,20 +1,26 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 const {
-    obtenerClientes,
-    obtenerClientePorId,
-    crearCliente,
-    actualizarCliente,
-    eliminarCliente
-} = require('../controllers/clientesController');
+  obtenerClientes,
+  obtenerClientePorId,
+  crearCliente,
+  actualizarCliente,
+  eliminarCliente,
+} = require("../controllers/clientesController");
 
-const { validarCliente } = require('../middlewares/validaciones');
+// Endpoints CRUD
+router.get("/", obtenerClientes);
+router.get("/:id", obtenerClientePorId);
+router.post("/", crearCliente);
+router.put("/:id", actualizarCliente);
+router.patch("/:id", actualizarCliente);
+router.delete("/:id", eliminarCliente);
 
-router.get('/', obtenerClientes);
-router.get('/:id', obtenerClientePorId);
-router.post('/', validarCliente, crearCliente);
-router.put('/:id', validarCliente, actualizarCliente);
-router.delete('/:id', eliminarCliente);
+// Ruta para eliminación desde formulario HTML (Vista Pug)
+router.post("/:id/eliminar", eliminarCliente);
+
+// Formulario HTML Pug (Modal)
+router.post("/:id/editar", actualizarCliente);
 
 module.exports = router;

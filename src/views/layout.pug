@@ -1,19 +1,16 @@
 doctype html
-html(lang='es')
+html(lang="es")
   head
-    meta(charset='utf-8')
-    meta(name='viewport' content='width=device-width, initial-scale=1.0')
-    title #{titulo} - TurnoFlex
-    link(rel='stylesheet' href='/estilos.css')
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title TurnoFlex - Sistema de Gestión de Turnos
+    link(rel="stylesheet", href="/estilos.css")
   body
-    header
-      h1 TurnoFlex
-      nav
-        a(href='/') Inicio
-        a(href='/clientes') Clientes
-        a(href='/profesionales') Profesionales
-        a(href='/turnos') Turnos
-    main
-      block contenido
-    footer
-      p Centro de atención TurnoFlex
+    nav
+      a(href="/") Inicio
+      a(href="/clientes") Clientes
+      a(href="/profesionales") Profesionales
+      a(href="/turnos") Turnos
+    
+    .container
+      block content
