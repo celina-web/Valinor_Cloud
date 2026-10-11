@@ -1,23 +1,25 @@
-class Cliente {
-  constructor(id, nombre, apellido, dni, telefono) {
-    this.id = id;
-    this.nombre = nombre;
-    this.apellido = apellido;
-    this.dni = dni;
-    this.telefono = telefono;
-  }
+const mongoose = require("mongoose");
 
-  nombreCompleto() {
-    return `${this.nombre} ${this.apellido}`;
-  }
+const clienteSchema = new mongoose.Schema(
+  {
+    nombre: { type: String, required: [true, "El nombre es obligatorio"], trim: true },
+    apellido: { type: String, required: [true, "El apellido es obligatorio"], trim: true },
+    dni: {
+      type: String,
+      required: [true, "El DNI es obligatorio"],
+      unique: true,
+      trim: true,
+      match: [/^\d{7,8}$/, "El DNI debe tener 7 u 8 números"],
+    },
+    telefono: { type: String, trim: true },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      match: [/^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/, "El email no es válido"],
+    },
+  },
+  { timestamps: true }
+);
 
-  static validar(datos = {}) {
-    const errores = [];
-    if (!datos.nombre) errores.push('El nombre es obligatorio');
-    if (!datos.apellido) errores.push('El apellido es obligatorio');
-    if (!datos.dni) errores.push('El dni es obligatorio');
-    return errores;
-  }
-}
-
-module.exports = Cliente;
+module.exports = mongoose.model("Cliente", clienteSchema);

@@ -1,178 +1,76 @@
-const JsonHelper = require("../helpers/jsonHelper");
 const Profesional = require("../models/Profesional");
+const Turno = require("../models/Turno");
+const Usuario = require("../models/Usuario");
+const { tomarCampos, describirCambios } = require("../helpers/campos");
+const { registrarAuditoria } = require("../helpers/auditoria");
 
-const jsonHelper = new JsonHelper("profesionales.json");
+const CAMPOS = ["nombre", "apellido", "especialidad", "matricula"];
 
-// GET ALL / Render Vista
-const obtenerProfesionales = (req, res) => {
-  const profesionales = jsonHelper.leer();
-
-  if (req.accepts("html")) {
-    return res.render("profesionales/index", { profesionales });
-  }
-
+const obtenerProfesionales = async (req, res) => {
+  const profesionales = await Profesional.find().sort({ apellido: 1, nombre: 1 });
   res.json(profesionales);
 };
 
-// GET BY ID
-const obtenerProfesionalPorId = (req, res) => {
-  const profesionales = jsonHelper.leer();
-  const id = parseInt(req.params.id);
-
-  const profesional = profesionales.find((p) => p.id === id);
-
-  if (!profesional) {
-    return res.status(404).json({ mensaje: "Profesional no encontrado" });
-  }
-
+const obtenerProfesionalPorId = async (req, res) => {
+  const profesional = await Profesional.findById(req.params.id);
+  if (!profesional) return res.status(404).json({ error: "Profesional no encontrado" });
   res.json(profesional);
 };
 
-// CREATE (API y Formulario HTML)
-const crearProfesional = (req, res) => {
-  const profesionales = jsonHelper.leer();
-  const { nombre, apellido, especialidad, matricula } = req.body;
-
-  // 1. Validaciones manuales de campos requeridos
-  if (!nombre || !apellido || !especialidad || !matricula) {
-    const errorMsg = "Los campos Nombre, Apellido, Especialidad y Matrícula son obligatorios.";
-
-    if (req.accepts("html")) {
-      return res.status(400).render("profesionales/index", {
-        profesionales,
-        error: errorMsg,
-        formData: req.body,
-      });
-    }
-    return res.status(400).json({ mensaje: errorMsg });
-  }
-
-  // 2. Validación manual de duplicado por Matrícula
-  const matriculaExiste = profesionales.some(
-    (p) => p.matricula.toString().trim() === matricula.toString().trim()
-  );
-  if (matriculaExiste) {
-    const errorMsg = `Ya existe un profesional registrado con la matrícula ${matricula}.`;
-
-    if (req.accepts("html")) {
-      return res.status(400).render("profesionales/index", {
-        profesionales,
-        error: errorMsg,
-        formData: req.body,
-      });
-    }
-    return res.status(400).json({ mensaje: errorMsg });
-  }
-
-  // Generar ID autoincremental
-  const nuevoId = profesionales.length > 0 ? Math.max(...profesionales.map((p) => p.id)) + 1 : 1;
-  const nuevoProfesional = new Profesional(
-    nuevoId,
-    nombre.trim(),
-    apellido.trim(),
-    especialidad.trim(),
-    matricula.trim()
-  );
-
-  profesionales.push(nuevoProfesional);
-  jsonHelper.guardar(profesionales);
-
-  if (req.accepts("html")) {
-    return res.render("profesionales/index", {
-      profesionales,
-      exito: "Profesional registrado exitosamente.",
-    });
-  }
-
-  res.status(201).json({
-    mensaje: "Profesional creado exitosamente",
-    profesional: nuevoProfesional,
+const crearProfesional = async (req, res) => {
+  const profesional = await Profesional.create(tomarCampos(req.body, CAMPOS));
+  await registrarAuditoria(req, "CREAR", {
+    entidad: "Profesional",
+    entidadId: profesional._id,
+    detalle: `${profesional.nombre} ${profesional.apellido} (Mat. ${profesional.matricula})`,
   });
+  res.status(201).json(profesional);
 };
 
-// UPDATE / PATCH (Soporta API JSON y Formulario HTML)
-const actualizarProfesional = (req, res) => {
-  const profesionales = jsonHelper.leer();
-  const id = parseInt(req.params.id);
+const actualizarProfesional = async (req, res) => {
+  const profesional = await Profesional.findById(req.params.id);
+  if (!profesional) return res.status(404).json({ error: "Profesional no encontrado" });
 
-  const profesional = profesionales.find((p) => p.id === id);
+  profesional.set(tomarCampos(req.body, CAMPOS));
+  const cambios = describirCambios(profesional);
+  await profesional.save();
 
-  if (!profesional) {
-    if (req.accepts("html")) {
-      return res.status(404).render("profesionales/index", {
-        profesionales,
-        error: "Profesional no encontrado.",
-      });
-    }
-    return res.status(404).json({ mensaje: "Profesional no encontrado" });
-  }
-
-  const { nombre, apellido, especialidad, matricula } = req.body;
-
-  // Validación de matrícula duplicada al actualizar
-  if (matricula && matricula.toString().trim() !== profesional.matricula.toString()) {
-    const matriculaExiste = profesionales.some(
-      (p) => p.matricula.toString().trim() === matricula.toString().trim()
-    );
-    if (matriculaExiste) {
-      const errorMsg = `La matrícula ${matricula} ya pertenece a otro profesional.`;
-      if (req.accepts("html")) {
-        return res.status(400).render("profesionales/index", {
-          profesionales,
-          error: errorMsg,
-        });
-      }
-      return res.status(400).json({ mensaje: errorMsg });
-    }
-  }
-
-  profesional.nombre = nombre ? nombre.trim() : profesional.nombre;
-  profesional.apellido = apellido ? apellido.trim() : profesional.apellido;
-  profesional.especialidad = especialidad ? especialidad.trim() : profesional.especialidad;
-  profesional.matricula = matricula ? matricula.trim() : profesional.matricula;
-
-  jsonHelper.guardar(profesionales);
-
-  if (req.accepts("html")) {
-    return res.render("profesionales/index", {
-      profesionales,
-      exito: "Profesional actualizado exitosamente.",
-    });
-  }
-
-  res.json({
-    mensaje: "Profesional actualizado exitosamente",
-    profesional,
+  await registrarAuditoria(req, "MODIFICAR", {
+    entidad: "Profesional",
+    entidadId: profesional._id,
+    detalle: `Campos: ${cambios}`,
   });
+  res.json(profesional);
 };
 
-// DELETE (Soporta API y Vista Pug)
-const eliminarProfesional = (req, res) => {
-  const profesionales = jsonHelper.leer();
-  const id = parseInt(req.params.id);
+const eliminarProfesional = async (req, res) => {
+  const profesional = await Profesional.findById(req.params.id);
+  if (!profesional) return res.status(404).json({ error: "Profesional no encontrado" });
 
-  const nuevosProfesionales = profesionales.filter((p) => p.id !== id);
-
-  if (profesionales.length === nuevosProfesionales.length) {
-    if (req.accepts("html")) {
-      return res.status(404).render("profesionales/index", {
-        profesionales,
-        error: "El profesional a eliminar no fue encontrado.",
-      });
-    }
-    return res.status(404).json({ mensaje: "Profesional no encontrado" });
+  const tieneTurnosReservados = await Turno.exists({
+    profesional: profesional._id,
+    estado: "reservado",
+  });
+  if (tieneTurnosReservados) {
+    return res
+      .status(409)
+      .json({ error: "No se puede eliminar: el profesional tiene turnos reservados" });
   }
 
-  jsonHelper.guardar(nuevosProfesionales);
-
-  if (req.accepts("html")) {
-    return res.render("profesionales/index", {
-      profesionales: nuevosProfesionales,
-      exito: "Profesional eliminado exitosamente.",
-    });
+  const tieneUsuario = await Usuario.exists({ profesional: profesional._id });
+  if (tieneUsuario) {
+    return res
+      .status(409)
+      .json({ error: "No se puede eliminar: el profesional tiene un usuario vinculado" });
   }
 
-  res.json({ mensaje: "Profesional eliminado exitosamente" });
+  await profesional.deleteOne();
+  await registrarAuditoria(req, "ELIMINAR", {
+    entidad: "Profesional",
+    entidadId: profesional._id,
+    detalle: `${profesional.nombre} ${profesional.apellido} (Mat. ${profesional.matricula})`,
+  });
+  res.status(204).end();
 };
 
 module.exports = {

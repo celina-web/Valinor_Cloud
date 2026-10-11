@@ -1,52 +1,29 @@
-const { leerDB } = require('../data/db');
-const Cliente = require('../models/Cliente');
-const Profesional = require('../models/Profesional');
+const { ROLES } = require("../config/roles");
+const { ACCIONES } = require("../models/Auditoria");
 
-const home = (req, res) => {
-  res.render('base', { titulo: 'Inicio' });
+const mostrarLogin = (req, res) => {
+  if (req.session.usuarioId) return res.redirect("/");
+  res.render("login");
 };
 
-const listaClientes = async (req, res, next) => {
-  try {
-    const db = await leerDB();
-    res.render('clientes', { titulo: 'Clientes', clientes: db.clientes });
-  } catch (err) {
-    next(err);
-  }
+const mostrarPanel = (req, res) => res.render("home");
+
+const mostrarClientes = (req, res) => res.render("clientes/index");
+
+const mostrarProfesionales = (req, res) => res.render("profesionales/index");
+
+const mostrarTurnos = (req, res) => res.render("turnos/index");
+
+const mostrarUsuarios = (req, res) => res.render("usuarios/index", { roles: ROLES });
+
+const mostrarAuditoria = (req, res) => res.render("auditoria/index", { acciones: ACCIONES });
+
+module.exports = {
+  mostrarLogin,
+  mostrarPanel,
+  mostrarClientes,
+  mostrarProfesionales,
+  mostrarTurnos,
+  mostrarUsuarios,
+  mostrarAuditoria,
 };
-
-const listaProfesionales = async (req, res, next) => {
-  try {
-    const db = await leerDB();
-    res.render('profesionales', {
-      titulo: 'Profesionales',
-      profesionales: db.profesionales,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-const listaTurnos = async (req, res, next) => {
-  try {
-    const db = await leerDB();
-
-    const turnos = db.turnos.map((turno) => {
-      const cli = db.clientes.find((c) => c.id === turno.idCliente);
-      const prof = db.profesionales.find((p) => p.id === turno.idProfesional);
-      return {
-        ...turno,
-        cliente: cli ? new Cliente(cli).nombreCompleto() : `#${turno.idCliente}`,
-        profesional: prof
-          ? new Profesional(prof).nombreCompleto()
-          : `#${turno.idProfesional}`,
-      };
-    });
-
-    res.render('turnos', { titulo: 'Turnos', turnos });
-  } catch (err) {
-    next(err);
-  }
-};
-
-module.exports = { home, listaClientes, listaProfesionales, listaTurnos };

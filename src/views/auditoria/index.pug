@@ -1,0 +1,34 @@
+extends ../layout
+
+block content
+  h1 Auditoría
+  p.ayuda Últimos 100 eventos registrados, del más reciente al más antiguo.
+
+  form#formFiltros.filtros
+    .form-group
+      label(for="filtroAccion") Acción
+      select#filtroAccion(name="accion")
+        option(value="") Todas
+        each accion in acciones
+          option(value=accion)= accion
+    .form-group
+      label(for="filtroUsuario") Usuario
+      input#filtroUsuario(type="text" name="usuario" placeholder="ej: admin")
+    button(type="submit") Filtrar
+
+  .error#errorAuditoria(hidden)
+  .tabla-scroll
+    table
+      thead
+        tr
+          th Fecha
+          th Usuario
+          th Acción
+          th Entidad
+          th Detalle
+          th IP
+      tbody#tablaAuditoria
+  p#sinRegistros(hidden) No hay eventos que coincidan.
+
+block scripts
+  script(src="/js/auditoria.js")

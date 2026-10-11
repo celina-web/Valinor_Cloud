@@ -1,11 +1,38 @@
 extends layout
 
 block content
-  h1 Bienvenido/a al sistema TurnoFlex
-  p Este es un sistema de gestión de turnos.
-  p Usá el menú para consultar clientes, profesionales y turnos.
-  ul
-    li: a(href='/clientes') Ver clientes
-    li: a(href='/profesionales') Ver profesionales
-    li: a(href='/turnos') Ver turnos
+  h1 Hola, #{usuario.nombre}
+  p
+    | Rol: 
+    strong= usuario.rol
+    if usuario.rol === "profesional"
+      |  - Ves únicamente tus propios turnos.
 
+  h2 Turnos de hoy
+  .resumen
+    .tarjeta
+      span.numero#cantidadReservados 0
+      span Reservados
+    .tarjeta
+      span.numero#cantidadAtendidos 0
+      span Atendidos
+    .tarjeta
+      span.numero#cantidadCancelados 0
+      span Cancelados
+
+  .error#errorTurnos(hidden)
+  table
+    thead
+      tr
+        th Fecha
+        th Hora
+        th Cliente
+        th Profesional
+        th Estado
+        th Acciones
+    tbody#tablaTurnos
+  p#sinTurnos(hidden) No hay turnos para hoy.
+
+block scripts
+  script(src="/js/turnosTabla.js")
+  script(src="/js/panel.js")

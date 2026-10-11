@@ -1,11 +1,26 @@
-const express = require('express');
-const router = express.Router();
-const vistas = require('../controllers/vistasController');
+const express = require("express");
+const { requiereLogin, requierePermiso } = require("../middlewares/auth");
+const {
+  mostrarLogin,
+  mostrarPanel,
+  mostrarClientes,
+  mostrarProfesionales,
+  mostrarTurnos,
+  mostrarUsuarios,
+  mostrarAuditoria,
+} = require("../controllers/vistasController");
 
-// Rutas que renderizan páginas HTML con Pug
-router.get('/', vistas.home);
-router.get('/clientes', vistas.listaClientes);
-router.get('/profesionales', vistas.listaProfesionales);
-router.get('/turnos', vistas.listaTurnos);
+const router = express.Router();
+
+router.get("/login", mostrarLogin);
+
+router.use(requiereLogin);
+
+router.get("/", mostrarPanel);
+router.get("/clientes", requierePermiso("clientes:read"), mostrarClientes);
+router.get("/profesionales", requierePermiso("profesionales:read"), mostrarProfesionales);
+router.get("/turnos", requierePermiso("turnos:read"), mostrarTurnos);
+router.get("/usuarios", requierePermiso("usuarios:read"), mostrarUsuarios);
+router.get("/auditoria", requierePermiso("auditoria:read"), mostrarAuditoria);
 
 module.exports = router;

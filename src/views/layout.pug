@@ -5,12 +5,29 @@ html(lang="es")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     title TurnoFlex - Sistema de Gestión de Turnos
     link(rel="stylesheet", href="/estilos.css")
-  body
-    nav
-      a(href="/") Inicio
-      a(href="/clientes") Clientes
-      a(href="/profesionales") Profesionales
-      a(href="/turnos") Turnos
-    
+  body(
+    data-rol=usuario ? usuario.rol : false
+    data-usuario-id=usuario ? String(usuario._id) : false
+    data-permisos=usuario ? JSON.stringify(permisos) : false
+  )
+    if usuario
+      nav
+        .nav-links
+          a(href="/") Inicio
+          if puede("clientes:read")
+            a(href="/clientes") Clientes
+          if puede("profesionales:read")
+            a(href="/profesionales") Profesionales
+          if puede("turnos:read")
+            a(href="/turnos") Turnos
+          if puede("usuarios:read")
+            a(href="/usuarios") Usuarios
+          if puede("auditoria:read")
+            a(href="/auditoria") Auditoría
+        .nav-usuario
+          span #{usuario.nombre} (#{usuario.rol})
+          button#btnLogout.btn-secundario(type="button") Salir
     .container
       block content
+    script(src="/js/api.js")
+    block scripts
