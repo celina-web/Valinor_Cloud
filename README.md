@@ -53,7 +53,6 @@ La aplicación queda disponible en **http://localhost:3000**.
 Valinor_Cloud/
 ├── .env.example
 ├── docs/
-│   ├── GUIA_DE_PRUEBAS.md               Paso a paso para probar la aplicación
 │   └── TurnoFlex.postman_collection.json
 └── src/
     ├── index.js                         Configura Express, sesión, rutas y errores; conecta a Mongo
