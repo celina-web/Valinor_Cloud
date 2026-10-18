@@ -1,0 +1,73 @@
+extends ../layout
+
+mixin camposUsuario(prefijo, esEdicion)
+  .form-group
+    label(for=prefijo + "usuario") Usuario *
+    input(id=prefijo + "usuario" type="text" name="usuario" required)
+  .form-group
+    label(for=prefijo + "nombre") Nombre *
+    input(id=prefijo + "nombre" type="text" name="nombre" required)
+  .form-group
+    label(for=prefijo + "password")= esEdicion ? "Nueva contraseña (vacío = no cambia)" : "Contraseña *"
+    input(id=prefijo + "password" type="text" name="password" minlength="6" required=!esEdicion)
+  .form-group
+    label(for=prefijo + "rol") Rol *
+    select.select-rol(id=prefijo + "rol" name="rol")
+      each rol in roles
+        option(value=rol selected=rol === "profesional")= rol
+  .form-group
+    label(for=prefijo + "profesional") Profesional vinculado
+    select.select-profesional(id=prefijo + "profesional" name="profesional")
+      option(value="") Ninguno
+  .form-group
+    label(for=prefijo + "expiraEl") Vence el (opcional)
+    input(id=prefijo + "expiraEl" type="datetime-local" name="expiraEl")
+  if esEdicion
+    .form-group.checkbox
+      label
+        input(type="checkbox" name="activo")
+        |  Activo
+
+block content
+  h1 Gestión de Usuarios
+
+  if puede("usuarios:create")
+    h2 Crear Usuario
+    p.ayuda Por mínimo privilegio, el rol por defecto es "profesional".
+    .error#errorAlta(hidden)
+    form#formAlta
+      +camposUsuario("alta_", false)
+      button(type="submit") Crear Usuario
+    hr
+
+  h2 Listado de Usuarios
+  .error#errorListado(hidden)
+  .tabla-scroll
+    table
+      thead
+        tr
+          th Usuario
+          th Nombre
+          th Rol
+          th Profesional
+          th Estado
+          th Vence
+          th Creado
+          th Modificado
+          th Último acceso
+          th Acciones
+      tbody#tablaUsuarios
+
+  .modal#modalEditar(hidden)
+    .modal-contenido
+      h3 Editar Usuario
+      .error#errorEdicion(hidden)
+      form#formEditar
+        input(type="hidden" name="_id")
+        +camposUsuario("edit_", true)
+        .modal-botones
+          button(type="submit") Guardar Cambios
+          button.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+
+block scripts
+  script(src="/js/usuarios.js")

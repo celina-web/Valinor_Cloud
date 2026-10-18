@@ -1,196 +1,63 @@
-const JsonHelper = require("../helpers/jsonHelper");
 const Cliente = require("../models/Cliente");
+const Turno = require("../models/Turno");
+const { tomarCampos, describirCambios } = require("../helpers/campos");
+const { registrarAuditoria } = require("../helpers/auditoria");
 
-const jsonHelper = new JsonHelper("clientes.json");
+const CAMPOS = ["nombre", "apellido", "dni", "telefono", "email"];
 
-// GET ALL / Render Vista
-const obtenerClientes = (req, res) => {
-  const clientes = jsonHelper.leer();
-
-  // Si la petición acepta HTML (navegador) renderiza la vista
-  if (req.accepts("html")) {
-    return res.render("clientes/index", { clientes });
-  }
-
-  // De lo contrario responde JSON para Postman / ThunderClient
+const obtenerClientes = async (req, res) => {
+  const clientes = await Cliente.find().sort({ apellido: 1, nombre: 1 });
   res.json(clientes);
 };
 
-// GET BY ID
-const obtenerClientePorId = (req, res) => {
-  const clientes = jsonHelper.leer();
-  const id = parseInt(req.params.id);
-
-  const cliente = clientes.find((c) => c.id === id);
-
-  if (!cliente) {
-    return res.status(404).json({ mensaje: "Cliente no encontrado" });
-  }
-
+const obtenerClientePorId = async (req, res) => {
+  const cliente = await Cliente.findById(req.params.id);
+  if (!cliente) return res.status(404).json({ error: "Cliente no encontrado" });
   res.json(cliente);
 };
 
-// CREATE (Soporta API y Formulario HTML)
-const crearCliente = (req, res) => {
-  const clientes = jsonHelper.leer();
-  const { nombre, apellido, dni, telefono } = req.body;
-
-  // 1. Validaciones manuales de campos requeridos
-  if (!nombre || !apellido || !dni) {
-    const errorMsg = "Los campos Nombre, Apellido y DNI son obligatorios.";
-  
-    if (req.accepts("html")) {
-      return res.status(400).render("clientes/index", {
-        clientes,
-        error: errorMsg,
-        formData: req.body,
-      });
-    }
-    return res.status(400).json({ mensaje: errorMsg });
-  }
-
-  if (!/^\d+$/.test(dni.toString().trim())){
-    const errorMsg = "El DNI debe contener solo números.";
-
-    if (req.accepts("html")) {
-      return res.status(400).render("clientes/index", {
-        clientes,
-        error: errorMsg,
-        formData: req.body,
-      });
-    }
-    return res.status(400).json({ mensaje: errorMsg });
-  }
-
-  // 2. Validación manual de duplicado por DNI
-  const dniExiste = clientes.some((c) => c.dni.toString().trim() === dni.toString().trim());
-  if (dniExiste) {
-    const errorMsg = `Ya existe un cliente registrado con el DNI ${dni}.`;
-    
-    if (req.accepts("html")) {
-      return res.status(400).render("clientes/index", {
-        clientes,
-        error: errorMsg,
-        formData: req.body,
-      });
-    }
-    return res.status(400).json({ mensaje: errorMsg });
-  }
-
-  // Generar ID autoincremental
-  const nuevoId = clientes.length > 0 ? Math.max(...clientes.map((c) => c.id)) + 1 : 1;
-  const nuevoCliente = new Cliente(nuevoId, nombre.trim(), apellido.trim(), dni.trim(), telefono ? telefono.trim() : "");
-
-  clientes.push(nuevoCliente);
-  jsonHelper.guardar(clientes);
-
-  if (req.accepts("html")) {
-    return res.render("clientes/index", {
-      clientes,
-      exito: "Cliente registrado exitosamente.",
-    });
-  }
-
-  res.status(201).json({
-    mensaje: "Cliente creado exitosamente",
-    cliente: nuevoCliente,
+const crearCliente = async (req, res) => {
+  const cliente = await Cliente.create(tomarCampos(req.body, CAMPOS));
+  await registrarAuditoria(req, "CREAR", {
+    entidad: "Cliente",
+    entidadId: cliente._id,
+    detalle: `${cliente.nombre} ${cliente.apellido} (DNI ${cliente.dni})`,
   });
+  res.status(201).json(cliente);
 };
 
-// UPDATE / PATCH (Soporta API JSON y Formulario HTML)
-const actualizarCliente = (req, res) => {
-  const clientes = jsonHelper.leer();
-  const id = parseInt(req.params.id);
+const actualizarCliente = async (req, res) => {
+  const cliente = await Cliente.findById(req.params.id);
+  if (!cliente) return res.status(404).json({ error: "Cliente no encontrado" });
 
-  const cliente = clientes.find((c) => c.id === id);
+  cliente.set(tomarCampos(req.body, CAMPOS));
+  const cambios = describirCambios(cliente);
+  await cliente.save();
 
-  if (!cliente) {
-    if (req.accepts("html")) {
-      return res.status(404).render("clientes/index", {
-        clientes,
-        error: "Cliente no encontrado.",
-      });
-    }
-    return res.status(404).json({ mensaje: "Cliente no encontrado" });
-  }
-
-  const { nombre, apellido, dni, telefono } = req.body;
-
-  // Validación de DNI duplicado al actualizar
-  const dniNormalizado = dni === undefined || dni === null ? null : dni.toString().trim();
-  const dniActual = cliente.dni === undefined || cliente.dni === null
-    ? ""
-    : cliente.dni.toString().trim();
-
-    // Solo se realiza la validación si el DNI proporcionado es diferente al actual
-  if (dniNormalizado !== null && dniNormalizado !== dniActual) {
-    const dniExiste = clientes.some(
-      (c) => c.id !== cliente.id
-        && c.dni !== undefined
-        && c.dni !== null
-        && c.dni.toString().trim() === dniNormalizado
-    );
-    if (dniExiste) {
-      const errorMsg = `El DNI ${dni} ya pertenece a otro cliente.`;
-      if (req.accepts("html")) {
-        return res.status(400).render("clientes/index", {
-          clientes,
-          error: errorMsg,
-        });
-      }
-      return res.status(400).json({ mensaje: errorMsg });
-    }
-  }
-
-  cliente.nombre = nombre ? nombre.trim() : cliente.nombre;
-  cliente.apellido = apellido ? apellido.trim() : cliente.apellido;
-  cliente.dni = dniNormalizado || cliente.dni;
-  cliente.telefono = telefono !== undefined && telefono !== null
-    ? telefono.toString().trim()
-    : cliente.telefono;
-
-  jsonHelper.guardar(clientes);
-
-  if (req.accepts("html")) {
-    return res.render("clientes/index", {
-      clientes,
-      exito: "Cliente actualizado exitosamente.",
-    });
-  }
-
-  res.json({
-    mensaje: "Cliente actualizado exitosamente",
-    cliente,
+  await registrarAuditoria(req, "MODIFICAR", {
+    entidad: "Cliente",
+    entidadId: cliente._id,
+    detalle: `Campos: ${cambios}`,
   });
+  res.json(cliente);
 };
 
-// DELETE (Soporta eliminación desde formulario Pug)
-const eliminarCliente = (req, res) => {
-  const clientes = jsonHelper.leer();
-  const id = parseInt(req.params.id);
+const eliminarCliente = async (req, res) => {
+  const cliente = await Cliente.findById(req.params.id);
+  if (!cliente) return res.status(404).json({ error: "Cliente no encontrado" });
 
-  const nuevosClientes = clientes.filter((c) => c.id !== id);
-
-  if (clientes.length === nuevosClientes.length) {
-    if (req.accepts("html")) {
-      return res.status(404).render("clientes/index", {
-        clientes,
-        error: "El cliente a eliminar no fue encontrado.",
-      });
-    }
-    return res.status(404).json({ mensaje: "Cliente no encontrado" });
+  const tieneTurnosReservados = await Turno.exists({ cliente: cliente._id, estado: "reservado" });
+  if (tieneTurnosReservados) {
+    return res.status(409).json({ error: "No se puede eliminar: el cliente tiene turnos reservados" });
   }
 
-  jsonHelper.guardar(nuevosClientes);
-
-  if (req.accepts("html")) {
-    return res.render("clientes/index", {
-      clientes: nuevosClientes,
-      exito: "Cliente eliminado exitosamente.",
-    });
-  }
-
-  res.json({ mensaje: "Cliente eliminado exitosamente" });
+  await cliente.deleteOne();
+  await registrarAuditoria(req, "ELIMINAR", {
+    entidad: "Cliente",
+    entidadId: cliente._id,
+    detalle: `${cliente.nombre} ${cliente.apellido} (DNI ${cliente.dni})`,
+  });
+  res.status(204).end();
 };
 
 module.exports = {

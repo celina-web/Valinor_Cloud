@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  .login
+    h1 TurnoFlex
+    p Ingresá con tu usuario para continuar.
+    .error#errorLogin(hidden)
+    form#formLogin
+      .form-group
+        label(for="usuario") Usuario
+        input#usuario(type="text" name="usuario" autocomplete="username" required autofocus)
+      .form-group
+        label(for="password") Contraseña
+        input#password(type="password" name="password" autocomplete="current-password" required)
+      button(type="submit") Ingresar
+
+block scripts
+  script(src="/js/login.js")
