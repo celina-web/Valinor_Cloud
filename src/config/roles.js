@@ -1,4 +1,4 @@
-const ROLES = ["profesional", "recepcion", "admin"];
+const ROLES = ["profesional", "recepcion", "admin", "cliente"];
 
 const profesional = [
   "clientes:read",
@@ -28,7 +28,9 @@ const admin = [
   "auditoria:read",
 ];
 
-const PERMISOS_POR_ROL = { profesional, recepcion, admin };
+const cliente = ["turnos:read"];
+
+const PERMISOS_POR_ROL = { profesional, recepcion, admin, cliente };
 
 const permisosDe = (rol) => PERMISOS_POR_ROL[rol] || [];
 

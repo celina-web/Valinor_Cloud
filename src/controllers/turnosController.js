@@ -11,6 +11,7 @@ const POBLAR = [
 const ESTADOS_FINALES = ["atendido", "cancelado"];
 
 const esProfesional = (usuario) => usuario.rol === "profesional";
+const esCliente = (usuario) => usuario.rol === "cliente";
 
 const perteneceAlProfesional = (turno, usuario) => {
   const idProfesional = turno.profesional && (turno.profesional._id || turno.profesional);
@@ -35,6 +36,10 @@ const obtenerTurnos = async (req, res) => {
   if (cliente) filtro.cliente = String(cliente);
   if (profesional) filtro.profesional = String(profesional);
   if (esProfesional(req.usuario)) filtro.profesional = req.usuario.profesional;
+  if (esCliente(req.usuario)) {
+    if (!req.usuario.cliente) return res.json([]);
+    filtro.cliente = req.usuario.cliente;
+  }
 
   const turnos = await Turno.find(filtro).populate(POBLAR).sort({ fecha: 1, hora: 1 });
   res.json(turnos);
@@ -43,8 +48,14 @@ const obtenerTurnos = async (req, res) => {
 const obtenerTurnoPorId = async (req, res) => {
   const turno = await Turno.findById(req.params.id).populate(POBLAR);
   if (!turno) return res.status(404).json({ error: "Turno no encontrado" });
+  const idClienteTurno = turno.cliente && (turno.cliente._id || turno.cliente);
 
-  if (esProfesional(req.usuario) && !perteneceAlProfesional(turno, req.usuario)) {
+  if (
+    (esProfesional(req.usuario) && !perteneceAlProfesional(turno, req.usuario)) ||
+    (esCliente(req.usuario) &&
+      (!req.usuario.cliente ||
+        String(idClienteTurno) !== String(req.usuario.cliente)))
+  ) {
     return denegarPorContexto(req, res, turno, "Solo podés ver tus propios turnos");
   }
   res.json(turno);

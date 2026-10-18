@@ -1,4 +1,5 @@
 const Usuario = require("../models/Usuario");
+const Cliente = require("../models/Cliente");
 const { permisosDe } = require("../config/roles");
 const { registrarAuditoria } = require("../helpers/auditoria");
 const { destruirSesion } = require("../middlewares/auth");
@@ -51,6 +52,68 @@ const login = async (req, res) => {
   res.json({ usuario: usuario.usuario, nombre: usuario.nombre, rol: usuario.rol });
 };
 
+const verificarRegistroCliente = async (req, res) => {
+  const dni = String((req.body || {}).dni || "").trim();
+  if (!/^\d{7,8}$/.test(dni)) {
+    return res.status(400).json({ error: "Ingresá un DNI válido de 7 u 8 números" });
+  }
+
+  const clientes = await Cliente.find({ dni });
+  if (clientes.length !== 1) {
+    return res.status(clientes.length ? 409 : 404).json({
+      error: clientes.length
+        ? "Hay más de un cliente con ese DNI. Contactá a recepción"
+        : "No encontramos un cliente registrado con ese DNI",
+    });
+  }
+
+  if (await Usuario.exists({ cliente: clientes[0]._id })) {
+    return res.status(409).json({ error: "Ese cliente ya tiene una cuenta. Iniciá sesión" });
+  }
+
+  res.json({ disponible: true });
+};
+
+const registrarCliente = async (req, res) => {
+  const { usuario: usuarioIngresado, password: passwordIngresada } = req.body || {};
+  const dni = String((req.body || {}).dni || "").trim();
+  const usuarioNombre = String(usuarioIngresado || "").trim().toLowerCase();
+  const password = String(passwordIngresada || "");
+
+  if (!/^\d{7,8}$/.test(dni) || !usuarioNombre || !password) {
+    return res.status(400).json({ error: "Ingresá un DNI válido, usuario y contraseña" });
+  }
+
+  const clientes = await Cliente.find({ dni });
+  if (clientes.length !== 1) {
+    return res.status(clientes.length ? 409 : 404).json({
+      error: clientes.length
+        ? "Hay más de un cliente con ese DNI. Contactá a recepción"
+        : "No encontramos un cliente registrado con ese DNI",
+    });
+  }
+
+  const cliente = clientes[0];
+  if (await Usuario.exists({ cliente: cliente._id })) {
+    return res.status(409).json({ error: "Ese cliente ya tiene una cuenta. Iniciá sesión" });
+  }
+
+  const cuenta = await Usuario.create({
+    usuario: usuarioNombre,
+    password,
+    nombre: `${cliente.nombre} ${cliente.apellido}`,
+    rol: "cliente",
+    cliente: cliente._id,
+  });
+  await registrarAuditoria(req, "CREAR", {
+    entidad: "Usuario",
+    entidadId: cuenta._id,
+    detalle: `${cuenta.usuario} con rol cliente`,
+  });
+
+  res.status(201).json({ usuario: cuenta.usuario });
+};
+
 const logout = async (req, res) => {
   await registrarAuditoria(req, "LOGOUT", { entidad: "Usuario", entidadId: req.usuario._id });
   await destruirSesion(req);
@@ -63,4 +126,4 @@ const usuarioActual = (req, res) => {
   res.json({ usuario, nombre, rol, ultimoAcceso, permisos: permisosDe(rol) });
 };
 
-module.exports = { login, logout, usuarioActual };
+module.exports = { login, verificarRegistroCliente, registrarCliente, logout, usuarioActual };

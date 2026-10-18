@@ -34,6 +34,17 @@ const usuarioSchema = new mongoose.Schema(
         "Un usuario con rol profesional debe estar vinculado a un profesional",
       ],
     },
+    cliente: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Cliente",
+      default: null,
+      required: [
+        function () {
+          return this.rol === "cliente";
+        },
+        "Un usuario con rol cliente debe estar vinculado a un cliente",
+      ],
+    },
     activo: { type: Boolean, default: true },
     expiraEl: { type: Date, default: null },
     ultimoAcceso: { type: Date, default: null },
@@ -47,6 +58,11 @@ const usuarioSchema = new mongoose.Schema(
       },
     },
   }
+);
+
+usuarioSchema.index(
+  { cliente: 1 },
+  { unique: true, partialFilterExpression: { cliente: { $type: "objectId" } } }
 );
 
 usuarioSchema.methods.estaHabilitado = function () {

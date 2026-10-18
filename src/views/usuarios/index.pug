@@ -20,6 +20,10 @@ mixin camposUsuario(prefijo, esEdicion)
     select.select-profesional(id=prefijo + "profesional" name="profesional")
       option(value="") Ninguno
   .form-group
+    label(for=prefijo + "cliente") Cliente vinculado
+    select.select-cliente(id=prefijo + "cliente" name="cliente")
+      option(value="") Ninguno
+  .form-group
     label(for=prefijo + "expiraEl") Vence el (opcional)
     input(id=prefijo + "expiraEl" type="datetime-local" name="expiraEl")
   if esEdicion
@@ -50,6 +54,7 @@ block content
           th Nombre
           th Rol
           th Profesional
+          th Cliente
           th Estado
           th Vence
           th Creado

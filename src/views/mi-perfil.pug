@@ -1,0 +1,27 @@
+extends layout
+
+block content
+  h1 Mi perfil
+  p Podés actualizar tu nombre, apellido, teléfono y email. El DNI no se puede modificar.
+  .error#errorPerfil(hidden)
+  p#estadoPerfil(hidden)
+  form#formPerfil
+    .form-group
+      label(for="nombre") Nombre *
+      input#nombre(type="text" name="nombre" required)
+    .form-group
+      label(for="apellido") Apellido *
+      input#apellido(type="text" name="apellido" required)
+    .form-group
+      label(for="dni") DNI
+      input#dni(type="text" name="dni" readonly)
+    .form-group
+      label(for="telefono") Teléfono
+      input#telefono(type="text" name="telefono")
+    .form-group
+      label(for="email") Email
+      input#email(type="email" name="email")
+    button(type="submit") Guardar cambios
+
+block scripts
+  script(src="/js/mi-perfil.js")

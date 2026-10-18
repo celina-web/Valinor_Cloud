@@ -106,7 +106,7 @@ Todos los modelos usan `timestamps`, así que guardan `createdAt` (fecha de crea
 | `clientes` | nombre, apellido, dni, telefono, email | dni único de 7 u 8 números, email válido |
 | `profesionales` | nombre, apellido, especialidad, matricula | matrícula única |
 | `turnos` | cliente (ref), profesional (ref), fecha, hora, estado, creadoPor (ref) | fecha `YYYY-MM-DD`, hora `HH:mm`, estado en `reservado / atendido / cancelado` |
-| `usuarios` | usuario, password, nombre, rol, profesional (ref), activo, expiraEl, ultimoAcceso | usuario único, contraseña de 6 caracteres o más, rol válido, profesional obligatorio si el rol es profesional |
+| `usuarios` | usuario, password, nombre, rol, profesional/cliente (ref), activo, expiraEl, ultimoAcceso | usuario único, contraseña de 6 caracteres o más, rol válido, profesional obligatorio si el rol es profesional y cliente obligatorio si el rol es cliente |
 | `auditoria` | usuario (ref), usuarioNombre, accion, entidad, entidadId, detalle, ip, createdAt | acción dentro de la lista permitida |
 
 ### Reglas de negocio de turnos
@@ -115,7 +115,7 @@ Todos los modelos usan `timestamps`, así que guardan `createdAt` (fecha de crea
 - Un cliente no puede tener dos turnos reservados en la misma fecha y hora (409).
 - El estado solo puede cambiar de `reservado` a `atendido` o `cancelado`. Ambos son estados finales.
 - Solo se pueden eliminar turnos `cancelado`.
-- No se puede eliminar un cliente o profesional que tenga turnos reservados (409), ni un profesional con un usuario vinculado.
+- No se puede eliminar un cliente o profesional que tenga turnos reservados (409), ni un profesional o cliente con un usuario vinculado.
 
 ---
 
@@ -123,15 +123,18 @@ Todos los modelos usan `timestamps`, así que guardan `createdAt` (fecha de crea
 
 Los permisos usan la nomenclatura **CRUD**: `recurso:create`, `recurso:read`, `recurso:update` y `recurso:delete`.
 
-| Recurso | profesional | recepcion | admin |
-|---|:-:|:-:|:-:|
-| clientes | R | C R U D | C R U D |
-| profesionales | R | C R U D | C R U D |
-| turnos | R\* U\* | C R U D | C R U D |
-| usuarios | – | – | C R U D |
-| auditoria | – | – | R |
+| Recurso | profesional | recepcion | admin | cliente |
+|---|:-:|:-:|:-:|:-:|
+| clientes | R | C R U D | C R U D | – |
+| profesionales | R | C R U D | C R U D | – |
+| turnos | R\* U\* | C R U D | C R U D | R\*\* |
+| usuarios | – | – | C R U D | – |
+| auditoria | – | – | R | – |
 
 \* Con control por contexto: el profesional solo ve **sus** turnos y solo puede marcarlos como **atendidos**.
+\*\* El cliente solo ve su historial de turnos y puede actualizar los datos permitidos de su propia ficha.
+
+Un cliente ya cargado puede crear una cuenta desde `/registro`, validando el DNI asociado a su ficha y eligiendo un usuario y contraseña. La cuenta queda vinculada a esa ficha; desde **Mi perfil** puede editar nombre, apellido, teléfono y email, y desde **Mis turnos** consulta su historial.
 
 La matriz está definida en un único lugar, [`src/config/roles.js`](src/config/roles.js). Cada ruta declara el permiso exacto que necesita, por ejemplo:
 
@@ -143,9 +146,9 @@ router.delete("/:id", requierePermiso("clientes:delete"), eliminarCliente);
 
 | Práctica | Cómo se implementa |
 |---|---|
-| **Mínimo privilegio** | Un usuario nuevo nace con el rol más bajo (`profesional`). Cada endpoint pide un permiso CRUD puntual y no un rol genérico. Los controladores solo aceptan los campos permitidos (`tomarCampos`), así nadie puede cambiar, por ejemplo, el `estado` de un turno al crearlo. La contraseña nunca viaja en las respuestas (`select: false` y `toJSON`). |
+| **Mínimo privilegio** | Un usuario creado por administración nace con el rol más bajo (`profesional`); el alta de autoservicio asigna únicamente el rol `cliente`. Cada endpoint pide un permiso CRUD puntual y no un rol genérico. Los controladores solo aceptan los campos permitidos (`tomarCampos`), así nadie puede cambiar, por ejemplo, el `estado` de un turno al crearlo. La contraseña nunca viaja en las respuestas (`select: false` y `toJSON`). |
 | **Roles jerárquicos** | En `roles.js`, cada rol hereda los permisos del anterior (`recepcion = [...profesional, ...]` y `admin = [...recepcion, ...]`). |
-| **Control por contexto** | Un usuario con rol profesional solo lista y consulta los turnos que tiene asignados, y solo puede pasarlos a `atendido`. Un admin no puede desactivarse, cambiarse el rol, ponerse vencimiento ni eliminarse a sí mismo. |
+| **Control por contexto** | Un usuario con rol profesional solo lista y consulta los turnos que tiene asignados, y solo puede pasarlos a `atendido`. Un cliente solo consulta turnos y modifica su propia ficha. Un admin no puede desactivarse, cambiarse el rol, ponerse vencimiento ni eliminarse a sí mismo. |
 | **Auditoría** | Se registran LOGIN, LOGIN_FALLIDO, LOGOUT, CREAR, MODIFICAR, ELIMINAR, CAMBIO_ESTADO, ACCESO_DENEGADO y SESION_REVOCADA, con usuario, entidad, detalle, IP y fecha. El admin los consulta en `/auditoria`. |
 | **Revocación automática** | Hay tres mecanismos. (1) La sesión expira tras `SESSION_MINUTOS` de inactividad (`rolling`). (2) En cada request se vuelve a leer el usuario desde Mongo: si fue desactivado, eliminado o pasó su fecha `expiraEl`, la sesión se destruye en ese momento y se audita como SESION_REVOCADA. (3) Un usuario vencido o inactivo no puede volver a iniciar sesión. |
 | **Fechas de creación, acceso y modificación** | `createdAt` y `updatedAt` vienen de `timestamps`. `ultimoAcceso` se actualiza en cada login sin modificar `updatedAt`, para no mezclar "accedió" con "lo modificaron". |
@@ -154,13 +157,16 @@ router.delete("/:id", requierePermiso("clientes:delete"), eliminarCliente);
 
 ## API REST
 
-Todas las rutas (salvo el login) requieren sesión. Responden **401** sin sesión y **403** sin permiso.
+Todas las rutas (salvo login y registro de clientes) requieren sesión. Responden **401** sin sesión y **403** sin permiso.
 
 | Método | Ruta | Permiso | Descripción |
 |---|---|---|---|
 | POST | `/api/auth/login` | público | Inicia sesión `{ usuario, password }` |
+| POST | `/api/auth/registro-cliente/verificar` | público | Verifica que el DNI corresponda a una ficha de cliente sin cuenta |
+| POST | `/api/auth/registro-cliente` | público | Crea una cuenta vinculada a esa ficha |
 | POST | `/api/auth/logout` | sesión | Cierra la sesión |
 | GET | `/api/auth/yo` | sesión | Usuario actual y sus permisos |
+| GET/PUT | `/api/mi-cuenta/perfil` | cliente | Consultar o actualizar los datos permitidos de su ficha |
 | GET | `/api/clientes` - `/api/clientes/:id` | clientes:read | Listar y ver detalle |
 | POST | `/api/clientes` | clientes:create | Crear |
 | PUT | `/api/clientes/:id` | clientes:update | Modificar |

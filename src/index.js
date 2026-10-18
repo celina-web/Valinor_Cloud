@@ -13,6 +13,7 @@ const profesionalesRoutes = require("./routes/api/profesionalesRoutes");
 const turnosRoutes = require("./routes/api/turnosRoutes");
 const usuariosRoutes = require("./routes/api/usuariosRoutes");
 const auditoriaRoutes = require("./routes/api/auditoriaRoutes");
+const miCuentaRoutes = require("./routes/api/miCuentaRoutes");
 const vistasRoutes = require("./routes/vistasRoutes");
 
 const app = express();
@@ -36,6 +37,7 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
+app.use("/api/mi-cuenta", miCuentaRoutes);
 app.use("/api/clientes", clientesRoutes);
 app.use("/api/profesionales", profesionalesRoutes);
 app.use("/api/turnos", turnosRoutes);

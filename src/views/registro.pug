@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  .login
+    h1 Crear usuario de cliente
+    p Ingresá el DNI con el que te registraron en TurnoFlex.
+    .error#errorRegistro(hidden)
+    form#formVerificar
+      .form-group
+        label(for="dniRegistro") DNI registrado
+        input#dniRegistro(type="text" name="dni" inputmode="numeric" pattern="[0-9]{7,8}" required autofocus)
+      button(type="submit") Verificar DNI
+
+    form#formCrear(hidden)
+      input#dniVerificado(type="hidden" name="dni")
+      p El DNI corresponde a una ficha sin usuario. Elegí tu usuario y contraseña.
+      .form-group
+        label(for="usuarioRegistro") Usuario
+        input#usuarioRegistro(
+          type="text"
+          name="usuario"
+          minlength="3"
+          maxlength="30"
+          pattern="[a-zA-Z0-9._-]{3,30}"
+          autocomplete="username"
+          required
+        )
+      .form-group
+        label(for="passwordRegistro") Contraseña
+        input#passwordRegistro(type="password" name="password" minlength="6" autocomplete="new-password" required)
+      button(type="submit") Crear cuenta
+    p
+      a(href="/login") Volver al inicio de sesión
+
+block scripts
+  script(src="/js/registro.js")

@@ -23,9 +23,13 @@ const prepararDatos = (formulario) => {
 
 const sincronizarProfesional = (formulario) => {
   const esProfesional = formulario.rol.value === "profesional";
+  const esCliente = formulario.rol.value === "cliente";
   formulario.profesional.disabled = !esProfesional;
   formulario.profesional.required = esProfesional;
+  formulario.cliente.disabled = !esCliente;
+  formulario.cliente.required = esCliente;
   if (!esProfesional) formulario.profesional.value = "";
+  if (!esCliente) formulario.cliente.value = "";
 };
 
 const estadoDe = (usuario) => {
@@ -40,6 +44,7 @@ const abrirEdicion = (usuario) => {
     ...usuario,
     password: "",
     profesional: usuario.profesional ? usuario.profesional._id : "",
+    cliente: usuario.cliente ? usuario.cliente._id : "",
     expiraEl: aFechaLocal(usuario.expiraEl),
   });
   sincronizarProfesional(formEditar);
@@ -89,6 +94,7 @@ const crearFilaUsuario = (usuario) => {
       usuario.nombre,
       usuario.rol,
       usuario.profesional ? nombreCompleto(usuario.profesional) : "-",
+      usuario.cliente ? nombreCompleto(usuario.cliente) : "-",
       estadoDe(usuario),
       formatearFechaHora(usuario.expiraEl),
       formatearFechaHora(usuario.createdAt),
@@ -113,6 +119,13 @@ const cargarProfesionales = async () => {
   const profesionales = await api("/api/profesionales");
   document.querySelectorAll(".select-profesional").forEach((select) => {
     llenarSelect(select, profesionales, (p) => `${p.apellido}, ${p.nombre}`);
+  });
+};
+
+const cargarClientes = async () => {
+  const clientes = await api("/api/clientes");
+  document.querySelectorAll(".select-cliente").forEach((select) => {
+    llenarSelect(select, clientes, (cliente) => `${cliente.apellido}, ${cliente.nombre}`);
   });
 };
 
@@ -150,5 +163,6 @@ formEditar.addEventListener("submit", async (evento) => {
 
 configurarModal(modalEditar);
 cargarProfesionales()
+  .then(cargarClientes)
   .then(cargarUsuarios)
   .catch((error) => mostrarError(errorListado, error.message));

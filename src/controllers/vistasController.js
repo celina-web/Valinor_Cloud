@@ -6,6 +6,13 @@ const mostrarLogin = (req, res) => {
   res.render("login");
 };
 
+const mostrarRegistro = (req, res) => res.render("registro");
+
+const mostrarMiPerfil = (req, res) => {
+  if (req.usuario.rol !== "cliente") return res.redirect("/");
+  res.render("mi-perfil");
+};
+
 const mostrarPanel = (req, res) => res.render("home");
 
 const mostrarClientes = (req, res) => res.render("clientes/index");
@@ -20,6 +27,8 @@ const mostrarAuditoria = (req, res) => res.render("auditoria/index", { acciones:
 
 module.exports = {
   mostrarLogin,
+  mostrarRegistro,
+  mostrarMiPerfil,
   mostrarPanel,
   mostrarClientes,
   mostrarProfesionales,

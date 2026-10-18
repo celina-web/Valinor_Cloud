@@ -19,7 +19,9 @@ html(lang="es")
           if puede("profesionales:read")
             a(href="/profesionales") Profesionales
           if puede("turnos:read")
-            a(href="/turnos") Turnos
+            a(href="/turnos")= usuario.rol === "cliente" ? "Mis turnos" : "Turnos"
+          if usuario.rol === "cliente"
+            a(href="/mi-perfil") Mi perfil
           if puede("usuarios:read")
             a(href="/usuarios") Usuarios
           if puede("auditoria:read")

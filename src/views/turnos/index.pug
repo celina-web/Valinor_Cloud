@@ -1,7 +1,7 @@
 extends ../layout
 
 block content
-  h1 Gestión de Turnos
+  h1= usuario.rol === "cliente" ? "Historial de Turnos" : "Gestión de Turnos"
 
   if puede("turnos:create")
     h2 Reservar Nuevo Turno
