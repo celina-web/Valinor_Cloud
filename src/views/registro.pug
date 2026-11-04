@@ -2,33 +2,77 @@ extends layout
 
 block content
   .login
-    h1 Crear usuario de cliente
-    p Ingresá el DNI con el que te registraron en TurnoFlex.
+    h1 Registro de cliente
+    p Elegí cómo registrarte. Tu ficha de cliente y tu usuario de acceso se guardan por separado.
     .error#errorRegistro(hidden)
-    form#formVerificar
-      .form-group
-        label(for="dniRegistro") DNI registrado
-        input#dniRegistro(type="text" name="dni" inputmode="numeric" pattern="[0-9]{7,8}" required autofocus)
-      button(type="submit") Verificar DNI
+    .modal-botones#opcionesRegistro
+      button#btnNuevoCliente(type="button") Nuevo Cliente
+      button#btnClienteExistente.btn-secundario(type="button") Cliente Existente
 
-    form#formCrear(hidden)
-      input#dniVerificado(type="hidden" name="dni")
-      p El DNI corresponde a una ficha sin usuario. Elegí tu usuario y contraseña.
-      .form-group
-        label(for="usuarioRegistro") Usuario
-        input#usuarioRegistro(
-          type="text"
-          name="usuario"
-          minlength="3"
-          maxlength="30"
-          pattern="[a-zA-Z0-9._-]{3,30}"
-          autocomplete="username"
-          required
-        )
-      .form-group
-        label(for="passwordRegistro") Contraseña
-        input#passwordRegistro(type="password" name="password" minlength="6" autocomplete="new-password" required)
-      button(type="submit") Crear cuenta
+    section#registroNuevo(hidden)
+      button#volverNuevo.btn-secundario(type="button") Volver
+      h2 Nuevo Cliente
+      form#formNuevoCliente
+        .form-group
+          label(for="nombreNuevo") Nombre
+          input#nombreNuevo(type="text" name="nombre" autocomplete="given-name" required)
+        .form-group
+          label(for="apellidoNuevo") Apellido
+          input#apellidoNuevo(type="text" name="apellido" autocomplete="family-name" required)
+        .form-group
+          label(for="dniNuevo") DNI
+          input#dniNuevo(type="text" name="dni" inputmode="numeric" pattern="[0-9]{7,8}" required)
+        .form-group
+          label(for="telefonoNuevo") Teléfono
+          input#telefonoNuevo(type="tel" name="telefono" autocomplete="tel")
+        .form-group
+          label(for="emailNuevo") Email
+          input#emailNuevo(type="email" name="email" autocomplete="email")
+        .form-group
+          label(for="usuarioNuevo") Usuario
+          input#usuarioNuevo(
+            type="text"
+            name="usuario"
+            minlength="3"
+            maxlength="30"
+            pattern="[a-zA-Z0-9._-]{3,30}"
+            autocomplete="username"
+            required
+          )
+        .form-group
+          label(for="passwordNuevo") Contraseña
+          input#passwordNuevo(type="password" name="password" minlength="6" autocomplete="new-password" required)
+        button(type="submit") Crear cuenta
+
+    section#registroExistente(hidden)
+      button#volverExistente.btn-secundario(type="button") Volver
+      h2 Cliente Existente
+      p Ingresá el DNI con el que te registraron en TurnoFlex.
+      form#formVerificar
+        .form-group
+          label(for="dniRegistro") DNI registrado
+          input#dniRegistro(type="text" name="dni" inputmode="numeric" pattern="[0-9]{7,8}" required)
+        button(type="submit") Verificar DNI
+
+      form#formCrear(hidden)
+        input#dniVerificado(type="hidden" name="dni")
+        p El DNI corresponde a una ficha sin usuario. Elegí tu usuario y contraseña.
+        .form-group
+          label(for="usuarioRegistro") Usuario
+          input#usuarioRegistro(
+            type="text"
+            name="usuario"
+            minlength="3"
+            maxlength="30"
+            pattern="[a-zA-Z0-9._-]{3,30}"
+            autocomplete="username"
+            required
+          )
+        .form-group
+          label(for="passwordRegistro") Contraseña
+          input#passwordRegistro(type="password" name="password" minlength="6" autocomplete="new-password" required)
+        button(type="submit") Crear cuenta
+
     p
       a(href="/login") Volver al inicio de sesión
 

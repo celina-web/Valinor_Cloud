@@ -134,7 +134,7 @@ Los permisos usan la nomenclatura **CRUD**: `recurso:create`, `recurso:read`, `r
 \* Con control por contexto: el profesional solo ve **sus** turnos y solo puede marcarlos como **atendidos**.
 \*\* El cliente solo ve su historial de turnos y puede actualizar los datos permitidos de su propia ficha.
 
-Un cliente ya cargado puede crear una cuenta desde `/registro`, validando el DNI asociado a su ficha y eligiendo un usuario y contraseña. La cuenta queda vinculada a esa ficha; desde **Mi perfil** puede editar nombre, apellido, teléfono y email, y desde **Mis turnos** consulta su historial.
+Desde `/registro`, cualquier persona puede elegir **Nuevo Cliente** para crear una ficha de cliente y un usuario de acceso vinculados, o **Cliente Existente** para validar el DNI de una ficha ya cargada y crearle un usuario. Las fichas (`clientes`) y las cuentas de acceso (`usuarios`) se guardan en colecciones diferentes. Desde **Mi perfil**, el cliente puede editar nombre, apellido, teléfono y email; desde **Mis turnos** consulta su historial.
 
 La matriz está definida en un único lugar, [`src/config/roles.js`](src/config/roles.js). Cada ruta declara el permiso exacto que necesita, por ejemplo:
 
@@ -164,6 +164,7 @@ Todas las rutas (salvo login y registro de clientes) requieren sesión. Responde
 | POST | `/api/auth/login` | público | Inicia sesión `{ usuario, password }` |
 | POST | `/api/auth/registro-cliente/verificar` | público | Verifica que el DNI corresponda a una ficha de cliente sin cuenta |
 | POST | `/api/auth/registro-cliente` | público | Crea una cuenta vinculada a esa ficha |
+| POST | `/api/auth/registro-cliente/nuevo` | público | Crea una ficha de cliente y su cuenta de acceso vinculada |
 | POST | `/api/auth/logout` | sesión | Cierra la sesión |
 | GET | `/api/auth/yo` | sesión | Usuario actual y sus permisos |
 | GET/PUT | `/api/mi-cuenta/perfil` | cliente | Consultar o actualizar los datos permitidos de su ficha |

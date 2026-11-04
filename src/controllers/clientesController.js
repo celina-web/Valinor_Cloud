@@ -28,12 +28,36 @@ const actualizarMiPerfil = async (req, res) => {
   const cliente = await Cliente.findById(req.usuario.cliente);
   if (!cliente) return res.status(404).json({ error: "No se encontró tu ficha de cliente" });
 
-  cliente.set(tomarCampos(req.body, CAMPOS_AUTOSERVICIO));
-  const cambios = describirCambios(cliente);
+  const datos = tomarCampos(req.body, CAMPOS_AUTOSERVICIO);
+  const camposModificados = Object.entries(datos).filter(([campo, valor]) => {
+    const actual = cliente[campo] ?? "";
+    const nuevo = typeof valor === "string" ? valor.trim() : valor ?? "";
+    return campo === "email"
+      ? String(actual).toLowerCase() !== String(nuevo).toLowerCase()
+      : actual !== nuevo;
+  });
+
+  if (!camposModificados.length) return res.json(cliente);
+
+  cliente.set(
+    Object.fromEntries(
+      camposModificados.map(([campo, valor]) => [
+        campo,
+        typeof valor === "string" ? valor.trim() : valor,
+      ])
+    )
+  );
+  const cambios = camposModificados.map(([campo]) => campo).join(", ");
   await cliente.save();
   const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`;
-  await Usuario.updateOne({ _id: req.usuario._id }, { nombre: nombreCompleto });
-  req.usuario.nombre = nombreCompleto;
+  if (req.usuario.nombre !== nombreCompleto) {
+    await Usuario.updateOne(
+      { _id: req.usuario._id },
+      { nombre: nombreCompleto },
+      { timestamps: false }
+    );
+    req.usuario.nombre = nombreCompleto;
+  }
 
   await registrarAuditoria(req, "MODIFICAR", {
     entidad: "Cliente",

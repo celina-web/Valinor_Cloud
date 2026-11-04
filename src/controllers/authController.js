@@ -114,6 +114,59 @@ const registrarCliente = async (req, res) => {
   res.status(201).json({ usuario: cuenta.usuario });
 };
 
+const registrarNuevoCliente = async (req, res) => {
+  const datos = req.body || {};
+  const cliente = new Cliente({
+    nombre: datos.nombre,
+    apellido: datos.apellido,
+    dni: String(datos.dni || "").trim(),
+    telefono: datos.telefono,
+    email: datos.email,
+  });
+  const usuarioNombre = String(datos.usuario || "").trim().toLowerCase();
+  const password = String(datos.password || "");
+  const cuenta = new Usuario({
+    usuario: usuarioNombre,
+    password,
+    nombre: `${cliente.nombre || ""} ${cliente.apellido || ""}`.trim(),
+    rol: "cliente",
+    cliente: cliente._id,
+  });
+  await cliente.validate();
+  await cuenta.validate();
+
+  if (await Cliente.exists({ dni: cliente.dni })) {
+    return res.status(409).json({
+      error: "Ya existe un cliente con ese DNI. Elegí Cliente Existente",
+    });
+  }
+  if (await Usuario.exists({ usuario: usuarioNombre })) {
+    return res.status(409).json({ error: "Ese nombre de usuario ya está en uso" });
+  }
+
+  await cliente.save();
+
+  try {
+    await cuenta.save();
+  } catch (error) {
+    await Cliente.deleteOne({ _id: cliente._id });
+    throw error;
+  }
+
+  await registrarAuditoria(req, "CREAR", {
+    entidad: "Cliente",
+    entidadId: cliente._id,
+    detalle: `${cliente.nombre} ${cliente.apellido} (DNI ${cliente.dni})`,
+  });
+  await registrarAuditoria(req, "CREAR", {
+    entidad: "Usuario",
+    entidadId: cuenta._id,
+    detalle: `${cuenta.usuario} con rol cliente`,
+  });
+
+  res.status(201).json({ usuario: cuenta.usuario });
+};
+
 const logout = async (req, res) => {
   await registrarAuditoria(req, "LOGOUT", { entidad: "Usuario", entidadId: req.usuario._id });
   await destruirSesion(req);
@@ -126,4 +179,11 @@ const usuarioActual = (req, res) => {
   res.json({ usuario, nombre, rol, ultimoAcceso, permisos: permisosDe(rol) });
 };
 
-module.exports = { login, verificarRegistroCliente, registrarCliente, logout, usuarioActual };
+module.exports = {
+  login,
+  verificarRegistroCliente,
+  registrarCliente,
+  registrarNuevoCliente,
+  logout,
+  usuarioActual,
+};
