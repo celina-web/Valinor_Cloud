@@ -27,6 +27,18 @@ npm run dev               # inicia con nodemon (o npm start)
 
 La aplicación queda disponible en **http://localhost:3000**.
 
+### Uso con Docker
+
+También se puede levantar la app y MongoDB con contenedores (modo desarrollo con hot-reload):
+
+```bash
+cp .env.example .env
+docker compose up --build
+docker compose exec app npm run seed
+```
+
+La guía completa está en [`docs/Docker/docker-readme.md`](docs/Docker/docker-readme.md).
+
 ### Variables de entorno (`.env`)
 
 | Variable | Descripción | Valor por defecto |
