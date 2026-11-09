@@ -28,7 +28,7 @@ Navegador ──► localhost:3000 ──► [contenedor app]  ──► mongo:2
    cp .env.example .env
    ```
 
-   Opcionalmente, cambiá `SESSION_SECRET` por un texto largo.
+   Cambiá `JWT_SECRET` por un texto largo y aleatorio (si falta, la app usa una clave de desarrollo y muestra un aviso al iniciar).
 
 2. Construir y levantar los contenedores:
 
@@ -78,7 +78,7 @@ Se toman del `.env`, con estas particularidades:
 |---|---|
 | `PORT` | Define el puerto publicado en tu equipo (`${PORT}:3000`). Dentro del contenedor la app siempre escucha en 3000. |
 | `MONGO_URI` | Sobrescrita por Compose (`mongodb://mongo:27017/turnoflex`). |
-| `SESSION_SECRET`, `SESSION_MINUTOS` | Se leen del `.env` sin cambios. |
+| `JWT_SECRET`, `JWT_MINUTOS` | Se leen del `.env` sin cambios. |
 
 ## Problemas frecuentes
 
@@ -86,4 +86,6 @@ Se toman del `.env`, con estas particularidades:
 - **Los cambios no se reflejan**: confirmá que editás archivos dentro de `src/` y que el comando sigue usando `nodemon -L` (polling).
 - **Puerto 3000 o 27017 ocupado**: cambiá `PORT` en el `.env`, o detené el MongoDB local (`sudo systemctl stop mongod`).
 - **Permisos en Linux**: el contenedor corre como el usuario `node` (UID 1000). Si tu usuario tiene otro UID y la app no puede leer `src/`, revisá los permisos de la carpeta.
+- **`Cannot find module 'passport'` (u otra dependencia nueva)**: el volumen anónimo de `node_modules` conserva las dependencias viejas. Reconstruí renovándolo: `docker compose up --build -V`.
+- **No puedo iniciar sesión con los usuarios de prueba después de actualizar**: las contraseñas ahora se guardan hasheadas. Volvé a cargar los datos con `docker compose exec app npm run seed`.
 - **Empezar de cero**: `docker compose down -v --rmi local` y repetir los pasos.

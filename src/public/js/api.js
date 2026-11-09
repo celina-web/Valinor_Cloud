@@ -1,3 +1,5 @@
+// El JWT viaja en una cookie httpOnly que el navegador envía solo (mismo origen):
+// el JS no lo lee ni lo guarda, así no queda expuesto ante un XSS.
 const api = async (url, opciones = {}) => {
   const respuesta = await fetch(url, {
     method: opciones.method || "GET",

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const { ROLES } = require("../config/roles");
 
 const usuarioSchema = new mongoose.Schema(
@@ -37,17 +38,33 @@ const usuarioSchema = new mongoose.Schema(
     activo: { type: Boolean, default: true },
     expiraEl: { type: Date, default: null },
     ultimoAcceso: { type: Date, default: null },
+    // Se incrementa en el logout y al cambiar la contraseña: los JWT emitidos antes dejan de valer
+    tokenVersion: { type: Number, default: 0 },
   },
   {
     timestamps: true,
     toJSON: {
       transform: (documento, datos) => {
         delete datos.password;
+        delete datos.tokenVersion;
         return datos;
       },
     },
   }
 );
+
+const RONDAS_BCRYPT = 10;
+
+// Mongoose valida antes de este hook, así que minlength se aplica a la contraseña en claro
+usuarioSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, RONDAS_BCRYPT);
+  if (!this.isNew) this.tokenVersion += 1;
+});
+
+usuarioSchema.methods.compararPassword = function (password) {
+  return bcrypt.compare(password, this.password);
+};
 
 usuarioSchema.methods.estaHabilitado = function () {
   const vencido = this.expiraEl && this.expiraEl <= new Date();

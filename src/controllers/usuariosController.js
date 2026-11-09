@@ -2,6 +2,7 @@ const Usuario = require("../models/Usuario");
 const Profesional = require("../models/Profesional");
 const { tomarCampos, describirCambios } = require("../helpers/campos");
 const { registrarAuditoria } = require("../helpers/auditoria");
+const { firmarToken, enviarTokenEnCookie } = require("../helpers/token");
 
 const CAMPOS = ["usuario", "password", "nombre", "rol", "profesional", "activo", "expiraEl"];
 
@@ -66,6 +67,10 @@ const actualizarUsuario = async (req, res) => {
   usuario.set(datos);
   const cambios = describirCambios(usuario);
   await usuario.save();
+
+  // Cambiar la contraseña invalida los tokens anteriores (tokenVersion); si es la
+  // propia, se emite uno nuevo para no cerrarle la sesión al admin.
+  if (esElMismo && datos.password) enviarTokenEnCookie(res, firmarToken(usuario));
 
   await registrarAuditoria(req, "MODIFICAR", {
     entidad: "Usuario",

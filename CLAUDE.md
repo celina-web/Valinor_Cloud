@@ -10,7 +10,7 @@ TurnoFlex: aplicación web de gestión de turnos (Node.js 18+, Express 5, MongoD
 
 ```bash
 npm install
-cp .env.example .env     # variables: PORT, MONGO_URI, SESSION_SECRET, SESSION_MINUTOS
+cp .env.example .env     # variables: PORT, MONGO_URI, JWT_SECRET, JWT_MINUTOS
 npm run seed             # BORRA la base y crea datos y usuarios de prueba (admin/admin123, etc.)
 npm run dev              # nodemon src/index.js
 npm start                # node src/index.js
@@ -19,7 +19,7 @@ npm start                # node src/index.js
 Con Docker (modo desarrollo, hot-reload con nodemon sobre `./src` montado como volumen; guía en `docs/Docker/docker-readme.md`):
 
 ```bash
-docker compose up --build            # app + mongo; Compose sobrescribe MONGO_URI a mongodb://mongo:27017/turnoflex
+docker compose up --build -V         # app + mongo; -V renueva node_modules; Compose sobrescribe MONGO_URI a mongodb://mongo:27017/turnoflex
 docker compose exec app npm run seed
 docker compose down -v               # detiene y borra los datos (volumen mongo_data)
 ```
@@ -29,13 +29,14 @@ Sin Docker requiere una instancia de MongoDB corriendo (por defecto `mongodb://1
 ## Arquitectura
 
 - **Vistas y API separadas.** `src/routes/vistasRoutes.js` solo renderiza el esqueleto de cada página con Pug; los datos los carga el JS del navegador (`src/public/js/*.js`, usando `api.js` como wrapper de `fetch`) contra `/api/...`, que siempre responde JSON.
-- **Cadena de middlewares por ruta:** `requiereLogin` → `requierePermiso("recurso:accion")` → controlador (`src/middlewares/auth.js`). `requiereLogin` vuelve a leer el usuario desde Mongo en cada request: si está desactivado, eliminado o vencido (`expiraEl`), destruye la sesión y audita `SESION_REVOCADA`. Distingue API de vistas por el prefijo `/api` (401 JSON vs. redirect a `/login`).
+- **Autenticación stateless (Passport + JWT):** no hay sesiones en el servidor. Estrategias en `src/config/passport.js`: `local` (login, compara con bcrypt) y `jwt` (token HS256 tomado de `Authorization: Bearer` o de la cookie httpOnly `token`). Firma y cookie en `src/helpers/token.js`. El login devuelve el token en el JSON y lo setea en la cookie (las vistas Pug dependen de la cookie). Detalle completo en `docs/refactor-passport-jwt.md`.
+- **Cadena de middlewares por ruta:** `requiereLogin` → `requierePermiso("recurso:accion")` → controlador (`src/middlewares/auth.js`). `requiereLogin` usa la estrategia `jwt`, cuyo `verify` vuelve a leer el usuario desde Mongo: si está desactivado, eliminado o vencido (`expiraEl`) rechaza el token y audita `SESION_REVOCADA`; si `payload.ver !== usuario.tokenVersion` (logout o cambio de contraseña) también lo rechaza. Renueva la cookie cuando el token consumió la mitad de su vida. Distingue API de vistas por el prefijo `/api` (401 JSON vs. redirect a `/login`). `usuarioOpcional` carga el usuario sin cortar la request (lo usa `/login`).
 - **Permisos:** la matriz CRUD vive solo en `src/config/roles.js`. Los roles son jerárquicos por spread de arrays (`profesional` ⊂ `recepcion` ⊂ `admin`). Para agregar un permiso, definilo ahí y usalo en la ruta.
 - **Control por contexto** (en controladores, no en roles): el rol `profesional` solo ve sus propios turnos y solo puede pasarlos a `atendido`; un admin no puede desactivarse, cambiarse el rol, ponerse vencimiento ni eliminarse a sí mismo.
 - **Errores:** Express 5 propaga errores de controladores `async` al `errorHandler` (`src/middlewares/errores.js`), que traduce errores de Mongoose (validación → 400, id inválido → 400, duplicado → 409). No hace falta `try/catch` en los controladores.
 - **Auditoría:** `registrarAuditoria(req, accion, {...})` en `src/helpers/auditoria.js`; la acción debe estar en la lista permitida del modelo `Auditoria`. Se llama en login/logout, altas/bajas/modificaciones, cambios de estado y accesos denegados.
 - **Mass assignment:** los controladores filtran el body con `tomarCampos()` (`src/helpers/campos.js`); usalo en todo endpoint nuevo de escritura.
-- **Contraseñas:** campo `select: false` en `Usuario` y excluido en `toJSON`; no devolverlas nunca en respuestas.
+- **Contraseñas:** hasheadas con bcrypt en el `pre("save")` de `Usuario` (usá `create`/`save`, no `updateOne`, para cambiarlas); campo `select: false` y excluido en `toJSON` junto con `tokenVersion`; no devolverlas nunca en respuestas.
 
 ## Reglas de negocio de turnos
 

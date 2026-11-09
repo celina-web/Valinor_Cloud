@@ -1,12 +1,24 @@
-const Usuario = require("../models/Usuario");
+const passport = require("../config/passport");
 const { tienePermiso, permisosDe } = require("../config/roles");
 const { registrarAuditoria } = require("../helpers/auditoria");
+const {
+  JWT_MINUTOS,
+  firmarToken,
+  enviarTokenEnCookie,
+  borrarCookieToken,
+  tokenDeCookie,
+} = require("../helpers/token");
 
 const esApi = (req) => req.originalUrl.startsWith("/api");
 
-const destruirSesion = (req) =>
-  new Promise((resolve) => {
-    req.session.destroy(() => resolve());
+// Envuelve passport.authenticate (con callback) en una Promise para poder usar
+// await y que Express 5 lleve cualquier error al errorHandler.
+const autenticar = (estrategia, req, res) =>
+  new Promise((resolve, reject) => {
+    passport.authenticate(estrategia, { session: false }, (error, usuario, info) => {
+      if (error) return reject(error);
+      resolve({ usuario, info: info || {} });
+    })(req, res, reject);
   });
 
 const responderSinSesion = (req, res, mensaje) => {
@@ -14,29 +26,58 @@ const responderSinSesion = (req, res, mensaje) => {
   return res.redirect("/login");
 };
 
-const requiereLogin = async (req, res, next) => {
-  if (!req.session.usuarioId) {
-    return responderSinSesion(req, res, "Debés iniciar sesión");
+const mensajeDeRechazo = (info) => {
+  if (info.revocado) return "Tu sesión fue revocada";
+  if (info.mensaje) return info.mensaje;
+  if (info.name === "TokenExpiredError") return "Tu sesión expiró. Ingresá de nuevo";
+  return "Debés iniciar sesión";
+};
+
+const vinoPorCookie = (req) => !req.headers.authorization && Boolean(tokenDeCookie(req));
+
+// Renovación deslizante: si el token de la cookie ya consumió la mitad de su vida,
+// se emite uno nuevo. Así la expiración funciona como "minutos de inactividad".
+const renovarSiHaceFalta = (req, res, usuario, payload) => {
+  if (!payload || !vinoPorCookie(req)) return;
+  const segundosRestantes = payload.exp - Math.floor(Date.now() / 1000);
+  if (segundosRestantes < (JWT_MINUTOS * 60) / 2) {
+    enviarTokenEnCookie(res, firmarToken(usuario));
   }
+};
 
-  const usuario = await Usuario.findById(req.session.usuarioId);
-
-  if (!usuario || !usuario.estaHabilitado()) {
-    await registrarAuditoria(req, "SESION_REVOCADA", {
-      usuario,
-      usuarioNombre: req.session.usuarioNombre,
-      entidad: "Usuario",
-      entidadId: req.session.usuarioId,
-      detalle: usuario ? "Usuario desactivado o vencido" : "El usuario fue eliminado",
-    });
-    await destruirSesion(req);
-    return responderSinSesion(req, res, "Tu sesión fue revocada");
-  }
-
+const cargarUsuario = (req, res, usuario) => {
   req.usuario = usuario;
   res.locals.usuario = usuario;
   res.locals.permisos = permisosDe(usuario.rol);
   res.locals.puede = (permiso) => tienePermiso(usuario.rol, permiso);
+};
+
+const requiereLogin = async (req, res, next) => {
+  const { usuario, info } = await autenticar("jwt", req, res);
+
+  if (!usuario) {
+    if (info.revocado) {
+      await registrarAuditoria(req, "SESION_REVOCADA", {
+        usuario: info.usuario,
+        usuarioNombre: info.payload.usuario,
+        entidad: "Usuario",
+        entidadId: info.payload.sub,
+        detalle: info.detalle,
+      });
+    }
+    if (tokenDeCookie(req)) borrarCookieToken(res);
+    return responderSinSesion(req, res, mensajeDeRechazo(info));
+  }
+
+  renovarSiHaceFalta(req, res, usuario, info.payload);
+  cargarUsuario(req, res, usuario);
+  next();
+};
+
+// Para páginas públicas (login): carga el usuario si hay un token válido, sin cortar la request.
+const usuarioOpcional = async (req, res, next) => {
+  const { usuario } = await autenticar("jwt", req, res);
+  if (usuario) cargarUsuario(req, res, usuario);
   next();
 };
 
@@ -56,4 +97,4 @@ const requierePermiso = (permiso) => async (req, res, next) => {
   });
 };
 
-module.exports = { requiereLogin, requierePermiso, destruirSesion };
+module.exports = { autenticar, requiereLogin, usuarioOpcional, requierePermiso };

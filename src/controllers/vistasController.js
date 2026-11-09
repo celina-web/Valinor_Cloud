@@ -2,7 +2,7 @@ const { ROLES } = require("../config/roles");
 const { ACCIONES } = require("../models/Auditoria");
 
 const mostrarLogin = (req, res) => {
-  if (req.session.usuarioId) return res.redirect("/");
+  if (req.usuario) return res.redirect("/");
   res.render("login");
 };
 

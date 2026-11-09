@@ -1,5 +1,5 @@
 const express = require("express");
-const { requiereLogin, requierePermiso } = require("../middlewares/auth");
+const { requiereLogin, requierePermiso, usuarioOpcional } = require("../middlewares/auth");
 const {
   mostrarLogin,
   mostrarPanel,
@@ -12,7 +12,7 @@ const {
 
 const router = express.Router();
 
-router.get("/login", mostrarLogin);
+router.get("/login", usuarioOpcional, mostrarLogin);
 
 router.use(requiereLogin);
 

@@ -1,45 +1,29 @@
 const Usuario = require("../models/Usuario");
 const { permisosDe } = require("../config/roles");
 const { registrarAuditoria } = require("../helpers/auditoria");
-const { destruirSesion } = require("../middlewares/auth");
-
-const regenerarSesion = (req) =>
-  new Promise((resolve, reject) => {
-    req.session.regenerate((error) => (error ? reject(error) : resolve()));
-  });
+const { autenticar } = require("../middlewares/auth");
+const { firmarToken, enviarTokenEnCookie, borrarCookieToken } = require("../helpers/token");
 
 const login = async (req, res) => {
-  const { usuario: usuarioIngresado, password: passwordIngresada } = req.body || {};
-  const nombreUsuario = String(usuarioIngresado || "").trim().toLowerCase();
-  const password = String(passwordIngresada || "");
+  const { usuario: usuarioIngresado, password } = req.body || {};
 
-  if (!nombreUsuario || !password) {
+  if (!String(usuarioIngresado || "").trim() || !password) {
     return res.status(400).json({ error: "Ingresá usuario y contraseña" });
   }
 
-  const usuario = await Usuario.findOne({ usuario: nombreUsuario }).select("+password");
+  const { usuario, info } = await autenticar("local", req, res);
 
-  if (!usuario || usuario.password !== password) {
+  if (!usuario) {
     await registrarAuditoria(req, "LOGIN_FALLIDO", {
-      usuarioNombre: nombreUsuario,
-      detalle: "Usuario o contraseña incorrectos",
+      usuario: info.usuario,
+      usuarioNombre: info.usuarioNombre,
+      detalle: info.detalle,
     });
-    return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+    return res.status(info.status || 401).json({ error: info.error || "No se pudo iniciar sesión" });
   }
 
-  if (!usuario.estaHabilitado()) {
-    await registrarAuditoria(req, "LOGIN_FALLIDO", {
-      usuario,
-      detalle: "Usuario desactivado o vencido",
-    });
-    return res
-      .status(403)
-      .json({ error: "Tu usuario está deshabilitado. Contactá a un administrador" });
-  }
-
-  await regenerarSesion(req);
-  req.session.usuarioId = usuario._id.toString();
-  req.session.usuarioNombre = usuario.usuario;
+  const token = firmarToken(usuario);
+  enviarTokenEnCookie(res, token);
 
   await Usuario.updateOne(
     { _id: usuario._id },
@@ -48,13 +32,19 @@ const login = async (req, res) => {
   );
   await registrarAuditoria(req, "LOGIN", { usuario, entidad: "Usuario", entidadId: usuario._id });
 
-  res.json({ usuario: usuario.usuario, nombre: usuario.nombre, rol: usuario.rol });
+  res.json({ token, usuario: usuario.usuario, nombre: usuario.nombre, rol: usuario.rol });
 };
 
+// Sin sesiones en el servidor: el logout sube tokenVersion para invalidar los
+// tokens ya emitidos de este usuario y borra la cookie del navegador.
 const logout = async (req, res) => {
+  await Usuario.updateOne(
+    { _id: req.usuario._id },
+    { $inc: { tokenVersion: 1 } },
+    { timestamps: false }
+  );
   await registrarAuditoria(req, "LOGOUT", { entidad: "Usuario", entidadId: req.usuario._id });
-  await destruirSesion(req);
-  res.clearCookie("connect.sid");
+  borrarCookieToken(res);
   res.status(204).end();
 };
 
