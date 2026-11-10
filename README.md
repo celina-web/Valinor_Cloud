@@ -9,6 +9,7 @@ turnos de un centro de atención. Permite administrar profesionales, clientes y 
 - **Auditoría** de todas las acciones relevantes.
 - **Front con `fetch`**: las pantallas cargan y guardan datos de forma asincrónica, sin recargar la página.
 - **Interfaz con Tailwind CSS 4** (por CDN, sin paso de build): navbar y sidebar colapsable, menú de usuario, colores por estado de turno y diseño responsive para móviles, tablets, portátiles y escritorio.
+- **Chat de consultas en tiempo real con WebSockets (Socket.io)**: recepción y profesionales le consultan a un administrador desde un panel lateral. Cada consulta pasa por los estados pendiente, activo, finalizado o rechazado, y vence a los 5 minutos si nadie la acepta.
 
 ---
 
@@ -29,6 +30,8 @@ npm run dev               # inicia con nodemon (o npm start)
 La aplicación queda disponible en **http://localhost:3000**.
 
 > Si venís de una versión anterior (con `express-session`), volvé a correr `npm run seed`: las contraseñas ahora se guardan hasheadas y las que estaban en texto plano ya no sirven para iniciar sesión.
+>
+> Si venís de una versión sin chat, corré `npm install` (agrega `socket.io`) y `npm run seed` (crea el segundo admin, `admin2`). Con Docker: `docker compose up --build -V`.
 
 ### Uso con Docker
 
@@ -50,12 +53,15 @@ La guía completa está en [`docs/Docker/docker-readme.md`](docs/Docker/docker-r
 | `MONGO_URI` | Cadena de conexión a MongoDB | `mongodb://127.0.0.1:27017/turnoflex` |
 | `JWT_SECRET` | Clave para firmar los JWT (HS256). En producción, un texto largo y aleatorio | clave de desarrollo (con aviso al iniciar) |
 | `JWT_MINUTOS` | Vida del token en minutos. En el navegador se renueva mientras se usa la app | `30` |
+| `CHAT_MAX_POR_ADMIN` | Máximo de chats abiertos (pendientes + activos) que puede tener cada admin | `3` |
+| `CHAT_TIMEOUT_MINUTOS` | Minutos que espera una consulta a ser aceptada antes de vencer. Acepta decimales (`0.5` = 30 s) para probar | `5` |
 
 ### Usuarios de prueba (creados por `npm run seed`)
 
 | Usuario | Contraseña | Rol | Contexto |
 |---|---|---|---|
 | `admin` | `admin123` | admin | Todo el sistema |
+| `admin2` | `admin123` | admin | Segundo operador, para probar el reparto de chats |
 | `recepcion` | `recepcion123` | recepcion | Clientes, profesionales y turnos |
 | `profesional1` | `prof1234` | profesional | Solo los turnos de la instructora Ferreyra |
 | `profesional2` | `prof5678` | profesional | Solo los turnos del instructor Acosta |
@@ -71,21 +77,31 @@ Valinor_Cloud/
 │   ├── TurnoFlex.postman_collection.json
 │   ├── refactor-passport-jwt.md         Detalle del paso de express-session a Passport + JWT
 │   ├── refactor-frontend.md             Detalle del rediseño del frontend con Tailwind 4
+│   ├── refactor-websockets.md           Detalle del chat en tiempo real con Socket.io
 │   └── Docker/docker-readme.md          Guía para levantar el proyecto con Docker
 └── src/
-    ├── index.js                         Configura Express, cookies, Passport, rutas y errores; conecta a Mongo
+    ├── index.js                         Configura Express, cookies, Passport, rutas, errores y Socket.io; conecta a Mongo
     ├── seed.js                          Carga datos y usuarios de prueba
     ├── config/
     │   ├── db.js                        Conexión a MongoDB con Mongoose
     │   ├── passport.js                  Estrategias local (login) y jwt (requests autenticadas)
-    │   └── roles.js                     Roles, jerarquía y permisos CRUD
+    │   ├── roles.js                     Roles, jerarquía y permisos CRUD
+    │   └── chat.js                      Límite de chats por admin, timeout y gracia de desconexión
     ├── models/                          Esquemas de Mongoose
     │   ├── Cliente.js  
     │   ├── Profesional.js  
     │   ├── Turno.js
     │   ├── Usuario.js                   Usuario, rol, estado, vencimiento, fechas y hash de contraseña
+    │   ├── Chat.js                      Consulta, estado, admin asignado, vencimiento y mensajes
     │   └── Auditoria.js                 Registro de eventos
     ├── controllers/                     Lógica de cada recurso (async/await)
+    ├── services/
+    │   ├── chatService.js               Máquina de estados del chat, asignación de admins y reasignación
+    │   └── chatTimeouts.js              Temporizadores del vencimiento de consultas pendientes
+    ├── socket/
+    │   ├── index.js                     Servidor Socket.io: autenticación JWT en el handshake y salas por usuario
+    │   ├── emisor.js                    emitirA() y desconectarUsuario()
+    │   └── presencia.js                 Admins conectados (en memoria) con período de gracia
     ├── routes/
     │   ├── api/                         API REST en JSON (/api/...)
     │   └── vistasRoutes.js              Páginas Pug
@@ -96,6 +112,7 @@ Valinor_Cloud/
     ├── helpers/
     │   ├── auditoria.js                 registrarAuditoria()
     │   ├── campos.js                    tomarCampos(): solo acepta campos permitidos
+    │   ├── errores.js                   crearError(): errores de negocio con status y mensaje
     │   └── token.js                     Firma del JWT y manejo de la cookie
     ├── views/                           Plantillas Pug
     │   ├── layouts/base.pug             Esqueleto HTML: Tailwind, tema, footer y scripts comunes
@@ -103,11 +120,12 @@ Valinor_Cloud/
     │   ├── includes/
     │   │   ├── tema.pug                 Configuración de Tailwind: paleta, variantes y componentes
     │   │   ├── mixins.pug               Componentes de vista: campos, tablas, modales, íconos, logo
+    │   │   ├── chatDrawer.pug           Panel lateral del chat (vista según el rol)
     │   │   └── navbar.pug  sidebar.pug  footer.pug
     │   ├── login.pug  error.pug         Páginas sin shell (extienden layouts/base)
     │   └── home.pug  clientes/  profesionales/  turnos/  usuarios/  auditoria/
     └── public/
-        └── js/                          JS del navegador (fetch a la API y layout.js para sidebar y menú)
+        └── js/                          JS del navegador (fetch a la API, layout.js para sidebar y menú, chat.js para el chat)
 ```
 
 ### Cómo funciona
@@ -124,6 +142,8 @@ Valinor_Cloud/
    | Validación | 400 |
    | Id inválido | 400 |
    | Dato duplicado | 409 |
+   | Error de negocio (`crearError`) | Su propio status y mensaje (por ejemplo 409 o 503) |
+7. **Tiempo real con Socket.io.** Express y Socket.io comparten el mismo servidor HTTP. Las acciones del chat se hacen por la API REST y Socket.io solo empuja los eventos al navegador (consulta nueva, aceptada, mensaje, finalizada). Ver [Chat de consultas](#chat-de-consultas-en-tiempo-real).
 
 ---
 
@@ -137,6 +157,7 @@ Todos los modelos usan `timestamps`, así que guardan `createdAt` (fecha de crea
 | `profesionales` | nombre, apellido, especialidad, matricula | matrícula única |
 | `turnos` | cliente (ref), profesional (ref), fecha, hora, estado, creadoPor (ref) | fecha `YYYY-MM-DD`, hora `HH:mm`, estado en `reservado / atendido / cancelado` |
 | `usuarios` | usuario, password (hash bcrypt), nombre, rol, profesional (ref), activo, expiraEl, ultimoAcceso, tokenVersion | usuario único, contraseña de 6 caracteres o más, rol válido, profesional obligatorio si el rol es profesional |
+| `chats` | solicitante (ref), rolSolicitante, admin (ref), estado, motivoCierre, expiraEl, aceptadoEl, cerradoEl, mensajes [autor, texto, createdAt] | estado en `pendiente / activo / finalizado / rechazado`, mensajes de 1 a 1000 caracteres, un solo chat abierto por usuario (índice único parcial) |
 | `auditoria` | usuario (ref), usuarioNombre, accion, entidad, entidadId, detalle, ip, createdAt | acción dentro de la lista permitida |
 
 ### Reglas de negocio de turnos
@@ -160,8 +181,12 @@ Los permisos usan la nomenclatura **CRUD**: `recurso:create`, `recurso:read`, `r
 | turnos | R\* U\* | C R U D | C R U D |
 | usuarios | – | – | C R U D |
 | auditoria | – | – | R |
+| chat:usar | ✓ | ✓ | ✓ |
+| chat:moderar | – | – | ✓ |
 
 \* Con control por contexto: el profesional solo ve **sus** turnos y solo puede marcarlos como **atendidos**.
+
+Los permisos del chat no siguen la nomenclatura CRUD: `chat:usar` permite consultar y escribir, y `chat:moderar` permite aceptar, rechazar y finalizar. Aunque el admin hereda `chat:usar`, **no puede iniciar** una consulta (control por contexto: 403).
 
 La matriz está definida en un único lugar, [`src/config/roles.js`](src/config/roles.js). Cada ruta declara el permiso exacto que necesita, por ejemplo:
 
@@ -177,10 +202,52 @@ router.delete("/:id", requierePermiso("clientes:delete"), eliminarCliente);
 | **Contraseñas hasheadas** | Se guardan con bcrypt (`bcryptjs`, 10 rondas) en un hook `pre("save")` del modelo y se comparan con `bcrypt.compare`. |
 | **Roles jerárquicos** | En `roles.js`, cada rol hereda los permisos del anterior (`recepcion = [...profesional, ...]` y `admin = [...recepcion, ...]`). |
 | **Control por contexto** | Un usuario con rol profesional solo lista y consulta los turnos que tiene asignados, y solo puede pasarlos a `atendido`. Un admin no puede desactivarse, cambiarse el rol, ponerse vencimiento ni eliminarse a sí mismo. |
-| **Auditoría** | Se registran LOGIN, LOGIN_FALLIDO, LOGOUT, CREAR, MODIFICAR, ELIMINAR, CAMBIO_ESTADO, ACCESO_DENEGADO y SESION_REVOCADA, con usuario, entidad, detalle, IP y fecha. El admin los consulta en `/auditoria`. |
-| **Revocación automática** | (1) El token vence a los `JWT_MINUTOS`; en el navegador se renueva solo mientras el usuario usa la app, así que en la práctica vence por inactividad. (2) En cada request se vuelve a leer el usuario desde Mongo: si fue desactivado, eliminado o pasó su fecha `expiraEl`, el token se rechaza en ese momento y se audita como SESION_REVOCADA. (3) Cada usuario tiene un `tokenVersion` que se incrementa al hacer logout o al cambiar la contraseña: los tokens anteriores dejan de valer (el logout cierra la sesión en todos los dispositivos). (4) Un usuario vencido o inactivo no puede volver a iniciar sesión. |
+| **Auditoría** | Se registran LOGIN, LOGIN_FALLIDO, LOGOUT, CREAR, MODIFICAR, ELIMINAR, CAMBIO_ESTADO, ACCESO_DENEGADO, SESION_REVOCADA y CHAT_SIN_OPERADOR, con usuario, entidad, detalle, IP y fecha. Los cambios de estado del chat que hace el servidor (timeout, reasignación) quedan a nombre de `sistema`. El admin los consulta en `/auditoria`. |
+| **Revocación automática** | (1) El token vence a los `JWT_MINUTOS`; en el navegador se renueva solo mientras el usuario usa la app, así que en la práctica vence por inactividad. (2) En cada request se vuelve a leer el usuario desde Mongo: si fue desactivado, eliminado o pasó su fecha `expiraEl`, el token se rechaza en ese momento y se audita como SESION_REVOCADA. (3) Cada usuario tiene un `tokenVersion` que se incrementa al hacer logout o al cambiar la contraseña: los tokens anteriores dejan de valer (el logout cierra la sesión en todos los dispositivos). (4) Un usuario vencido o inactivo no puede volver a iniciar sesión. (5) Los sockets del chat se autentican con el mismo JWT y se cierran al hacer logout o cuando un admin desactiva, cambia de rol, vence o elimina al usuario. |
 | **Token seguro** | JWT firmado con HS256 (solo se acepta ese algoritmo). La cookie es `httpOnly` (no la lee JavaScript) y `sameSite=strict` (mitiga CSRF); en producción también es `secure`. |
 | **Fechas de creación, acceso y modificación** | `createdAt` y `updatedAt` vienen de `timestamps`. `ultimoAcceso` se actualiza en cada login sin modificar `updatedAt`, para no mezclar "accedió" con "lo modificaron". |
+
+---
+
+## Chat de consultas en tiempo real
+
+Los usuarios con rol `recepcion` o `profesional` pueden hacerle una consulta a un administrador desde el **ícono de mensajes de la navbar**, al lado del avatar. El ícono abre un **panel lateral** que se desliza desde la derecha y no bloquea la página. El badge del ícono muestra cuántos chats hay abiertos.
+
+**Reglas**
+
+- Solo `recepcion` y `profesional` pueden **iniciar** una consulta. El `admin` atiende: acepta, rechaza o finaliza. No hay chats entre administradores.
+- Cada usuario puede tener **una sola consulta abierta** a la vez (409).
+- La consulta se asigna a **un solo admin conectado**: el que tiene menos chats abiertos (empate al azar), siempre que esté debajo de `CHAT_MAX_POR_ADMIN`. Si no hay ninguno conectado o todos llegaron al límite, se responde **503** con "Todos los operadores se encuentran ocupados en este momento".
+- Mientras está **pendiente**, el usuario no puede enviar más mensajes. Si ningún admin la acepta en `CHAT_TIMEOUT_MINUTOS` (5), **el servidor** la cierra (`finalizado` por timeout) y le avisa al usuario.
+- Cuando el admin la **finaliza** o la **rechaza**, el chat queda cerrado y en solo lectura, y para volver a consultar hay que iniciar una consulta nueva.
+
+**Estados**
+
+```
+pendiente ──aceptar──► activo ──finalizar──► finalizado
+    │                                            ▲
+    ├──timeout (servidor) ───────────────────────┘
+    └──rechazar──► rechazado
+```
+
+**Cómo funciona**
+
+- **Persistencia:** chats y mensajes se guardan en MongoDB (colección `chats`). En memoria quedan solo los admins conectados y los temporizadores de vencimiento, que se reconstruyen desde la base si el servidor se reinicia.
+- **Híbrido REST + WebSocket:** las acciones (iniciar, aceptar, rechazar, finalizar, enviar mensaje) son endpoints `/api/chats`, protegidos por los mismos middlewares, la misma auditoría y el mismo manejo de errores que el resto de la API. Socket.io avisa a los dos participantes en tiempo real. El único evento que manda el navegador por el socket es "escribiendo…".
+- **Autenticación del socket:** el handshake usa el mismo JWT (cookie `httpOnly` o header Bearer) y la misma estrategia de Passport. Si el token no es válido, el navegador vuelve al login.
+- **Salas por usuario:** cada socket se une a `usuario:<id>`. Como la app es multipágina y el socket se reconecta en cada navegación, los eventos van a la sala del usuario y llegan a todas sus pestañas. Un admin que cambia de página sigue contando como conectado durante 10 segundos de gracia; si no vuelve, sus consultas pendientes pasan a otro admin.
+- **Transiciones atómicas:** cada cambio de estado se aplica solo si el chat sigue en el estado esperado. Si dos acciones compiten (aceptar justo cuando vence), una gana y la otra recibe 409.
+
+| Evento (servidor → navegador) | Destino | Cuándo |
+|---|---|---|
+| `chat:nuevo` | admin asignado | Consulta nueva o reasignada |
+| `chat:actualizado` | ambos | Creada, aceptada o rechazada |
+| `chat:mensaje` | ambos | Mensaje nuevo |
+| `chat:finalizado` | ambos | Finalizada por el admin o por timeout |
+| `chat:retirado` | admin anterior | La consulta pendiente pasó a otro admin |
+| `chat:escribiendo` | el otro participante | Indicador "escribiendo…" |
+
+Para probarlo, abrí dos navegadores (o una ventana normal y una privada): uno como `admin` y otro como `recepcion`. El detalle completo (diseño, flujos, archivos y verificación) está en [`docs/refactor-websockets.md`](docs/refactor-websockets.md).
 
 ---
 
@@ -196,7 +263,7 @@ TOKEN=$(curl -s -H "Content-Type: application/json" \
 curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/clientes
 ```
 
-La colección de Postman (`docs/TurnoFlex.postman_collection.json`) guarda el token de cada login y se puede correr completa en orden.
+La colección de Postman (`docs/TurnoFlex.postman_collection.json`) guarda el token de cada login y se puede correr completa en orden. Para recorrer todo el flujo de la carpeta "Chat de consultas" tiene que haber un admin conectado por Socket.io (la app abierta en el navegador como `admin`); si no lo hay, la consulta responde 503 y los pasos siguientes se saltean.
 
 | Método | Ruta | Permiso | Descripción |
 |---|---|---|---|
@@ -218,6 +285,13 @@ La colección de Postman (`docs/TurnoFlex.postman_collection.json`) guarda el to
 | PUT | `/api/usuarios/:id` | usuarios:update | Modificar rol, estado, vencimiento, contraseña, etc. |
 | DELETE | `/api/usuarios/:id` | usuarios:delete | Eliminar |
 | GET | `/api/auditoria?accion=&usuario=` | auditoria:read | Últimos 100 eventos |
+| GET | `/api/chats` | chat:usar | Admin: sus chats pendientes y activos. Recepción/profesional: su consulta abierta o la última cerrada en la última hora. Incluye `maxPorAdmin` |
+| GET | `/api/chats/:id` | chat:usar | Ver un chat con sus mensajes (solo participantes) |
+| POST | `/api/chats` | chat:usar | Iniciar consulta `{ mensaje }`. 403 si sos admin, 409 si ya tenés una abierta, 503 sin operadores |
+| POST | `/api/chats/:id/aceptar` | chat:moderar | `pendiente` → `activo` (solo el admin asignado) |
+| POST | `/api/chats/:id/rechazar` | chat:moderar | `pendiente` → `rechazado` |
+| POST | `/api/chats/:id/finalizar` | chat:moderar | `activo` → `finalizado` |
+| POST | `/api/chats/:id/mensajes` | chat:usar | Enviar mensaje `{ texto }` (solo con el chat `activo`, 409 si no) |
 
 ---
 
@@ -229,6 +303,7 @@ En esta entrega usamos **Claude Code** como asistente de programación para:
 - generar correcciones del código de la migración a MongoDB/Mongoose, del sistema de usuarios, roles, permisos y auditoría, y del front.
 - planificar e implementar el cambio de `express-session` a Passport + JWT, verificarlo y documentarlo en `docs/refactor-passport-jwt.md`.
 - rediseñar las vistas Pug con Tailwind CSS 4 (paleta, navbar, sidebar, formularios y responsive), verificarlo y documentarlo en `docs/refactor-frontend.md`.
+- planificar e implementar el chat de consultas en tiempo real con Socket.io (máquina de estados, asignación de admins, timeout en el servidor y panel lateral), verificarlo y documentarlo en `docs/refactor-websockets.md`.
 - redactar este README.
 
 El grupo revisó, probó y ajustó todo el código generado. Las decisiones de diseño (roles, permisos CRUD, alcance del MVP) fueron nuestras.
@@ -250,3 +325,7 @@ El grupo revisó, probó y ajustó todo el código generado. Las decisiones de d
 - Pug: https://pugjs.org/api/getting-started.html
 - MDN, Fetch API: https://developer.mozilla.org/es/docs/Web/API/Fetch_API
 - MongoDB Manual: https://www.mongodb.com/docs/manual/
+- Socket.io v4: https://socket.io/docs/v4/
+- Socket.io, salas (rooms): https://socket.io/docs/v4/rooms/
+- Socket.io, middlewares y autenticación: https://socket.io/docs/v4/middlewares/
+- MongoDB, índices parciales: https://www.mongodb.com/docs/manual/core/index-partial/

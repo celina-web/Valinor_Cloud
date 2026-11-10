@@ -19,24 +19,37 @@ header(class="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between 
       +logo()
       span(class="truncate text-lg font-bold tracking-tight") TurnoFlex
 
-  div(class="relative")
-    button#btnMenuUsuario(
-      type="button"
-      aria-haspopup="menu"
-      aria-expanded="false"
-      aria-controls="menuUsuario"
-      aria-label=`Menú de ${usuario.nombre}`
-      class="inline-flex size-10 cursor-pointer items-center justify-center rounded-full bg-marca text-sm font-semibold text-white ring-2 ring-white transition-colors hover:bg-indigo-profundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
-    )= iniciales
-    div#menuUsuario(hidden role="menu" aria-labelledby="btnMenuUsuario" class="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl bg-white p-2 shadow-lg ring-1 ring-gray-200")
-      div(class="flex items-center gap-3 px-3 py-2")
-        span(class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-lavanda-100 text-sm font-semibold text-indigo-profundo" aria-hidden="true")= iniciales
-        div(class="min-w-0")
-          p(class="truncate text-sm font-semibold text-gray-900")= usuario.nombre
-          p(class="truncate text-sm text-gray-500") @#{usuario.usuario}
-      div(class="px-3 pb-2")
-        span.etiqueta.etiqueta-info= usuario.rol
-      div(class="my-1 border-t border-gray-100")
-      button#btnLogout(type="button" role="menuitem" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-900 transition-colors hover:bg-turno-cancelado/10 focus-visible:outline-2 focus-visible:outline-marca")
-        +icono("salir")(class="size-4")
-        | Cerrar sesión
+  div(class="flex items-center gap-1 sm:gap-2")
+    //- Acceso al chat de consultas: abre el drawer lateral (src/public/js/chat.js).
+    if puede("chat:usar")
+      button#btnChat(
+        type="button"
+        aria-controls="drawerChat"
+        aria-expanded="false"
+        aria-label="Chat de consultas"
+        title="Chat de consultas"
+        class="relative inline-flex size-10 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-lavanda-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+      )
+        +icono("mensajes")(class="size-6")
+        span#badgeChat(hidden class="absolute -top-0.5 -right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-turno-cancelado px-1 text-[11px] leading-none font-bold text-white ring-2 ring-lavanda-100")
+    div(class="relative")
+      button#btnMenuUsuario(
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="menuUsuario"
+        aria-label=`Menú de ${usuario.nombre}`
+        class="inline-flex size-10 cursor-pointer items-center justify-center rounded-full bg-marca text-sm font-semibold text-white ring-2 ring-white transition-colors hover:bg-indigo-profundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+      )= iniciales
+      div#menuUsuario(hidden role="menu" aria-labelledby="btnMenuUsuario" class="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-xl bg-white p-2 shadow-lg ring-1 ring-gray-200")
+        div(class="flex items-center gap-3 px-3 py-2")
+          span(class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-lavanda-100 text-sm font-semibold text-indigo-profundo" aria-hidden="true")= iniciales
+          div(class="min-w-0")
+            p(class="truncate text-sm font-semibold text-gray-900")= usuario.nombre
+            p(class="truncate text-sm text-gray-500") @#{usuario.usuario}
+        div(class="px-3 pb-2")
+          span.etiqueta.etiqueta-info= usuario.rol
+        div(class="my-1 border-t border-gray-100")
+        button#btnLogout(type="button" role="menuitem" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-900 transition-colors hover:bg-turno-cancelado/10 focus-visible:outline-2 focus-visible:outline-marca")
+          +icono("salir")(class="size-4")
+          | Cerrar sesión

@@ -5,6 +5,7 @@ const profesional = [
   "profesionales:read",
   "turnos:read",
   "turnos:update",
+  "chat:usar",
 ];
 
 const recepcion = [
@@ -26,6 +27,7 @@ const admin = [
   "usuarios:update",
   "usuarios:delete",
   "auditoria:read",
+  "chat:moderar",
 ];
 
 const PERMISOS_POR_ROL = { profesional, recepcion, admin };

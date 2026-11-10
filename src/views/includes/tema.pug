@@ -29,6 +29,7 @@ style(type="text/tailwindcss").
 
   @custom-variant colapsada (&:where([data-sidebar="colapsada"] *));
   @custom-variant drawer-abierto (&:where([data-drawer="abierto"] *));
+  @custom-variant chat-abierto (&:where([data-chat="abierto"] *));
 
   @layer components {
     /* Botones */
@@ -100,5 +101,28 @@ style(type="text/tailwindcss").
     }
     .fila-cancelado {
       @apply bg-turno-cancelado/5 [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-turno-cancelado)];
+    }
+
+    /* Chat de consultas: burbujas de mensajes y etiquetas de estado (las crea src/public/js/chat.js) */
+    .burbuja {
+      @apply flex max-w-[85%] flex-col gap-1 rounded-2xl px-3.5 py-2 text-sm shadow-xs;
+    }
+    .burbuja-propia {
+      @apply self-end rounded-br-sm bg-marca text-white;
+    }
+    .burbuja-ajena {
+      @apply self-start rounded-bl-sm bg-white text-gray-900 ring-1 ring-gray-200;
+    }
+    .estado-chat-pendiente {
+      @apply bg-turno-pendiente text-gray-950 ring-turno-pendiente;
+    }
+    .estado-chat-activo {
+      @apply bg-turno-presente text-white ring-turno-presente;
+    }
+    .estado-chat-finalizado {
+      @apply bg-turno-finalizado text-gray-800 ring-gray-400;
+    }
+    .estado-chat-rechazado {
+      @apply bg-turno-cancelado text-white ring-turno-cancelado;
     }
   }

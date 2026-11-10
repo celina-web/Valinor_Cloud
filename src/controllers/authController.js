@@ -3,6 +3,7 @@ const { permisosDe } = require("../config/roles");
 const { registrarAuditoria } = require("../helpers/auditoria");
 const { autenticar } = require("../middlewares/auth");
 const { firmarToken, enviarTokenEnCookie, borrarCookieToken } = require("../helpers/token");
+const { desconectarUsuario } = require("../socket/emisor");
 
 const login = async (req, res) => {
   const { usuario: usuarioIngresado, password } = req.body || {};
@@ -44,6 +45,8 @@ const logout = async (req, res) => {
     { timestamps: false }
   );
   await registrarAuditoria(req, "LOGOUT", { entidad: "Usuario", entidadId: req.usuario._id });
+  // Los sockets abiertos (chat) se autenticaron con el token viejo: se cierran.
+  desconectarUsuario(req.usuario._id);
   borrarCookieToken(res);
   res.status(204).end();
 };

@@ -9,4 +9,11 @@ block cuerpo
     main(class="min-w-0 flex-1 p-4 md:p-6 xl:p-8")
       div(class="mx-auto flex max-w-[1440px] flex-col gap-6")
         block content
+  if puede("chat:usar")
+    include includes/chatDrawer
   script(src="/js/layout.js")
+  if puede("chat:usar")
+    //- Cliente de Socket.io servido por el propio servidor (misma versión que el backend).
+    //- Con defer, ambos corren en orden después de api.js (que está al final del body).
+    script(src="/socket.io/socket.io.js" defer)
+    script(src="/js/chat.js" defer)

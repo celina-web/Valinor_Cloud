@@ -7,6 +7,7 @@ const Profesional = require("./models/Profesional");
 const Turno = require("./models/Turno");
 const Usuario = require("./models/Usuario");
 const Auditoria = require("./models/Auditoria");
+const Chat = require("./models/Chat");
 
 const fechaRelativa = (dias) => {
   const fecha = new Date();
@@ -58,8 +59,14 @@ const sembrar = async () => {
     Turno.deleteMany({}),
     Usuario.deleteMany({}),
     Auditoria.deleteMany({}),
+    Chat.deleteMany({}),
   ]);
-  await Promise.all([Cliente.syncIndexes(), Profesional.syncIndexes(), Usuario.syncIndexes()]);
+  await Promise.all([
+    Cliente.syncIndexes(),
+    Profesional.syncIndexes(),
+    Usuario.syncIndexes(),
+    Chat.syncIndexes(),
+  ]);
 
   const clientes = await Cliente.insertMany(CLIENTES);
   const profesionales = await Profesional.insertMany(PROFESIONALES);
@@ -72,6 +79,8 @@ const sembrar = async () => {
   });
 
   await Usuario.create([
+    // Segundo admin para probar la asignación y reasignación de chats entre operadores.
+    { usuario: "admin2", password: "admin123", nombre: "Administradora 2", rol: "admin" },
     { usuario: "recepcion", password: "recepcion123", nombre: "Recepcionista", rol: "recepcion" },
     {
       usuario: "profesional1",
@@ -102,7 +111,7 @@ const sembrar = async () => {
 
   console.log(
     `Datos cargados: ${clientes.length} clientes, ${profesionales.length} profesionales, ` +
-      `${TURNOS.length} turnos y 4 usuarios.`
+      `${TURNOS.length} turnos y 5 usuarios.`
   );
 };
 

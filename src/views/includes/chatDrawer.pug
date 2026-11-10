@@ -1,0 +1,93 @@
+//- Drawer del chat de consultas (se desliza desde la derecha, debajo de la navbar).
+//- No tiene overlay: la página sigue usable mientras está abierto. Lo maneja src/public/js/chat.js
+//- alternando data-chat="abierto" en <html> (variante chat-abierto de tema.pug).
+- const esAdminChat = usuario.rol === "admin"
+- const claseTextarea = "block w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs placeholder:text-gray-400 focus:border-marca focus:outline-none focus:ring-2 focus:ring-marca/30 disabled:cursor-not-allowed disabled:bg-gray-100"
+- const claseBotonIcono = "inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-marca"
+
+aside#drawerChat(
+  aria-label="Chat de consultas"
+  data-rol-chat=esAdminChat ? "admin" : "usuario"
+  class="invisible fixed top-16 right-0 bottom-0 z-30 flex w-full translate-x-full flex-col border-l border-lavanda-200 bg-fondo shadow-2xl transition-[translate,visibility] duration-200 chat-abierto:visible chat-abierto:translate-x-0 sm:w-96"
+)
+  //- Cabecera: volver (solo admin en una conversación), título, estado y cerrar.
+  header(class="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3")
+    if esAdminChat
+      button#btnChatVolver(hidden type="button" aria-label="Volver a la lista de chats" class=claseBotonIcono)
+        +icono("volver")(class="size-5")
+    div(class="min-w-0 flex-1")
+      h2#chatTitulo(class="truncate text-base font-semibold text-gray-900")= esAdminChat ? "Consultas" : "Consulta a un operador"
+      p#chatSubtitulo(class="truncate text-xs text-gray-500")
+    span#chatEstado(hidden class="etiqueta")
+    button#btnChatCerrar(type="button" aria-label="Cerrar el chat" class=claseBotonIcono)
+      +icono("cerrar")(class="size-5")
+
+  if esAdminChat
+    //- Barra de la conversación del admin: cuándo empezó y botón para finalizarla.
+    div#chatBarraAdmin(hidden class="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-2")
+      p#chatBarraInfo(class="truncate text-xs text-gray-500")
+      button#btnChatFinalizar(hidden type="button" class="btn btn-chico btn-danger") Finalizar conversación
+
+  div#errorChat(hidden role="alert" class="mx-3 mt-3 rounded-lg border border-turno-cancelado/30 bg-turno-cancelado/10 px-3 py-2 text-sm font-medium text-red-900")
+
+  if esAdminChat
+    //- Lista de chats asignados a este admin.
+    div#chatLista(class="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4")
+      p(class="text-xs text-gray-500")
+        | Chats abiertos:
+        |
+        strong#chatCarga(class="font-semibold text-gray-800") 0
+      section(aria-labelledby="tituloPendientes")
+        h3#tituloPendientes(class="mb-2 text-xs font-semibold tracking-wider text-gray-600 uppercase") Pendientes de aceptación
+        ul#listaPendientes(class="flex flex-col gap-3")
+        p#sinPendientes(class="rounded-xl border border-dashed border-gray-300 px-3 py-4 text-center text-sm text-gray-500") No hay consultas esperando.
+      section(aria-labelledby="tituloActivos")
+        h3#tituloActivos(class="mb-2 text-xs font-semibold tracking-wider text-gray-600 uppercase") Conversaciones activas
+        ul#listaActivos(class="flex flex-col gap-2")
+        p#sinActivos(class="rounded-xl border border-dashed border-gray-300 px-3 py-4 text-center text-sm text-gray-500") No tenés conversaciones activas.
+  else
+    //- Sin consulta abierta: formulario para iniciar una.
+    div#chatInicio(hidden class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4")
+      div(class="flex flex-col items-center gap-3 pt-4 text-center")
+        span(class="inline-flex size-14 items-center justify-center rounded-2xl bg-lavanda-100 text-marca")
+          +icono("mensajes")(class="size-7")
+        p(class="text-sm text-gray-600") Escribí tu consulta y un administrador la va a atender. Mientras esperás que la acepte no vas a poder enviar más mensajes.
+      form#formConsulta(class="flex flex-col gap-2" novalidate)
+        label(for="consultaTexto" class="text-sm font-medium text-gray-800") Tu consulta
+        textarea#consultaTexto(name="mensaje" rows="5" maxlength="1000" required placeholder="Por ejemplo: ¿cómo reprogramo un turno?" class=claseTextarea)
+        div(class="flex items-center justify-between gap-2")
+          span#consultaContador(class="text-xs text-gray-500") 0 / 1000
+          button#btnEnviarConsulta(type="submit" class="btn btn-primario")
+            +icono("enviar")(class="size-4")
+            | Enviar consulta
+
+    //- Consulta pendiente: no se puede escribir hasta que un admin la acepte.
+    div#chatEspera(hidden class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4")
+      div(class="flex flex-col items-center gap-3 pt-4 text-center" role="status")
+        span(class="relative flex size-12 items-center justify-center")
+          span(class="absolute inline-flex size-full animate-ping rounded-full bg-turno-pendiente/50")
+          span(class="relative inline-flex size-12 items-center justify-center rounded-full bg-turno-pendiente text-gray-900")
+            +icono("reloj")(class="size-6")
+        p(class="text-sm font-semibold text-gray-900") Esperando que un operador acepte tu consulta
+        p(class="text-xs text-gray-600")
+          | Tiempo restante:
+          |
+          span#esperaRestante(class="font-semibold tabular-nums text-gray-900") --:--
+      div(class="flex flex-col gap-1")
+        p(class="text-xs font-medium text-gray-500") Tu consulta
+        ol#esperaMensajes(class="flex flex-col gap-2")
+
+  //- Conversación (activa o cerrada). La comparten ambos roles.
+  div#chatConversacion(hidden class="flex min-h-0 flex-1 flex-col")
+    ol#chatMensajes(aria-live="polite" aria-label="Mensajes" class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4")
+    p#chatEscribiendo(hidden class="px-4 pb-1 text-xs text-gray-500 italic") Escribiendo…
+    form#formMensaje(class="flex shrink-0 items-end gap-2 border-t border-gray-200 bg-white p-3" novalidate)
+      label(for="chatTexto" class="sr-only") Mensaje
+      textarea#chatTexto(name="texto" rows="1" maxlength="1000" required placeholder="Escribí un mensaje…" class=claseTextarea + " max-h-32")
+      button#btnEnviarMensaje(type="submit" aria-label="Enviar mensaje" class="btn btn-primario px-3")
+        +icono("enviar")(class="size-4")
+    //- Aviso de cierre: la conversación queda en solo lectura.
+    div#chatCierre(hidden role="status" class="flex shrink-0 flex-col gap-3 border-t border-gray-200 bg-white p-4")
+      p#chatCierreTexto(class="text-sm font-medium text-gray-800")
+      if !esAdminChat
+        button#btnNuevaConsulta(type="button" class="btn btn-primario w-full") Iniciar nueva consulta

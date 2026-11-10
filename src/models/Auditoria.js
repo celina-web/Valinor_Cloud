@@ -10,6 +10,7 @@ const ACCIONES = [
   "CAMBIO_ESTADO",
   "ACCESO_DENEGADO",
   "SESION_REVOCADA",
+  "CHAT_SIN_OPERADOR",
 ];
 
 const auditoriaSchema = new mongoose.Schema(

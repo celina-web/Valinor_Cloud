@@ -3,6 +3,8 @@ const Profesional = require("../models/Profesional");
 const { tomarCampos, describirCambios } = require("../helpers/campos");
 const { registrarAuditoria } = require("../helpers/auditoria");
 const { firmarToken, enviarTokenEnCookie } = require("../helpers/token");
+const { desconectarUsuario } = require("../socket/emisor");
+const { liberarChatsDeAdmin } = require("../services/chatService");
 
 const CAMPOS = ["usuario", "password", "nombre", "rol", "profesional", "activo", "expiraEl"];
 
@@ -64,9 +66,17 @@ const actualizarUsuario = async (req, res) => {
     return res.status(400).json({ error: "El profesional seleccionado no existe" });
   }
 
+  const eraAdmin = usuario.rol === "admin";
   usuario.set(datos);
   const cambios = describirCambios(usuario);
   await usuario.save();
+
+  // Los sockets del chat se autenticaron con los datos anteriores: se cierran para que
+  // se reconecten (o sean rechazados) con el estado nuevo. El propio admin no cambia de permisos.
+  if (!esElMismo && (seQuitaPermisos || datos.password)) desconectarUsuario(usuario._id);
+  if (eraAdmin && !(usuario.rol === "admin" && usuario.estaHabilitado())) {
+    await liberarChatsDeAdmin(usuario._id);
+  }
 
   // Cambiar la contraseña invalida los tokens anteriores (tokenVersion); si es la
   // propia, se emite uno nuevo para no cerrarle la sesión al admin.
@@ -90,6 +100,8 @@ const eliminarUsuario = async (req, res) => {
   }
 
   await usuario.deleteOne();
+  desconectarUsuario(usuario._id);
+  if (usuario.rol === "admin") await liberarChatsDeAdmin(usuario._id);
   await registrarAuditoria(req, "ELIMINAR", {
     entidad: "Usuario",
     entidadId: usuario._id,

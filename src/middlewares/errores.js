@@ -22,6 +22,10 @@ const traducirError = (err) => {
     const campo = Object.keys(err.keyValue || {})[0] || "dato";
     return { status: 409, mensaje: `Ya existe un registro con ese ${campo}` };
   }
+  // Errores de negocio creados con crearError(): su mensaje es apto para mostrarse al usuario.
+  if (err.expuesto && err.status >= 400 && err.status < 600) {
+    return { status: err.status, mensaje: err.message };
+  }
   if (err.status >= 400 && err.status < 500) {
     return { status: err.status, mensaje: "La solicitud no es válida" };
   }

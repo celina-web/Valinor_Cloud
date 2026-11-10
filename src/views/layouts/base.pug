@@ -13,11 +13,17 @@ html(lang="es")
     link(rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap")
     script(src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3")
     include ../includes/tema
-    //- Aplica el estado guardado de la sidebar antes de pintar, para evitar el parpadeo.
+    //- Aplica el estado guardado de la sidebar y del chat antes de pintar, para evitar el parpadeo.
+    //- El chat usa sessionStorage: queda abierto al navegar entre páginas de la misma pestaña.
     script.
       try {
         if (localStorage.getItem("turnoflex:sidebar") === "colapsada") {
           document.documentElement.dataset.sidebar = "colapsada";
+        }
+      } catch (error) {}
+      try {
+        if (sessionStorage.getItem("turnoflex:chat") === "abierto") {
+          document.documentElement.dataset.chat = "abierto";
         }
       } catch (error) {}
   body(
