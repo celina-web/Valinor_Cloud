@@ -1,6 +1,15 @@
-extends layout
+extends layouts/base
 
-block content
-  h1= titulo
-  p= mensaje
-  a(href="/") Volver al inicio
+block titulo
+  | #{titulo || "Error"} · TurnoFlex
+
+block cuerpo
+  main(class="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-16 text-center")
+    div(class="flex flex-col items-center gap-4")
+      +logo("grande")
+      h1(class="text-3xl font-bold tracking-tight text-indigo-profundo") TurnoFlex
+      //- El motivo queda disponible para lectores de pantalla, sin mostrarse en la página.
+      p(class="sr-only") #{titulo}. #{mensaje}
+    a.btn.btn-primario(href="/" class="px-5 py-2.5")
+      +icono("inicio")(class="size-4")
+      | Volver al inicio

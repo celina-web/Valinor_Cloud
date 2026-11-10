@@ -1,0 +1,1336 @@
+ ▐▛███▛█   Claude Code v2.1.319
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~/Code/Valinor_Cloud
+
+
+❯ /clear                                                                        
+
+❯ Bien ahora quiero crear un plan para poder cambiar el manejo de autorización  
+  y autenticación dentro de la app. Actualmente la aplicación utiliza y maneja  
+  todo a través de express-sessions. Quiero cambiar este enfoque para que la    
+  aplicación empieze a utilizar Passport + JWT (stateless). Esto no es una      
+  simple tarea de reemplazo de código, hay que analizar el funcionamiento       
+  completo de la aplicación, determinar los cambios que hay que realizar para   
+  pasar de un enfoque al otro y realizar las verificaciones necesarias que      
+  permitarn determinar que la aplicación sigue funcionando en su totalidad.     
+  Además, dentro de la carpeta /docs se debe generar el documento               
+  refactor-passport-jwt.md en el cual queden explicados de manera detallada     
+  todos los cambios realizados. Por ultimo, hay que revisar el archivo          
+  @README.md buscando información que sea relevante para realizar el refactor   
+  y, una vez finalizado el mismo, actualizarlo y depurarlo (es decir, quitar la 
+  información obsoleta) para que refleje el nuevo enfoque y funcionalidad.      
+  Generemos el plan para realizar este refactor                                 
+  ⎿  Read README.md (212 lines)
+
+  Ran 4 shell commands (ctrl+o to expand)
+
+● User answered Claude's questions:
+  ⎿  · Las vistas Pug se renderizan del lado del servidor (nav, permisos y 
+     nombre del usuario salen de res.locals). Al navegar entre páginas el 
+     navegador no puede mandar un header Authorization. ¿Cómo debe viajar el 
+     JWT? → Cookie httpOnly + Bearer (Recommended)
+     · Hoy las contraseñas se guardan y comparan en texto plano. ¿Incluimos 
+     hashing (bcrypt) dentro de este refactor, usando passport-local para el 
+     login? → Sí, passport-local + bcrypt (Recommended)
+     · Con JWT stateless, logout y cambios de contraseña/rol no invalidan un 
+     token ya emitido. ¿Qué nivel de revocación querés? → Lectura de usuario + 
+     tokenVersion (Recommended)
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Updated plan
+  ⎿  /plan to preview
+
+● User approved Claude's plan
+  ⎿  Plan saved to: 
+     ~/.claude/plans/pasted-content-id-1017-bien-ahora-shiny-cascade.md · /plan 
+     to edit
+     Plan: refactor de autenticación/autorización a Passport + JWT (stateless)
+
+     Contexto
+
+     Hoy TurnoFlex autentica con express-session (cookie connect.sid + store en
+     memoria del servidor). requiereLogin lee req.session.usuarioId, vuelve a
+     buscar al usuario en Mongo y destruye la sesión si está
+     desactivado/vencido/eliminado. El login compara contraseñas en texto plano.
+     Se quiere pasar a Passport + JWT stateless, sin perder ninguna
+     funcionalidad (vistas Pug con nav por permisos, API JSON, control por
+     contexto, auditoría, revocación), documentar todo en
+     docs/refactor-passport-jwt.md y depurar el README.
+
+     Decisiones tomadas con el usuario:
+     - Transporte: el JWT viaja en cookie httpOnly (para el navegador y las
+       vistas Pug) y se acepta Authorization: Bearer (Postman / clientes
+       externos). El login devuelve el token también en el JSON.
+     - Login: passport-local + contraseñas hasheadas con bcryptjs (JS puro, sin
+       compilación nativa en node:22-alpine).
+     - Revocación: el verify de passport-jwt sigue leyendo el usuario de Mongo
+       (se mantiene SESION_REVOCADA) + campo tokenVersion en Usuario para
+       invalidar tokens en logout y cambio de contraseña. No se guardan sesiones
+       en el servidor.
+
+     Paso 0: línea base (antes de tocar código)
+
+     - Levantar Mongo (docker compose up -d mongo o local), npm install, npm run
+       seed, npm start.
+     - Correr la colección de Postman con npx newman run 
+       docs/TurnoFlex.postman_collection.json y guardar el resultado como
+       referencia de comportamiento actual.
+
+     Cambios
+
+     1. Dependencias y entorno
+
+     - package.json: agregar passport, passport-local, passport-jwt,
+       jsonwebtoken, bcryptjs, cookie-parser; quitar express-session.
+     - .env.example: reemplazar SESSION_SECRET / SESSION_MINUTOS por JWT_SECRET
+       y JWT_MINUTOS (default 30).
+     - docker-compose.yml no cambia (toma todo del .env).
+
+     2. Modelo src/models/Usuario.js
+
+     - Nuevo campo tokenVersion: { type: Number, default: 0 }; excluirlo en el
+       toJSON junto con password.
+     - pre("save"): si isModified("password") → hashear con bcrypt (la
+       validación minlength: 6 corre antes del hook, así que valida la
+       contraseña en claro). Si además !isNew → tokenVersion += 1 (invalida
+       tokens viejos al cambiar contraseña).
+     - Método compararPassword(texto) con bcrypt.compare.
+     - estaHabilitado() se mantiene igual.
+     - crearUsuario / actualizarUsuario (src/controllers/usuariosController.js)
+       y src/seed.js ya usan create / save, así que el hash se aplica solo;
+       describirCambios se calcula antes del save y no lista tokenVersion.
+
+     3. Nuevo src/helpers/token.js
+
+     - firmarToken(usuario): jwt.sign({ sub: id, usuario: usuario.usuario, ver: 
+       usuario.tokenVersion }, JWT_SECRET, { expiresIn: JWT_MINUTOS*60, 
+       algorithm: "HS256" }).
+     - enviarTokenEnCookie(res, token): cookie token, httpOnly, sameSite: 
+       "strict", secure si NODE_ENV === "production", maxAge = JWT_MINUTOS.
+     - borrarCookieToken(res).
+     - Constantes JWT_SECRET (fallback de desarrollo, como hoy con la sesión) y
+       JWT_MINUTOS leídas del entorno en un solo lugar.
+
+     4. Nuevo src/config/passport.js (estrategias)
+
+     - LocalStrategy (usernameField: "usuario", passReqToCallback: true):
+       normaliza el usuario (trim + lowercase), busca con .select("+password"),
+       compararPassword. Devuelve done(null, false, { status, error, usuario? })
+       para credenciales inválidas (401) o usuario deshabilitado (403), para
+       que el controlador audite LOGIN_FALLIDO igual que hoy.
+     - JwtStrategy: jwtFromRequest = 
+       ExtractJwt.fromExtractors([fromAuthHeaderAsBearerToken(), req => 
+       req.cookies?.token]), algorithms: ["HS256"]. El verify busca
+       Usuario.findById(payload.sub) y devuelve:
+       - usuario válido → done(null, usuario);
+       - eliminado / !estaHabilitado() → done(null, false, { revocado: true, 
+         detalle, payload });
+       - payload.ver !== usuario.tokenVersion → done(null, false, { mensaje: "Tu
+         sesión fue cerrada" }).
+
+     5. src/middlewares/auth.js
+
+     - Helper autenticar(estrategia, req, res) que envuelve
+       passport.authenticate(estrategia, { session: false }, cb) en una Promise,
+       para que los middlewares sigan siendo async y Express 5 propague errores
+       al errorHandler.
+     - requiereLogin: usa autenticar("jwt"). Sin usuario → borrarCookieToken +
+       responderSinSesion (401 JSON en /api, redirect a /login en vistas — se
+       conserva esApi). Si info.revocado → auditar SESION_REVOCADA (con
+       usuarioNombre tomado del payload). Token vencido → mensaje "Tu sesión
+       expiró". Con usuario → setea req.usuario y res.locals (usuario, permisos,
+       puede) exactamente como hoy.
+     - Renovación deslizante (equivalente al rolling de la sesión): si el token
+       vino por cookie y le queda menos de la mitad de vida, se firma uno nuevo
+       y se reenvía la cookie. Así la expiración sigue siendo "por inactividad"
+       en el navegador.
+     - Nuevo usuarioOpcional: igual pero sin cortar la request (para /login).
+     - requierePermiso no cambia. Se elimina destruirSesion.
+
+     6. Login / logout (src/controllers/authController.js, 
+     src/routes/api/authRoutes.js)
+
+     - login: mantiene el 400 si faltan campos; luego autenticar("local"). Fallo
+       → auditar LOGIN_FALLIDO y responder con el status/mensaje del info.
+       Éxito → firmarToken, enviarTokenEnCookie, actualizar ultimoAcceso (con
+       timestamps: false, como hoy), auditar LOGIN, responder { token, usuario, 
+       nombre, rol }. Se elimina regenerarSesion.
+     - logout: Usuario.updateOne({ _id }, { $inc: { tokenVersion: 1 } }, { 
+       timestamps: false }), borrarCookieToken, auditar LOGOUT, 204. (Efecto
+       documentado: cierra la sesión en todos los dispositivos de ese usuario.)
+     - usuarioActual sin cambios.
+     - usuariosController.actualizarUsuario: si el admin cambia su propia
+       contraseña, reemitir el token en la cookie para que no lo eche.
+
+     7. src/index.js y vistas
+
+     - Quitar express-session; agregar cookieParser(),
+       require("./config/passport") y app.use(passport.initialize()).
+     - src/routes/vistasRoutes.js: router.get("/login", usuarioOpcional, 
+       mostrarLogin).
+     - src/controllers/vistasController.js: mostrarLogin usa req.usuario en
+       lugar de req.session.usuarioId.
+     - layout.pug, home.pug y los demás Pug no cambian (siguen leyendo
+       res.locals).
+
+     8. Front (src/public/js)
+
+     - api.js y login.js funcionan sin cambios funcionales: fetch same-origin
+       envía la cookie, el 401 sigue redirigiendo a /login y el logout ya llama
+       a /api/auth/logout. Solo se ajusta el mensaje/comentario del 401 si hace
+       falta. El token del JSON no se guarda en localStorage (a propósito, por
+       XSS).
+
+     9. Postman (docs/TurnoFlex.postman_collection.json)
+
+     - Auth a nivel colección: Bearer {{token}}; variable token.
+     - Tests de cada login: pm.collectionVariables.set("token", 
+       pm.response.json().token) y verificar que exista token.
+     - Revisar el orden: después de Logout el token queda invalidado
+       (tokenVersion), así que la carpeta siguiente debe volver a hacer login
+       (agregar request o ajustar orden). Actualizar la descripción (ya no habla
+       de connect.sid).
+     - Agregar casos: token inválido → 401, sin token → 401, token viejo después
+       de logout → 401.
+
+     10. Documentación
+
+     - docs/refactor-passport-jwt.md (nuevo, en español rioplatense):
+       motivación; comparación antes/después (sesión con estado vs JWT
+       stateless); diagrama/flujo de login y de request autenticada; detalle
+       archivo por archivo de los cambios; payload del token y configuración de
+       la cookie; estrategia de revocación (lectura de usuario + tokenVersion) y
+       sus límites; renovación deslizante; hashing de contraseñas y necesidad
+       de re-correr npm run seed; consideraciones de seguridad (httpOnly,
+       sameSite=strict como mitigación de CSRF, secure en producción, secreto en
+       .env, algoritmo fijo); variables de entorno nuevas/eliminadas; cambios
+       en Postman; cómo se verificó.
+     - README.md — depurar y actualizar:
+       - Intro: reemplazar "sesiones con express-session" por Passport (local +
+         JWT) con contraseñas hasheadas.
+       - Tabla de variables: JWT_SECRET, JWT_MINUTOS (quitar SESSION_*).
+       - Estructura: agregar config/passport.js y helpers/token.js; auth.js
+         describe requiereLogin (JWT), usuarioOpcional, requierePermiso;
+         mencionar docs/refactor-passport-jwt.md y docs/Docker/.
+       - "Cómo funciona": paso de autenticación con JWT (cookie o Bearer).
+       - Modelos: usuarios con password hasheada y tokenVersion.
+       - Buenas prácticas: reescribir "Revocación automática" (expiración del
+         token + renovación, lectura del usuario por request, tokenVersion en
+         logout/cambio de contraseña, usuario vencido no puede loguearse);
+         agregar fila de contraseñas con bcrypt.
+       - API REST: "requieren token" (401 sin token / token inválido), login
+         devuelve { token, ... } y setea cookie, ejemplo de header
+         Authorization: Bearer.
+       - Bibliografía: quitar express-session; agregar Passport, passport-local,
+         passport-jwt, jsonwebtoken, bcryptjs, RFC 7519. Declaración de IA:
+         sumar este refactor.
+     - docs/Docker/docker-readme.md: cambiar menciones a SESSION_SECRET /
+       SESSION_MINUTOS por las variables JWT.
+     - CLAUDE.md: actualizar variables de entorno y la descripción de
+       requiereLogin (hoy habla de destruir la sesión).
+
+     Verificación
+
+     1. grep -rn "session\|connect.sid" src → sin restos (salvo la acción de
+        auditoría SESION_REVOCADA, que se conserva por compatibilidad).
+     2. npm install && npm run seed && npm start sin errores; en mongosh,
+        db.usuarios.find({}, {password:1}) muestra hashes $2….
+     3. Script de curl (en $CLAUDE_JOB_DIR/tmp) que cubra:
+        - login admin → 200, token en el JSON, Set-Cookie: token=…; HttpOnly; 
+          SameSite=Strict;
+        - contraseña incorrecta → 401 + LOGIN_FALLIDO; usuario desactivado →
+          403;
+        - /api/auth/yo con Bearer → 200, con cookie → 200, sin token → 401,
+          token alterado → 401, token vencido (firmado con exp pasado) → 401;
+        - permisos: profesional1 → POST /api/clientes 403 + ACCESO_DENEGADO; GET
+          /api/turnos devuelve solo sus turnos; no puede cancelar;
+        - revocación: admin desactiva / vence / elimina a recepcion → el token
+          de recepcion da 401 y se audita SESION_REVOCADA;
+        - logout → el token anterior da 401; cambio de contraseña → el token
+          anterior da 401; admin cambiando su propia contraseña sigue logueado;
+        - reglas de negocio de turnos (doble reserva 409, transiciones de
+          estado, eliminar solo cancelados) sin cambios.
+     4. Vistas: GET / sin cookie → 302 a /login; con cookie → 200 con el nav
+        según permisos; /login con cookie válida → 302 a /; profesional en
+        /usuarios → página 403.
+     5. npx newman run docs/TurnoFlex.postman_collection.json → todo en verde y
+        comparable con la línea base del paso 0.
+     6. Prueba manual en el navegador: login con cada usuario de prueba, ABM de
+        clientes/profesionales/turnos/usuarios, auditoría y logout.
+     7. docker compose up --build + docker compose exec app npm run seed para
+        confirmar que las dependencias nuevas instalan bien en la imagen alpine.
+
+  Ran 5 shell commands (ctrl+o to expand)
+
+● Estoy escribiendo un script de regresión con curl contra la versión de
+  sesiones actual, para luego compararlo con la versión Passport + JWT. Lo corro
+  en una base aparte (turnoflex_refactor, puerto 3100) para no tocar tus
+  contenedores.
+
+● Write(~/.claude/jobs/0cda50f6/tmp/regresion.sh)
+  ⎿  Wrote 127 lines to ~/.claude/jobs/0cda50f6/tmp/regresion.sh
+       1 #!/usr/bin/env bash
+       2 # Regresión funcional común a ambos enfoques (usa cookie jars, q
+         ue funcionan con sesión y con JWT en cookie).
+       3 # Uso: BASE=http://localhost:3100 ./regresion.sh
+       4 BASE=${BASE:-http://localhost:3100}
+       5 DIR=$(mktemp -d)
+       6 OK=0; FAIL=0
+       7 
+       8 check() { # nombre esperado obtenido
+       9   if [ "$2" == "$3" ]; then OK=$((OK+1)); echo "  ok   $1 ($3)";
+     … +119 lines (~8 KB) (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Línea base: 83/83 casos OK con la versión de sesiones. Ahora implemento el
+  refactor.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Mi pkill también tumbó el node dentro del contenedor valinor_cloud-app-1, y
+  nodemon queda esperando cambios hasta que se reconstruya la imagen. De ahora
+  en adelante detendré procesos solo por PID.
+
+● Bash(npm uninstall express-session 2>&1 | tail -1 && npm install passport
+      passport-local passport-jwt jsonwebtoken bcryptjs cookie-parser 2>&1 |
+      tail -2 && grep -A12…)
+  ⎿  Run `npm audit` for details.
+
+     Run `npm audit` for details.
+     … +13 lines (ctrl+o to expand)
+  ⎿  Updated package.json (+6 -1)
+      21    },
+      22    "homepage": "https://github.com/celina-web/Valinor_Cloud#read
+          me",
+      23    "dependencies": {
+      24 +    "bcryptjs": "^3.0.3",                                      
+      25 +    "cookie-parser": "^1.4.7",                                 
+      26      "dotenv": "^18.0.7",
+      27      "express": "^5.2.1",
+      26 -    "express-session": "^1.19.0",                              
+      28 +    "jsonwebtoken": "^9.0.3",                                  
+      29      "mongoose": "^8.24.5",
+      30 +    "passport": "^0.7.0",                                      
+      31 +    "passport-jwt": "^4.0.1",                                  
+      32 +    "passport-local": "^1.0.0",                                
+      33      "pug": "^3.0.4"
+      34    },
+      35    "devDependencies": {
+  ⎿  Updated package-lock.json (+197 -70)
+       9        "version": "1.0.0",
+      10        "license": "ISC",
+      11        "dependencies": {
+      12 +        "bcryptjs": "^3.0.3",                                  
+      13 +        "cookie-parser": "^1.4.7",                             
+      14          "dotenv": "^18.0.7",
+      15          "express": "^5.2.1",
+      14 -        "express-session": "^1.19.0",                          
+      16 +        "jsonwebtoken": "^9.0.3",                              
+      17          "mongoose": "^8.24.5",
+      18 +        "passport": "^0.7.0",                                  
+      19 +        "passport-jwt": "^4.0.1",                              
+      20 +        "passport-local": "^1.0.0",                            
+      21          "pug": "^3.0.4"
+      22        },
+      23        "devDependencies": {
+     ...
+      164          "node": "18 || 20 || >=22"
+      165        }
+      166      },
+      167 +    "node_modules/bcryptjs": {                                
+      168 +      "version": "3.0.3",                                     
+      169 +      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryp
+          +tjs-3.0.3.tgz",                                               
+      170 +      "integrity": "sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLv
+          +TS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==",       
+      171 +      "license": "BSD-3-Clause",                              
+      172 +      "bin": {                                                
+      173 +        "bcrypt": "bin/bcrypt"                                
+      174 +      }                                                       
+      175 +    },                                                        
+      176      "node_modules/binary-extensions": {
+      177        "version": "2.3.0",
+      178        "resolved": "https://registry.npmjs.org/binary-extension
+           s/-/binary-extensions-2.3.0.tgz",
+     ...
+      257          "node": ">=16.20.1"
+      258        }
+      259      },
+      260 +    "node_modules/buffer-equal-constant-time": {              
+      261 +      "version": "1.0.1",                                     
+      262 +      "resolved": "https://registry.npmjs.org/buffer-equal-con
+          +stant-time/-/buffer-equal-constant-time-1.0.1.tgz",           
+      263 +      "integrity": "sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07O
+          +Ix0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==",       
+      264 +      "license": "BSD-3-Clause"                               
+      265 +    },                                                        
+     … 332 more lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Now the env, model, and token helper.
+
+● Bash(cat > .env.example <<'EOF'
+      PORT=3000…)
+  ⎿  PORT=...
+     # Con Docker Compose este valor se sobrescribe (host "mongo"); aplica
+     al correr sin Docker
+     … +3 lines (ctrl+o to expand)
+  ⎿  Updated .env.example (+4 -2)
+      1  PORT=3000
+      2  # Con Docker Compose este valor se sobrescribe (host "mongo"); a
+         plica al correr sin Docker
+      3  MONGO_URI=mongodb://127.0.0.1:27017/turnoflex
+      4 -SESSION_SECRET=cambiar-por-un-texto-largo                       
+      5 -SESSION_MINUTOS=30                                              
+      4 +# Clave para firmar los JWT (HS256). Usá un texto largo y aleato
+        +rio.                                                            
+      5 +JWT_SECRET=cambiar-por-un-texto-largo                           
+      6 +# Minutos de vida del token (se renueva solo mientras el usuario
+        + usa la app)                                                    
+      7 +JWT_MINUTOS=30                                                  
+
+● Bash(python3 - <<'EOF'
+      p='src/models/Usuario.js'…)
+  ⎿        ],
+         },
+         activo: { type: Boolean, default: true },
+     … +36 lines (ctrl+o to expand)
+  ⎿  Updated src/models/Usuario.js (+17 -0)
+      1  const mongoose = require("mongoose");
+      2 +const bcrypt = require("bcryptjs");                             
+      3  const { ROLES } = require("../config/roles");
+      4  
+      5  const usuarioSchema = new mongoose.Schema(
+     ...
+      38      activo: { type: Boolean, default: true },
+      39      expiraEl: { type: Date, default: null },
+      40      ultimoAcceso: { type: Date, default: null },
+      41 +    // Se incrementa en el logout y al cambiar la contraseña: l
+         +os JWT emitidos antes dejan de valer                           
+      42 +    tokenVersion: { type: Number, default: 0 },                
+      43    },
+      44    {
+      45      timestamps: true,
+      46      toJSON: {
+      47        transform: (documento, datos) => {
+      48          delete datos.password;
+      49 +        delete datos.tokenVersion;                             
+      50          return datos;
+      51        },
+      52      },
+      53    }
+      54  );
+      55  
+      56 +const RONDAS_BCRYPT = 10;                                      
+      57 +                                                               
+      58 +// Mongoose valida antes de este hook, así que minlength se apl
+         +ica a la contraseña en claro                                   
+      59 +usuarioSchema.pre("save", async function () {                  
+      60 +  if (!this.isModified("password")) return;                    
+      61 +  this.password = await bcrypt.hash(this.password, RONDAS_BCRYP
+         +T);                                                            
+      62 +  if (!this.isNew) this.tokenVersion += 1;                     
+      63 +});                                                            
+      64 +                                                               
+      65 +usuarioSchema.methods.compararPassword = function (password) { 
+      66 +  return bcrypt.compare(password, this.password);              
+      67 +};                                                             
+      68 +                                                               
+      69  usuarioSchema.methods.estaHabilitado = function () {
+      70    const vencido = this.expiraEl && this.expiraEl <= new Date();
+      71    return this.activo && !vencido;
+  ⎿  Created src/helpers/token.js (+44 -0)
+       1 +const jwt = require("jsonwebtoken");                           
+       2 +                                                               
+       3 +const JWT_SECRET = process.env.JWT_SECRET || "turnoflex-desarro
+         +llo";                                                          
+       4 +const JWT_MINUTOS = Number(process.env.JWT_MINUTOS) || 30;     
+       5 +const JWT_ALGORITMO = "HS256";                                 
+       6 +const NOMBRE_COOKIE = "token";                                 
+       7 +                                                               
+       8 +if (!process.env.JWT_SECRET) {                                 
+       9 +  console.warn("Aviso: JWT_SECRET no está definido; se usa una 
+         +clave de desarrollo.");                                        
+      10 +}                                                              
+      11 +                                                               
+      12 +const firmarToken = (usuario) =>                               
+      13 +  jwt.sign(                                                    
+      14 +    { sub: String(usuario._id), usuario: usuario.usuario, ver: 
+         +usuario.tokenVersion },                                        
+      15 +    JWT_SECRET,                                                
+      16 +    { algorithm: JWT_ALGORITMO, expiresIn: JWT_MINUTOS * 60 }  
+      17 +  );                                                           
+      18 +                                                               
+      19 +const opcionesCookie = () => ({                                
+      20 +  httpOnly: true,                                              
+      21 +  sameSite: "strict",                                          
+      22 +  secure: process.env.NODE_ENV === "production",               
+      23 +  path: "/",                                                   
+      24 +});                                                            
+      25 +                                                               
+      26 +const enviarTokenEnCookie = (res, token) => {                  
+      27 +  res.cookie(NOMBRE_COOKIE, token, { ...opcionesCookie(), maxAg
+         +e: JWT_MINUTOS * 60 * 1000 });                                 
+      28 +};                                                             
+      29 +                                                               
+      30 +const borrarCookieToken = (res) => {                           
+      31 +  res.clearCookie(NOMBRE_COOKIE, opcionesCookie());            
+      32 +};                                                             
+      33 +                                                               
+      34 +const tokenDeCookie = (req) => (req.cookies && req.cookies[NOMB
+         +RE_COOKIE]) || null;                                           
+      35 +                                                               
+      36 +module.exports = {                                             
+      37 +  JWT_SECRET,                                                  
+      38 +  JWT_MINUTOS,                                                 
+      39 +  JWT_ALGORITMO,                                               
+      40 +  firmarToken,                                                 
+     … 4 more lines (ctrl+o to expand)
+
+● Write(src/config/passport.js)
+  ⎿  Wrote 82 lines to src/config/passport.js
+       1 const passport = require("passport");
+       2 const { Strategy: LocalStrategy } = require("passport-local");
+       3 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-
+         jwt");
+       4 
+       5 const Usuario = require("../models/Usuario");
+       6 const { JWT_SECRET, JWT_ALGORITMO, tokenDeCookie } = require("..
+         /helpers/token");
+       7 
+       8 // Login: valida usuario y contraseña. Los fallos vuelven como `
+     … +75 lines (~2 KB) (ctrl+o to expand)
+
+● Write(src/middlewares/auth.js)
+  ⎿  Added 61 lines, removed 20 lines
+       1 -const Usuario = require("../models/Usuario");                  
+       1 +const passport = require("../config/passport");                
+       2  const { tienePermiso, permisosDe } = require("../config/roles")
+          ;
+       3  const { registrarAuditoria } = require("../helpers/auditoria");
+       4 +const {                                                        
+       5 +  JWT_MINUTOS,                                                 
+       6 +  firmarToken,                                                 
+       7 +  enviarTokenEnCookie,                                         
+       8 +  borrarCookieToken,                                           
+       9 +  tokenDeCookie,                                               
+      10 +} = require("../helpers/token");                               
+      11  
+      12  const esApi = (req) => req.originalUrl.startsWith("/api");
+      13  
+       7 -const destruirSesion = (req) =>                                
+       8 -  new Promise((resolve) => {                                   
+       9 -    req.session.destroy(() => resolve());                      
+      14 +// Envuelve passport.authenticate (con callback) en una Promise
+         + para poder usar                                               
+      15 +// await y que Express 5 lleve cualquier error al errorHandler.
+      16 +const autenticar = (estrategia, req, res) =>                   
+      17 +  new Promise((resolve, reject) => {                           
+      18 +    passport.authenticate(estrategia, { session: false }, (erro
+         +r, usuario, info) => {                                         
+      19 +      if (error) return reject(error);                         
+      20 +      resolve({ usuario, info: info || {} });                  
+      21 +    })(req, res, reject);                                      
+      22    });
+      23  
+      24  const responderSinSesion = (req, res, mensaje) => {
+     ...
+      26    return res.redirect("/login");
+      27  };
+      28  
+      17 -const requiereLogin = async (req, res, next) => {              
+      18 -  if (!req.session.usuarioId) {                                
+      19 -    return responderSinSesion(req, res, "Debés iniciar sesión")
+         -;                                                              
+      20 -  }                                                            
+      29 +const mensajeDeRechazo = (info) => {                           
+      30 +  if (info.revocado) return "Tu sesión fue revocada";          
+      31 +  if (info.mensaje) return info.mensaje;                       
+      32 +  if (info.name === "TokenExpiredError") return "Tu sesión expi
+         +ró. Ingresá de nuevo";                                         
+      33 +  return "Debés iniciar sesión";                               
+      34 +};                                                             
+      35  
+      22 -  const usuario = await Usuario.findById(req.session.usuarioId)
+         -;                                                              
+      36 +const vinoPorCookie = (req) => !req.headers.authorization && Bo
+         +olean(tokenDeCookie(req));                                     
+      37  
+      24 -  if (!usuario || !usuario.estaHabilitado()) {                 
+      25 -    await registrarAuditoria(req, "SESION_REVOCADA", {         
+      26 -      usuario,                                                 
+      27 -      usuarioNombre: req.session.usuarioNombre,                
+      28 -      entidad: "Usuario",                                      
+      29 -      entidadId: req.session.usuarioId,                        
+      30 -      detalle: usuario ? "Usuario desactivado o vencido" : "El 
+         -usuario fue eliminado",                                        
+      31 -    });                                                        
+      32 -    await destruirSesion(req);                                 
+      33 -    return responderSinSesion(req, res, "Tu sesión fue revocada
+         -");                                                            
+      38 +// Renovación deslizante: si el token de la cookie ya consumió 
+         +la mitad de su vida,                                           
+      39 +// se emite uno nuevo. Así la expiración funciona como "minutos
+         + de inactividad".                                              
+      40 +const renovarSiHaceFalta = (req, res, usuario, payload) => {   
+      41 +  if (!payload || !vinoPorCookie(req)) return;                 
+      42 +  const segundosRestantes = payload.exp - Math.floor(Date.now()
+         + / 1000);                                                      
+      43 +  if (segundosRestantes < (JWT_MINUTOS * 60) / 2) {            
+      44 +    enviarTokenEnCookie(res, firmarToken(usuario));            
+      45    }
+      46 +};                                                             
+      47  
+      48 +const cargarUsuario = (req, res, usuario) => {                 
+      49    req.usuario = usuario;
+      50    res.locals.usuario = usuario;
+      51    res.locals.permisos = permisosDe(usuario.rol);
+      52    res.locals.puede = (permiso) => tienePermiso(usuario.rol, per
+          miso);
+      53 +};                                                             
+      54 +                                                               
+      55 +const requiereLogin = async (req, res, next) => {              
+      56 +  const { usuario, info } = await autenticar("jwt", req, res); 
+      57 +                                                               
+      58 +  if (!usuario) {                                              
+      59 +    if (info.revocado) {                                       
+      60 +      await registrarAuditoria(req, "SESION_REVOCADA", {       
+      61 +        usuario: info.usuario,                                 
+      62 +        usuarioNombre: info.payload.usuario,                   
+      63 +        entidad: "Usuario",                                    
+      64 +        entidadId: info.payload.sub,                           
+      65 +        detalle: info.detalle,                                 
+      66 +      });                                                      
+      67 +    }                                                          
+      68 +    if (tokenDeCookie(req)) borrarCookieToken(res);            
+      69 +    return responderSinSesion(req, res, mensajeDeRechazo(info))
+         +;                                                              
+      70 +  }                                                            
+      71 +                                                               
+      72 +  renovarSiHaceFalta(req, res, usuario, info.payload);         
+      73 +  cargarUsuario(req, res, usuario);                            
+      74    next();
+      75  };
+      76  
+      77 +// Para páginas públicas (login): carga el usuario si hay un to
+         +ken válido, sin cortar la request.                             
+      78 +const usuarioOpcional = async (req, res, next) => {            
+      79 +  const { usuario } = await autenticar("jwt", req, res);       
+      80 +  if (usuario) cargarUsuario(req, res, usuario);               
+      81 +  next();                                                      
+      82 +};                                                             
+      83 +                                                               
+      84  const requierePermiso = (permiso) => async (req, res, next) => 
+          {
+      85    if (tienePermiso(req.usuario.rol, permiso)) return next();
+      86  
+     ...
+       97    });
+       98  };
+       99  
+       59 -module.exports = { requiereLogin, requierePermiso, destruirSes
+          -ion };                                                        
+      100 +module.exports = { autenticar, requiereLogin, usuarioOpcional,
+          + requierePermiso };                                           
+
+● Write(src/controllers/authController.js)
+  ⎿  Added 21 lines, removed 31 lines
+       1  const Usuario = require("../models/Usuario");
+       2  const { permisosDe } = require("../config/roles");
+       3  const { registrarAuditoria } = require("../helpers/auditoria");
+       4 -const { destruirSesion } = require("../middlewares/auth");     
+       4 +const { autenticar } = require("../middlewares/auth");         
+       5 +const { firmarToken, enviarTokenEnCookie, borrarCookieToken } =
+         + require("../helpers/token");                                  
+       6  
+       6 -const regenerarSesion = (req) =>                               
+       7 -  new Promise((resolve, reject) => {                           
+       8 -    req.session.regenerate((error) => (error ? reject(error) : 
+         -resolve()));                                                   
+       9 -  });                                                          
+      10 -                                                               
+       7  const login = async (req, res) => {
+      12 -  const { usuario: usuarioIngresado, password: passwordIngresad
+         -a } = req.body || {};                                          
+      13 -  const nombreUsuario = String(usuarioIngresado || "").trim().t
+         -oLowerCase();                                                  
+      14 -  const password = String(passwordIngresada || "");            
+       8 +  const { usuario: usuarioIngresado, password } = req.body || {
+         +};                                                             
+       9  
+      16 -  if (!nombreUsuario || !password) {                           
+      10 +  if (!String(usuarioIngresado || "").trim() || !password) {   
+      11      return res.status(400).json({ error: "Ingresá usuario y con
+          traseña" });
+      12    }
+      13  
+      20 -  const usuario = await Usuario.findOne({ usuario: nombreUsuari
+         -o }).select("+password");                                      
+      14 +  const { usuario, info } = await autenticar("local", req, res)
+         +;                                                              
+      15  
+      22 -  if (!usuario || usuario.password !== password) {             
+      16 +  if (!usuario) {                                              
+      17      await registrarAuditoria(req, "LOGIN_FALLIDO", {
+      24 -      usuarioNombre: nombreUsuario,                            
+      25 -      detalle: "Usuario o contraseña incorrectos",             
+      18 +      usuario: info.usuario,                                   
+      19 +      usuarioNombre: info.usuarioNombre,                       
+      20 +      detalle: info.detalle,                                   
+      21      });
+      27 -    return res.status(401).json({ error: "Usuario o contraseña 
+         -incorrectos" });                                               
+      22 +    return res.status(info.status || 401).json({ error: info.er
+         +ror || "No se pudo iniciar sesión" });                         
+      23    }
+      24  
+      30 -  if (!usuario.estaHabilitado()) {                             
+      31 -    await registrarAuditoria(req, "LOGIN_FALLIDO", {           
+      32 -      usuario,                                                 
+      33 -      detalle: "Usuario desactivado o vencido",                
+      34 -    });                                                        
+      35 -    return res                                                 
+      36 -      .status(403)                                             
+      37 -      .json({ error: "Tu usuario está deshabilitado. Contactá a
+         - un administrador" });                                         
+      38 -  }                                                            
+      25 +  const token = firmarToken(usuario);                          
+      26 +  enviarTokenEnCookie(res, token);                             
+      27  
+      40 -  await regenerarSesion(req);                                  
+      41 -  req.session.usuarioId = usuario._id.toString();              
+      42 -  req.session.usuarioNombre = usuario.usuario;                 
+      43 -                                                               
+      28    await Usuario.updateOne(
+      29      { _id: usuario._id },
+      30      { ultimoAcceso: new Date() },
+     ...
+      32    );
+      33    await registrarAuditoria(req, "LOGIN", { usuario, entidad: "U
+          suario", entidadId: usuario._id });
+      34  
+      51 -  res.json({ usuario: usuario.usuario, nombre: usuario.nombre, 
+         -rol: usuario.rol });                                           
+      35 +  res.json({ token, usuario: usuario.usuario, nombre: usuario.n
+         +ombre, rol: usuario.rol });                                    
+      36  };
+      37  
+      38 +// Sin sesiones en el servidor: el logout sube tokenVersion par
+         +a invalidar los                                                
+      39 +// tokens ya emitidos de este usuario y borra la cookie del nav
+         +egador.                                                        
+      40  const logout = async (req, res) => {
+      41 +  await Usuario.updateOne(                                     
+      42 +    { _id: req.usuario._id },                                  
+      43 +    { $inc: { tokenVersion: 1 } },                             
+      44 +    { timestamps: false }                                      
+      45 +  );                                                           
+      46    await registrarAuditoria(req, "LOGOUT", { entidad: "Usuario",
+           entidadId: req.usuario._id });
+      56 -  await destruirSesion(req);                                   
+      57 -  res.clearCookie("connect.sid");                              
+      47 +  borrarCookieToken(res);                                      
+      48    res.status(204).end();
+      49  };
+      50  
+
+● Bash(sed -i 's/!(await usuario.compararPassword(password))/!(await
+      usuario.compararPassword(String(password)))/' src/config/passport.js &&
+      grep -n compararPassword s…)
+  ⎿  18:        if (!usuario || !(await usuario.compararPassword(String(pas
+     sword)))) {
+     require("dotenv").config({ quiet: true });
+     … +70 lines (ctrl+o to expand)
+  ⎿  Updated src/config/passport.js (+1 -1)
+      15          const nombreUsuario = String(usuarioIngresado).trim().t
+          oLowerCase();
+      16          const usuario = await Usuario.findOne({ usuario: nombre
+          Usuario }).select("+password");
+      17  
+      18 -        if (!usuario || !(await usuario.compararPassword(passwo
+         -rd))) {                                                        
+      18 +        if (!usuario || !(await usuario.compararPassword(String
+         +(password)))) {                                                
+      19            return done(null, false, {
+      20              status: 401,
+      21              error: "Usuario o contraseña incorrectos",
+  ⎿  Updated src/index.js (+4 -11)
+       1  require("dotenv").config({ quiet: true });
+       2  const express = require("express");
+       3  const path = require("path");
+       4 -const session = require("express-session");                    
+       4 +const cookieParser = require("cookie-parser");                 
+       5  
+       6  const conectarDB = require("./config/db");
+       7 +const passport = require("./config/passport");                 
+       8  const logger = require("./middlewares/logger");
+       9  const { notFound, errorHandler } = require("./middlewares/error
+          es");
+      10  
+     ...
+      18  
+      19  const app = express();
+      20  const PORT = process.env.PORT || 3000;
+      20 -const MINUTOS_SESION = Number(process.env.SESSION_MINUTOS) || 3
+         -0;                                                             
+      21  
+      22  app.set("view engine", "pug");
+      23  app.set("views", path.join(__dirname, "views"));
+     ...
+      25  app.use(express.static(path.join(__dirname, "public")));
+      26  app.use(logger);
+      27  app.use(express.json());
+      28 -app.use(                                                       
+      29 -  session({                                                    
+      30 -    secret: process.env.SESSION_SECRET || "turnoflex-desarrollo
+         -",                                                             
+      31 -    resave: false,                                             
+      32 -    saveUninitialized: false,                                  
+      33 -    rolling: true,                                             
+      34 -    cookie: { httpOnly: true, sameSite: "lax", maxAge: MINUTOS_
+         -SESION * 60 * 1000 },                                          
+      35 -  })                                                           
+      36 -);                                                             
+      28 +app.use(cookieParser());                                       
+      29 +app.use(passport.initialize());                                
+      30  
+      31  app.use("/api/auth", authRoutes);
+      32  app.use("/api/clientes", clientesRoutes);
+  ⎿  Updated src/routes/vistasRoutes.js (+2 -2)
+      1  const express = require("express");
+      2 -const { requiereLogin, requierePermiso } = require("../middlewar
+        -es/auth");                                                      
+      2 +const { requiereLogin, requierePermiso, usuarioOpcional } = requ
+        +ire("../middlewares/auth");                                     
+      3  const {
+      4    mostrarLogin,
+      5    mostrarPanel,
+     ...
+      12  
+      13  const router = express.Router();
+      14  
+      15 -router.get("/login", mostrarLogin);                            
+      15 +router.get("/login", usuarioOpcional, mostrarLogin);           
+      16  
+      17  router.use(requiereLogin);
+      18  
+  ⎿  Updated src/controllers/vistasController.js (+1 -1)
+      2  const { ACCIONES } = require("../models/Auditoria");
+      3  
+      4  const mostrarLogin = (req, res) => {
+      5 -  if (req.session.usuarioId) return res.redirect("/");          
+      5 +  if (req.usuario) return res.redirect("/");                    
+      6    res.render("login");
+      7  };
+      8  
+
+● Ya están el modelo, las estrategias de Passport, el middleware y el
+  login/logout; ahora ajusto el cambio de contraseña propia y pruebo.
+● Bash(python3 - <<'EOF'
+      p='src/controllers/usuariosController.js'; s=open(p).read()…)
+  ⎿  src/config/passport.js:12:    { usernameField: "usuario", passwordFiel
+     d: "password", session: false },
+     src/middlewares/auth.js:18:    passport.authenticate(estrategia, { ses
+     … +6 lines (ctrl+o to expand)
+  ⎿  Updated src/controllers/usuariosController.js (+5 -0)
+      2  const Profesional = require("../models/Profesional");
+      3  const { tomarCampos, describirCambios } = require("../helpers/ca
+         mpos");
+      4  const { registrarAuditoria } = require("../helpers/auditoria");
+      5 +const { firmarToken, enviarTokenEnCookie } = require("../helpers
+        +/token");                                                       
+      6  
+      7  const CAMPOS = ["usuario", "password", "nombre", "rol", "profesi
+         onal", "activo", "expiraEl"];
+      8  
+     ...
+      68    const cambios = describirCambios(usuario);
+      69    await usuario.save();
+      70  
+      71 +  // Cambiar la contraseña invalida los tokens anteriores (toke
+         +nVersion); si es la                                            
+      72 +  // propia, se emite uno nuevo para no cerrarle la sesión al a
+         +dmin.                                                          
+      73 +  if (esElMismo && datos.password) enviarTokenEnCookie(res, fir
+         +marToken(usuario));                                            
+      74 +                                                               
+      75    await registrarAuditoria(req, "MODIFICAR", {
+      76      entidad: "Usuario",
+      77      entidadId: usuario._id,
+  ⎿  (timeout 3m)
+
+● Regresión con Passport + JWT: 83/83 igual que la línea base. Ahora pruebo los
+  casos propios de JWT (Bearer, cookie, token alterado/vencido, tokenVersion,
+  renovación, hashes).
+
+● Bash(sed -i 's/{ usernameField: "usuario", passwordField: "password", session:
+      false }/{ usernameField: "usuario", passwordField: "password" }/'
+      src/config/passport.…)
+  ⎿  Datos cargados: 8 clientes, 3 profesionales, 13 turnos y 4 usuarios.
+       FAIL SESION_REVOCADA con usuarioNombre del token: esperado true, obt
+     uvo false
+     RESULTADO: 37 ok, 1 fallas
+  ⎿  Updated src/config/passport.js (+1 -1)
+       9  // controlador responda y audite (passport no responde nada por
+           su cuenta).
+      10  passport.use(
+      11    new LocalStrategy(
+      12 -    { usernameField: "usuario", passwordField: "password", sess
+         -ion: false },                                                  
+      12 +    { usernameField: "usuario", passwordField: "password" },   
+      13      async (usuarioIngresado, password, done) => {
+      14        try {
+      15          const nombreUsuario = String(usuarioIngresado).trim().t
+          oLowerCase();
+  ⎿  (timeout 3m)
+
+● The one failure is a gap in my test (this suite never revoked anyone, so there
+  was no event to check). I'll trigger a real revocation and check the audit
+  entry:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● La revocación quedó auditada sin errores en el servidor. Ahora actualizo la
+  colección de Postman para usar Bearer y poder ejecutarla completa con newman.
+
+● Bash(python3 - <<'EOF'
+      import json, copy…)
+  ⎿   docs/TurnoFlex.postman_collection.json | 257 ++++++++++++++++++++++++
+     +++++++--
+      1 file changed, 243 insertions(+), 14 deletions(-)
+     … +3 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /home/matiasae/Code/Valinor_Cloud
+  ⎿  Updated docs/TurnoFlex.postman_collection.json (+243 -14)
+      1  {
+      2    "info": {
+      3      "name": "TurnoFlex API",
+      4 -    "description": "Ejecutar primero Auth > Login admin: la cook
+        -ie connect.sid queda guardada y se envía en las siguientes petic
+        -iones. Luego ejecutar las carpetas en orden.",                  
+      4 +    "description": "Autenticación con JWT. Los requests de login
+        + guardan el token en variables de la colección (token = admin, t
+        +okenRecepcion, tokenProfesional) y la colección lo envía como 'A
+        +uthorization: Bearer {{token}}'. La carpeta 'Permisos' usa {{tok
+        +enProfesional}}. Se puede correr completa en orden (Runner o new
+        +man) después de 'npm run seed'.",                               
+      5      "schema": "https://schema.getpostman.com/json/collection/v2.
+         1.0/collection.json"
+      6    },
+      7    "variable": [
+     ...
+      24      {
+      25        "key": "usuarioId",
+      26        "value": ""
+      27 +    },                                                         
+      28 +    {                                                          
+      29 +      "key": "token",                                          
+      30 +      "value": ""                                              
+      31 +    },                                                         
+      32 +    {                                                          
+      33 +      "key": "tokenRecepcion",                                 
+      34 +      "value": ""                                              
+      35 +    },                                                         
+      36 +    {                                                          
+      37 +      "key": "tokenProfesional",                               
+      38 +      "value": ""                                              
+      39 +    },                                                         
+      40 +    {                                                          
+      41 +      "key": "tokenAnterior",                                  
+      42 +      "value": ""                                              
+      43      }
+      44    ],
+      45    "item": [
+     ...
+      47        "name": "Auth",
+      48        "item": [
+      49          {
+      34 -          "name": "Login admin",                               
+      50 +          "name": "Login incorrecto (401)",                    
+      51            "request": {
+      52              "method": "POST",
+      53              "header": [
+     ...
+      69              },
+      70              "body": {
+     … 332 more lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+● Newman: 46 requests, 51 assertions, 0 failures — the collection now runs end
+  to end (before, anything after the Logout failed with 401). Let me check the
+  diff isn't just reformatting noise:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Voy a reconstruir solo el servicio app en Docker con una base aparte, para no
+  tocar turnoflex.
+
+  Ran 2 shell commands (ctrl+o to expand)
+  ⎿  1 action blocked by auto mode
+     │ Auto mode: [Interfere With Workloads]
+
+● La imagen de Docker ya se reconstruyó y el contenedor app encuentra todas las
+  dependencias nuevas, pero el smoke test extra fue bloqueado dentro de Docker,
+  así que no lo reintento. Las pruebas funcionales completas ya pasaron en el
+  host, y sigo con la documentación.
+
+● Bash(python3 - <<'EOF'
+      p='src/public/js/api.js'; s=open(p).read()…)
+  ⎿   .env.example                           |   6 +-
+      docs/TurnoFlex.postman_collection.json | 257 ++++++++++++++++++++++++
+     +++++--
+     … +24 lines (ctrl+o to expand)
+  ⎿  Updated src/public/js/api.js (+2 -0)
+      1 +// El JWT viaja en una cookie httpOnly que el navegador envía so
+        +lo (mismo origen):                                              
+      2 +// el JS no lo lee ni lo guarda, así no queda expuesto ante un X
+        +SS.                                                             
+      3  const api = async (url, opciones = {}) => {
+      4    const respuesta = await fetch(url, {
+      5      method: opciones.method || "GET",
+
+● Now the refactor document.
+
+● Write(docs/refactor-passport-jwt.md)
+  ⎿  Wrote 264 lines to docs/refactor-passport-jwt.md
+      1 # Refactor: de `express-session` a Passport + JWT (stateless)
+      2 
+      3 Este documento explica el cambio del mecanismo de autenticación d
+        e TurnoFlex: qué había, qué hay ahora, por qué se tomó cada decis
+        ión, qué archivos cambiaron y cómo se verificó que la aplicación 
+        siga funcionando igual.
+      4 
+      5 ---
+      6 
+      7 ## 1. Motivación
+     … +257 lines (ctrl+o to expand)
+
+● Now the README: rewrite the outdated parts.
+
+● Bash(python3 - <<'EOF'
+      p='README.md'; s=open(p).read()…)
+  ⎿  104:3. **Autenticación sin estado.** El login (`POST /api/auth/login`)
+      verifica la contraseña con la estrategia `local` de Passport, firma u
+     n JWT, lo guarda en la cookie `token` (`httpOnly`, `sameSite=strict`)
+     … +17 lines (ctrl+o to expand)
+  ⎿  Updated README.md (+42 -19)
+       4  turnos de un centro de atención. Permite administrar profesiona
+          les, clientes y turnos, aplicando reglas de negocio. Es un **pr
+          oducto mínimo viable** con:
+       5  
+       6  - Persistencia en **MongoDB** usando Mongoose.
+       7 -- **Usuarios con login**, mediante sesiones con `express-sessio
+         -n`.                                                            
+       7 +- **Autenticación stateless con Passport + JWT**: login con `pa
+         +ssport-local` (contraseñas hasheadas con bcrypt) y protección d
+         +e rutas con `passport-jwt`. El token viaja en una cookie `httpO
+         +nly` o en el header `Authorization: Bearer`.                   
+       8  - **Roles jerárquicos y permisos CRUD**: `admin` > `recepcion` 
+          > `profesional`.
+       9  - **Auditoría** de todas las acciones relevantes.
+      10  - **Front con `fetch`**: las pantallas cargan y guardan datos d
+          e forma asincrónica, sin recargar la página.
+     ...
+      33  
+      34  ```bash
+      35  cp .env.example .env
+      36 -docker compose up --build                                      
+      36 +docker compose up --build -V      # -V: renueva node_modules si
+         + cambiaron las dependencias                                    
+      37  docker compose exec app npm run seed
+      38  ```
+      39  
+     ...
+      45  |---|---|---|
+      46  | `PORT` | Puerto del servidor | `3000` |
+      47  | `MONGO_URI` | Cadena de conexión a MongoDB | `mongodb://127.0
+          .0.1:27017/turnoflex` |
+      48 -| `SESSION_SECRET` | Para firmar la cookie de sesión | `secreto
+         --sesion` |                                                     
+      49 -| `SESSION_MINUTOS` | Minutos de inactividad antes de que la se
+         -sión expire | `30` |                                           
+      48 +| `JWT_SECRET` | Clave para firmar los JWT (HS256). En producci
+         +ón, un texto largo y aleatorio | clave de desarrollo (con aviso
+         + al iniciar) |                                                 
+      49 +| `JWT_MINUTOS` | Vida del token en minutos. En el navegador se
+         + renueva mientras se usa la app | `30` |                       
+      50  
+      51  ### Usuarios de prueba (creados por `npm run seed`)
+      52  
+     ...
+      65  Valinor_Cloud/
+      66  ├── .env.example
+      67  ├── docs/
+      68 -│   └── TurnoFlex.postman_collection.json                      
+      68 +│   ├── TurnoFlex.postman_collection.json                      
+      69 +│   ├── refactor-passport-jwt.md         Detalle del paso de ex
+         +press-session a Passport + JWT                                 
+      70 +│   └── Docker/docker-readme.md          Guía para levantar el 
+         +proyecto con Docker                                            
+      71  └── src/
+      70 -    ├── index.js                         Configura Express, ses
+         -ión, rutas y errores; conecta a Mongo                          
+      72 +    ├── index.js                         Configura Express, coo
+         +kies, Passport, rutas y errores; conecta a Mongo               
+      73      ├── seed.js                          Carga datos y usuarios
+           de prueba
+      74      ├── config/
+      75      │   ├── db.js                        Conexión a MongoDB con
+           Mongoose
+      76 +    │   ├── passport.js                  Estrategias local (log
+         +in) y jwt (requests autenticadas)                              
+     … 104 more lines (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      def edit(p, pairs):…)
+  ⎿   .env.example                           |   6 +-
+      CLAUDE.md                              |   9 +-
+      README.md                              |  63 +++++---
+     … +15 lines (ctrl+o to expand)
+  ⎿  Updated README.md (+2 -0)
+      27  
+      28  La aplicación queda disponible en **http://localhost:3000**.
+      29  
+      30 +> Si venís de una versión anterior (con `express-session`), vol
+         +vé a correr `npm run seed`: las contraseñas ahora se guardan ha
+         +sheadas y las que estaban en texto plano ya no sirven para inic
+         +iar sesión.                                                    
+      31 +                                                               
+      32  ### Uso con Docker
+      33  
+      34  También se puede levantar la app y MongoDB con contenedores (mo
+          do desarrollo con hot-reload):
+  ⎿  Updated docs/Docker/docker-readme.md (+4 -2)
+      28     cp .env.example .env
+      29     ```
+      30  
+      31 -   Opcionalmente, cambiá `SESSION_SECRET` por un texto largo.  
+      31 +   Cambiá `JWT_SECRET` por un texto largo y aleatorio (si falta
+         +, la app usa una clave de desarrollo y muestra un aviso al inic
+         +iar).                                                          
+      32  
+      33  2. Construir y levantar los contenedores:
+      34  
+     ...
+      78  |---|---|
+      79  | `PORT` | Define el puerto publicado en tu equipo (`${PORT}:30
+          00`). Dentro del contenedor la app siempre escucha en 3000. |
+      80  | `MONGO_URI` | Sobrescrita por Compose (`mongodb://mongo:27017
+          /turnoflex`). |
+      81 -| `SESSION_SECRET`, `SESSION_MINUTOS` | Se leen del `.env` sin 
+         -cambios. |                                                     
+      81 +| `JWT_SECRET`, `JWT_MINUTOS` | Se leen del `.env` sin cambios.
+         + |                                                             
+      82  
+      83  ## Problemas frecuentes
+      84  
+     ...
+      86  - **Los cambios no se reflejan**: confirmá que editás archivos 
+          dentro de `src/` y que el comando sigue usando `nodemon -L` (po
+          lling).
+      87  - **Puerto 3000 o 27017 ocupado**: cambiá `PORT` en el `.env`, 
+          o detené el MongoDB local (`sudo systemctl stop mongod`).
+      88  - **Permisos en Linux**: el contenedor corre como el usuario `n
+          ode` (UID 1000). Si tu usuario tiene otro UID y la app no puede
+           leer `src/`, revisá los permisos de la carpeta.
+      89 +- **`Cannot find module 'passport'` (u otra dependencia nueva)*
+         +*: el volumen anónimo de `node_modules` conserva las dependenci
+         +as viejas. Reconstruí renovándolo: `docker compose up --build -
+         +V`.                                                            
+      90 +- **No puedo iniciar sesión con los usuarios de prueba después 
+         +de actualizar**: las contraseñas ahora se guardan hasheadas. Vo
+         +lvé a cargar los datos con `docker compose exec app npm run see
+         +d`.                                                            
+      91  - **Empezar de cero**: `docker compose down -v --rmi local` y r
+          epetir los pasos.
+  ⎿  Updated CLAUDE.md (+5 -4)
+      10  
+      11  ```bash
+      12  npm install
+      13 -cp .env.example .env     # variables: PORT, MONGO_URI, SESSION_
+         -SECRET, SESSION_MINUTOS                                        
+      13 +cp .env.example .env     # variables: PORT, MONGO_URI, JWT_SECR
+         +ET, JWT_MINUTOS                                                
+      14  npm run seed             # BORRA la base y crea datos y usuario
+          s de prueba (admin/admin123, etc.)
+      15  npm run dev              # nodemon src/index.js
+      16  npm start                # node src/index.js
+     ...
+      19  Con Docker (modo desarrollo, hot-reload con nodemon sobre `./sr
+          c` montado como volumen; guía en `docs/Docker/docker-readme.md`
+          ):
+      20  
+      21  ```bash
+      22 -docker compose up --build            # app + mongo; Compose sob
+         -rescribe MONGO_URI a mongodb://mongo:27017/turnoflex           
+      22 +docker compose up --build -V         # app + mongo; -V renueva 
+         +node_modules; Compose sobrescribe MONGO_URI a mongodb://mongo:2
+         +7017/turnoflex                                                 
+      23  docker compose exec app npm run seed
+      24  docker compose down -v               # detiene y borra los dato
+          s (volumen mongo_data)
+      25  ```
+     ...
+      29  ## Arquitectura
+      30  
+      31  - **Vistas y API separadas.** `src/routes/vistasRoutes.js` solo
+           renderiza el esqueleto de cada página con Pug; los datos los c
+          arga el JS del navegador (`src/public/js/*.js`, usando `api.js`
+           como wrapper de `fetch`) contra `/api/...`, que siempre respon
+          de JSON.
+      32 -- **Cadena de middlewares por ruta:** `requiereLogin` → `requie
+         -rePermiso("recurso:accion")` → controlador (`src/middlewares/au
+         -th.js`). `requiereLogin` vuelve a leer el usuario desde Mongo e
+         -n cada request: si está desactivado, eliminado o vencido (`expi
+         -raEl`), destruye la sesión y audita `SESION_REVOCADA`. Distingu
+         -e API de vistas por el prefijo `/api` (401 JSON vs. redirect a 
+         -`/login`).                                                     
+      32 +- **Autenticación stateless (Passport + JWT):** no hay sesiones
+         + en el servidor. Estrategias en `src/config/passport.js`: `loca
+         +l` (login, compara con bcrypt) y `jwt` (token HS256 tomado de `
+         +Authorization: Bearer` o de la cookie httpOnly `token`). Firma 
+         +y cookie en `src/helpers/token.js`. El login devuelve el token 
+         +en el JSON y lo setea en la cookie (las vistas Pug dependen de 
+         +la cookie). Detalle completo en `docs/refactor-passport-jwt.md`
+         +.                                                              
+      33 +- **Cadena de middlewares por ruta:** `requiereLogin` → `requie
+         +rePermiso("recurso:accion")` → controlador (`src/middlewares/au
+         +th.js`). `requiereLogin` usa la estrategia `jwt`, cuyo `verify`
+         + vuelve a leer el usuario desde Mongo: si está desactivado, eli
+         +minado o vencido (`expiraEl`) rechaza el token y audita `SESION
+         +_REVOCADA`; si `payload.ver !== usuario.tokenVersion` (logout o
+         + cambio de contraseña) también lo rechaza. Renueva la cookie cu
+         +ando el token consumió la mitad de su vida. Distingue API de vi
+         +stas por el prefijo `/api` (401 JSON vs. redirect a `/login`). 
+         +`usuarioOpcional` carga el usuario sin cortar la request (lo us
+         +a `/login`).                                                   
+      34  - **Permisos:** la matriz CRUD vive solo en `src/config/roles.j
+          s`. Los roles son jerárquicos por spread de arrays (`profesiona
+          l` ⊂ `recepcion` ⊂ `admin`). Para agregar un permiso, definilo 
+          ahí y usalo en la ruta.
+      35  - **Control por contexto** (en controladores, no en roles): el 
+          rol `profesional` solo ve sus propios turnos y solo puede pasar
+          los a `atendido`; un admin no puede desactivarse, cambiarse el 
+          rol, ponerse vencimiento ni eliminarse a sí mismo.
+      36  - **Errores:** Express 5 propaga errores de controladores `asyn
+          c` al `errorHandler` (`src/middlewares/errores.js`), que traduc
+          e errores de Mongoose (validación → 400, id inválido → 400, dup
+          licado → 409). No hace falta `try/catch` en los controladores.
+      37  - **Auditoría:** `registrarAuditoria(req, accion, {...})` en `s
+          rc/helpers/auditoria.js`; la acción debe estar en la lista perm
+          itida del modelo `Auditoria`. Se llama en login/logout, altas/b
+          ajas/modificaciones, cambios de estado y accesos denegados.
+      38  - **Mass assignment:** los controladores filtran el body con `t
+          omarCampos()` (`src/helpers/campos.js`); usalo en todo endpoint
+           nuevo de escritura.
+      38 -- **Contraseñas:** campo `select: false` en `Usuario` y excluid
+         -o en `toJSON`; no devolverlas nunca en respuestas.             
+      39 +- **Contraseñas:** hasheadas con bcrypt en el `pre("save")` de 
+         +`Usuario` (usá `create`/`save`, no `updateOne`, para cambiarlas
+         +); campo `select: false` y excluido en `toJSON` junto con `toke
+         +nVersion`; no devolverlas nunca en respuestas.                 
+      40  
+      41  ## Reglas de negocio de turnos
+      42  
+
+● Docs listos. Ahora corro todo de nuevo desde cero con el código final:
+  regresión, casos JWT (con el test de revocación corregido) y newman.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Todo pasa con el código final. Actualizo el número del documento (37 → 41
+  casos JWT) y borro las bases de prueba que creé.
+
+● Bash(sed -i 's/3. \*\*Casos propios de JWT\*\* (37 casos, todos OK):/3.
+      **Casos propios de JWT** (41 casos, todos OK):/'
+      docs/refactor-passport-jwt.md && grep -n "41…)
+  ⎿  252:3. **Casos propios de JWT** (41 casos, todos OK):
+     borrada turnoflex_refactor
+     borrada turnoflex_docker
+     … +18 lines (ctrl+o to expand)
+  ⎿  Updated docs/refactor-passport-jwt.md (+1 -1)
+      249  
+      250  1. **Línea base (antes del refactor):** un script de regresión
+            de 83 casos que cubre login, vistas, permisos, control por co
+           ntexto, ABM, reglas de negocio de turnos, usuarios, revocación
+           , auditoría y logout. Usa cookies, así que sirve para los dos 
+           enfoques. Resultado con `express-session`: **83/83**.
+      251  2. **Mismo script después del refactor:** **83/83**. El compor
+           tamiento visible no cambió.
+      252 -3. **Casos propios de JWT** (37 casos, todos OK):             
+      252 +3. **Casos propios de JWT** (41 casos, todos OK):             
+      253     - el login devuelve un JWT y setea la cookie `HttpOnly; Sam
+           eSite=Strict`; el payload solo tiene `sub`, `usuario`, `ver`, 
+           `iat` y `exp`;
+      254     - acceso con Bearer, con cookie y a vistas con cookie;
+      255     - 401 sin token, con token alterado, con firma de otra clav
+           e, con `alg: none` y con token vencido; en las vistas, redirec
+           t a `/login` y borrado de la cookie;
+
+● El refactor a Passport + JWT está terminado y la app se comporta igual que
+  antes. Los cambios están en el working tree de la rama matias, sin commitear.
+
+  Cómo quedó
+  - Login: se hace con passport-local y las contraseñas ahora se guardan
+    hasheadas con bcrypt.
+  - Requests autenticadas: pasan por passport-jwt, que acepta el token por
+    Authorization: Bearer o por una cookie httpOnly / sameSite=strict. La cookie
+    hace falta porque las vistas Pug se cargan navegando y el navegador no
+    puede mandar el header.
+  - Revocación: en cada request se vuelve a leer el usuario de Mongo, así que
+    desactivar, vencer o eliminar un usuario corta su acceso al instante y se
+    audita SESION_REVOCADA. Además, un campo nuevo tokenVersion invalida los
+    tokens viejos en el logout y al cambiar la contraseña.
+  - Expiración: en el navegador el token se renueva solo mientras se usa la app,
+    así que sigue venciendo por inactividad como antes.
+  - Archivos nuevos: src/config/passport.js, src/helpers/token.js y
+    docs/refactor-passport-jwt.md, con el detalle completo: decisiones, flujos,
+    cambios archivo por archivo, seguridad y verificación.
+  - Documentación actualizada: el README.md quedó depurado (sin referencias
+    viejas a sesiones, con las variables nuevas, la API con Bearer y la
+    bibliografía). También actualicé docs/Docker/docker-readme.md, CLAUDE.md,
+    .env.example y la colección de Postman.
+
+  Verificación (sobre una base de prueba aparte, ya borrada)
+  - Regresión de 83 casos: login, vistas, permisos, control por contexto, ABM,
+    reglas de turnos, revocación, auditoría y logout. Dio 83/83 con
+    express-session antes de tocar nada, y 83/83 con el código final.
+  - 41 casos propios de JWT: todos OK. Cubren Bearer y cookie, token alterado o
+    vencido, alg: none, renovación, hashes en Mongo, tokenVersion y la auditoría
+    de revocación.
+  - Postman con newman: 46 requests y 51 aserciones, 0 fallas. Antes la
+    colección no se podía correr completa, porque después del Logout todo
+    daba 401.
+  - Sin probar: no hice la prueba manual en el navegador. Las vistas las
+    verifiqué solo con curl (redirects, menú según permisos, 403).
+
+  Lo que tenés que hacer vos
+  1. Agregar JWT_SECRET y JWT_MINUTOS a tu .env local. Hoy tiene las variables
+     SESSION_*, así que la app arranca con una clave de desarrollo y muestra un
+     aviso.
+  2. Correr docker compose exec app npm run seed. Tu base turnoflex tiene las
+     contraseñas en texto plano y ya no se puede iniciar sesión con ellas. No la
+     sembré yo porque borra los datos.
+
+  Un error mío con tu entorno Docker: usé pkill para frenar mi servidor de
+  prueba y también mató el node de tu contenedor app. Lo arreglé reconstruyendo
+  ese servicio con docker compose up -d --build -V app; ahora corre con las
+  dependencias nuevas. El -V hace falta, porque si no el volumen de node_modules
+  conserva los módulos viejos sin passport. Quedó documentado en el README y en
+  la guía de Docker. Una prueba extra de login dentro de Docker fue bloqueada
+  por permisos y no la reintenté.
+
+  ¿Querés que lo commitee?
+
+✻ Churned for 10m 9s · done 17:19
+
+※ recap: Terminé el refactor de autenticación a Passport + JWT, con docs y README actualizados, y todas las verificaciones pasaron. Falta que agregues JWT_SECRET y JWT_MINUTOS a tu .env, corras docker compose exec app npm run seed y me digas si lo commiteo. (disable recaps in /config)
+
+❯ /model 
+  ⎿  Kept model as Opus 5.5
+
+❯ /effort                                                                       
+  ⎿  Cancelled

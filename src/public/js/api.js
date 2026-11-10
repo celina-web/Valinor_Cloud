@@ -51,7 +51,7 @@ const crearBoton = (texto, clase, alHacerClick) => {
   const boton = document.createElement("button");
   boton.type = "button";
   boton.textContent = texto;
-  if (clase) boton.className = clase;
+  boton.className = ["btn btn-chico", clase].filter(Boolean).join(" ");
   boton.addEventListener("click", alHacerClick);
   return boton;
 };
@@ -66,7 +66,7 @@ const crearFila = (valores, acciones = []) => {
   });
   if (acciones !== null) {
     const celdaAcciones = document.createElement("td");
-    celdaAcciones.className = "acciones";
+    celdaAcciones.className = "whitespace-nowrap space-x-2";
     acciones.forEach((boton) => celdaAcciones.appendChild(boton));
     fila.appendChild(celdaAcciones);
   }

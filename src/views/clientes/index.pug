@@ -1,68 +1,41 @@
 extends ../layout
 
 block content
-  h1 Gestión de Clientes
+  +encabezado("Gestión de Clientes", "Alta, edición y baja de los clientes del centro.")
 
   if puede("clientes:create")
-    h2 Registrar Nuevo Cliente
-    .error#errorAlta(hidden)
-    form#formAlta
-      .form-group
-        label(for="nombre") Nombre *
-        input#nombre(type="text" name="nombre" required)
-      .form-group
-        label(for="apellido") Apellido *
-        input#apellido(type="text" name="apellido" required)
-      .form-group
-        label(for="dni") DNI *
-        input#dni(type="text" name="dni" inputmode="numeric" required)
-      .form-group
-        label(for="telefono") Teléfono
-        input#telefono(type="text" name="telefono")
-      .form-group
-        label(for="email") Email
-        input#email(type="email" name="email")
-      button(type="submit") Guardar Cliente
-    hr
+    +seccion("Registrar nuevo cliente")
+      +alerta("errorAlta")
+      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2")
+        +campo("nombre", "Nombre")(type="text" name="nombre" required)
+        +campo("apellido", "Apellido")(type="text" name="apellido" required)
+        +campo("dni", "DNI")(type="text" name="dni" inputmode="numeric" placeholder="7 u 8 dígitos" required)
+        +campo("telefono", "Teléfono")(type="text" name="telefono" inputmode="tel")
+        +campo("email", "Email", { contenedor: "lg:col-span-2" })(type="email" name="email")
+        +botonera
+          button.btn.btn-primario(type="submit")
+            +icono("mas")(class="size-4")
+            | Guardar Cliente
 
-  h2 Listado de Clientes
-  .error#errorListado(hidden)
-  table
-    thead
-      tr
-        th Nombre
-        th Apellido
-        th DNI
-        th Teléfono
-        th Email
-        th Acciones
-    tbody#tablaClientes
-  p#sinRegistros(hidden) No hay clientes registrados actualmente.
+  +seccion("Listado de clientes")
+    +alerta("errorListado")
+    +tabla(["Nombre", "Apellido", "DNI", "Teléfono", "Email", "Acciones"], "tablaClientes")
+    +vacio("sinRegistros", "No hay clientes registrados actualmente.")
 
-  .modal#modalEditar(hidden)
-    .modal-contenido
-      h3 Editar Cliente
-      .error#errorEdicion(hidden)
-      form#formEditar
-        input(type="hidden" name="_id")
-        .form-group
-          label(for="edit_nombre") Nombre *
-          input#edit_nombre(type="text" name="nombre" required)
-        .form-group
-          label(for="edit_apellido") Apellido *
-          input#edit_apellido(type="text" name="apellido" required)
-        .form-group
-          label(for="edit_dni") DNI *
-          input#edit_dni(type="text" name="dni" inputmode="numeric" required)
-        .form-group
-          label(for="edit_telefono") Teléfono
-          input#edit_telefono(type="text" name="telefono")
-        .form-group
-          label(for="edit_email") Email
-          input#edit_email(type="email" name="email")
-        .modal-botones
-          button(type="submit") Guardar Cambios
-          button.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+  +modal("modalEditar", "Editar Cliente")
+    +alerta("errorEdicion")
+    form#formEditar(class="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2")
+      input(type="hidden" name="_id")
+      +campo("edit_nombre", "Nombre")(type="text" name="nombre" required)
+      +campo("edit_apellido", "Apellido")(type="text" name="apellido" required)
+      +campo("edit_dni", "DNI")(type="text" name="dni" inputmode="numeric" required)
+      +campo("edit_telefono", "Teléfono")(type="text" name="telefono" inputmode="tel")
+      +campo("edit_email", "Email", { contenedor: "md:col-span-2" })(type="email" name="email")
+      +botonera
+        button.btn.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+        button.btn.btn-primario(type="submit")
+          +icono("guardar")(class="size-4")
+          | Guardar Cambios
 
 block scripts
   script(src="/js/clientes.js")

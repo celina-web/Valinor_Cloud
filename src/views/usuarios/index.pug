@@ -1,73 +1,47 @@
 extends ../layout
 
 mixin camposUsuario(prefijo, esEdicion)
-  .form-group
-    label(for=prefijo + "usuario") Usuario *
-    input(id=prefijo + "usuario" type="text" name="usuario" required)
-  .form-group
-    label(for=prefijo + "nombre") Nombre *
-    input(id=prefijo + "nombre" type="text" name="nombre" required)
-  .form-group
-    label(for=prefijo + "password")= esEdicion ? "Nueva contraseña (vacío = no cambia)" : "Contraseña *"
-    input(id=prefijo + "password" type="text" name="password" minlength="6" required=!esEdicion)
-  .form-group
-    label(for=prefijo + "rol") Rol *
-    select.select-rol(id=prefijo + "rol" name="rol")
-      each rol in roles
-        option(value=rol selected=rol === "profesional")= rol
-  .form-group
-    label(for=prefijo + "profesional") Profesional vinculado
-    select.select-profesional(id=prefijo + "profesional" name="profesional")
-      option(value="") Ninguno
-  .form-group
-    label(for=prefijo + "expiraEl") Vence el (opcional)
-    input(id=prefijo + "expiraEl" type="datetime-local" name="expiraEl")
+  +campo(prefijo + "usuario", "Usuario")(type="text" name="usuario" required)
+  +campo(prefijo + "nombre", "Nombre")(type="text" name="nombre" required)
+  +campo(prefijo + "password", esEdicion ? "Nueva contraseña (vacío = no cambia)" : "Contraseña")(type="text" name="password" minlength="6" required=!esEdicion)
+  +campoSelect(prefijo + "rol", "Rol")(class="select-rol" name="rol" required)
+    each rol in roles
+      option(value=rol selected=rol === "profesional")= rol
+  +campoSelect(prefijo + "profesional", "Profesional vinculado")(class="select-profesional" name="profesional")
+    option(value="") Ninguno
+  +campo(prefijo + "expiraEl", "Vence el (opcional)")(type="datetime-local" name="expiraEl")
   if esEdicion
-    .form-group.checkbox
-      label
-        input(type="checkbox" name="activo")
-        |  Activo
+    label(class="flex items-center gap-2 self-end py-2 text-sm font-medium text-gray-800")
+      input(type="checkbox" name="activo" class="size-4 rounded border-gray-300 accent-marca")
+      | Activo
 
 block content
-  h1 Gestión de Usuarios
+  +encabezado("Gestión de Usuarios", "Cuentas de acceso, roles y vencimientos.")
 
   if puede("usuarios:create")
-    h2 Crear Usuario
-    p.ayuda Por mínimo privilegio, el rol por defecto es "profesional".
-    .error#errorAlta(hidden)
-    form#formAlta
-      +camposUsuario("alta_", false)
-      button(type="submit") Crear Usuario
-    hr
+    +seccion("Crear usuario", 'Por mínimo privilegio, el rol por defecto es "profesional".')
+      +alerta("errorAlta")
+      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2")
+        +camposUsuario("alta_", false)
+        +botonera
+          button.btn.btn-primario(type="submit")
+            +icono("mas")(class="size-4")
+            | Crear Usuario
 
-  h2 Listado de Usuarios
-  .error#errorListado(hidden)
-  .tabla-scroll
-    table
-      thead
-        tr
-          th Usuario
-          th Nombre
-          th Rol
-          th Profesional
-          th Estado
-          th Vence
-          th Creado
-          th Modificado
-          th Último acceso
-          th Acciones
-      tbody#tablaUsuarios
+  +seccion("Listado de usuarios")
+    +alerta("errorListado")
+    +tabla(["Usuario", "Nombre", "Rol", "Profesional", "Estado", "Vence", "Creado", "Modificado", "Último acceso", "Acciones"], "tablaUsuarios")
 
-  .modal#modalEditar(hidden)
-    .modal-contenido
-      h3 Editar Usuario
-      .error#errorEdicion(hidden)
-      form#formEditar
-        input(type="hidden" name="_id")
-        +camposUsuario("edit_", true)
-        .modal-botones
-          button(type="submit") Guardar Cambios
-          button.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+  +modal("modalEditar", "Editar Usuario")
+    +alerta("errorEdicion")
+    form#formEditar(class="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2")
+      input(type="hidden" name="_id")
+      +camposUsuario("edit_", true)
+      +botonera
+        button.btn.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+        button.btn.btn-primario(type="submit")
+          +icono("guardar")(class="size-4")
+          | Guardar Cambios
 
 block scripts
   script(src="/js/usuarios.js")

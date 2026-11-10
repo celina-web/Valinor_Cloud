@@ -30,9 +30,9 @@ const sincronizarProfesional = (formulario) => {
 
 const estadoDe = (usuario) => {
   const vencido = usuario.expiraEl && new Date(usuario.expiraEl) <= new Date();
-  if (!usuario.activo) return crearEtiqueta("inactivo", "estado-cancelado");
-  if (vencido) return crearEtiqueta("vencido", "estado-cancelado");
-  return crearEtiqueta("activo", "estado-atendido");
+  if (!usuario.activo) return crearEtiqueta("inactivo", "etiqueta-peligro");
+  if (vencido) return crearEtiqueta("vencido", "etiqueta-peligro");
+  return crearEtiqueta("activo", "etiqueta-exito");
 };
 
 const abrirEdicion = (usuario) => {

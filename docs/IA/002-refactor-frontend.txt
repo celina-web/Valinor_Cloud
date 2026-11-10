@@ -1,0 +1,1922 @@
+ ▐▛███▛█   Claude Code v2.1.319
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~/Code/Valinor_Cloud
+
+
+❯ /clear                                                                        
+
+❯ /context 
+  ⎿  Context Usage
+     ⛀ ⛁ ⛁ ⛁ ⛁ ⛀ ⛀ ⛀ ⛁ ⛀ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Opus 5.5
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   31.7k/1m tokens (3%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ 
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Estimated usage by category
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System prompt: 3.3k tokens (0.3%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System tools: 19.2k tokens (1.9%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ MCP tools: 661 tokens (0.1%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ MCP server instructions: 717 tokens (0.1%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛁ Memory files: 1.9k tokens (0.2%)
+                                               ⛁ Skills: 5.7k tokens (0.6%)
+                                               ⛁ Messages: 130 tokens (0.0%)
+                                               ⛶ Free space: 935.3k (93.5%)
+                                               ⛝ Autocompact buffer: 33k tokens (3.3%)
+
+     Auto-compact window: 1m tokens
+
+     MCP tools · /mcp (loaded on-demand)
+     └ 8 tools · 661 tokens
+
+     Memory files · /memory
+     └ 1 file · 1.9k tokens
+
+     Skills · /skills
+     └ 29 skills · 5.7k tokens
+
+     /context all to expand
+
+❯ /resume 
+  ⎿  Resume cancelled
+
+❯ /model                                                                        
+  ⎿  Set model to Opus 5.5 (default) and saved as your default for new sessions
+
+❯ /plugin                                                                       
+
+❯ Bien, ahora quiero implementar cambios directamente en el frontend (las       
+  vistas pug) de la aplicación. Lo primero que tenemos que hacer es implementar 
+  tailwind 4 a través de su CDN, y los estilos de tailwind tienen que aplicar   
+  a todas las vistas. Con respecto a la paleta de colores, para el manejo de    
+  los turnos quiero utilizar los siguientes colores:                            
+  • Verde Oliva Intenso (#4F772D): Presente / En sala de espera. El cliente ya  
+  llegó al centro y está listo para entrar.                                     
+  • Amarillo Mostaza (#E29578 o #E9C46A): Pendiente de confirmación / Reserva   
+  Online. Entró un turno por la web o WhatsApp y el staff tiene que             
+  confirmarlo.                                                                  
+  • Azul Cobalto (#1D3557): Seña pagada / Confirmado. El turno está asegurado y 
+  el cliente reconfirmó asistencia.                                             
+  • Terracota o Coral (#E63946 o #CD5A5A): Cancelado / Ausente sin aviso        
+  (No-show). Resalta rápido para que la recepcionista sepa que tiene ese bache  
+  libre para ofrecerlo a una urgencia.                                          
+  • Gris Claro (#E5E5E5): Turno Finalizado. Ya tomó la clase o el masaje, se le 
+  cobró y el turno queda "archivado" visualmente en el día.                     
+  Con respecto a los colores de la  aplicación:                                 
+  1. Fondo neutro: El fondo general del software (detrás del calendario) debe   
+  ser gris muy claro (#F8F9FA). Si ponés un fondo de color, competiría con los  
+  turnos y causaría fatiga visual.                                              
+  2. Contraste accesible: Asegurate de que el texto de los nombres de los       
+  clientes dentro de cada bloque sea oscuro (nunca uses texto blanco sobre      
+  fondos pastel porque no se lee nada).                                         
+  Con respecto a la aplicación y su diseño:                                     
+  1. Utiliza siempre que se pueda componentes, clases y estilos de tailwind. No 
+  generes CSS que pueda trabajarse desde las mismas clases de tailwind. Solo    
+  agregá CSS en el archivo de estilos cuando algo no pueda realizarse a través  
+  de tailwind.                                                                  
+  2. Mejora el estilo visual de la aplicación: en la nabvar quiero el nombre de 
+  la empresa del lado izquierdo con un icono que represente alguo relacionado   
+  a esto (turnoflex) y del lado derecho quiero el icono con las iniciales del   
+  usuario que se encuentra conectado. Al hacer click sobre ese ícono, se debe   
+  abrir un menu flotante con la información del usuario y un botón para cerrar  
+  la sesión                                                                     
+  3. Los menús que permiten acceder a los módulos de la aplicación deben estar  
+  en una sidebar del lado izquierdo con el tipico menú hamburguesa para poder   
+  expandir y contraer dicha sidebar. Tanto esta sidebar como el navbar deben    
+  tener un color en tono pastel que contraste con el fondo.                     
+  4. Por debajo quiero un footer que presente un color 2 tonos más arriba que   
+  el que utilizamos para el fondo de la aplicación. Del lado izquierdo del      
+  mismo debe decir: año en curso (calculado, para que cambie cuando cambia el   
+  año), separador, Turnoflex Sistema de Turnos, separador, Desarrollado por     
+  Valinor Cloud.                                                                
+  5. En la pantalla de login, el formulario tiene que estar dentro de un        
+  contenedor con borde redondeado y por encima de Turnoflex debe estar de       
+  manera centrada el mismo icono que usamos en el navbar.                       
+  6. Todos los formularios que se encuentren en las vistas para dar de alta una 
+  entidad (turno, profesional, cliente, usuario) deben mostrarse a 2 columnas   
+  cuando la aplicación se muestre en modo desktop (max de los formularios       
+  1440px)                                                                       
+  7. Toda la aplicación debe ser responsive teniendo en cuenta los siguientes   
+  breackpoints:                                                                 
+  • Celulares (Móviles): 320px a 480px (o hasta 640px para móviles grandes).    
+  • Tablets: 768px (estándar para iPads y tablets en vertical u horizontal).    
+  • Portátiles / Pantallas pequeñas: 1024px.                                    
+  • Escritorio (Desktop): 1280px o más                                          
+  8. Mejora también la vista de error para que solamente muestre el nombre de   
+  la aplicación con el icono de manera centrada, elmismo icono que utilizamos   
+  con anterioridad un boton que permita volver al inicio de la aplicación       
+  (dashboard principal) y el footer                                             
+                                                                                
+  Estamos trabajando con plantillas pug, si es posible utilizar el skill        
+  frontend-design para mejorar el plan, utilizalo. Pero tenés que hacer la      
+  salvedad de que todo lo generado tiene que estar en código de plantilla pug.  
+  Todas las vistas se encuentran en la ubicación @src/views/                    
+  ⎿  Listed directory src/views/
+
+  Searched for 1 pattern, ran 3 shell commands (ctrl+o to expand)
+
+● User answered Claude's questions:
+  ⎿  · El modelo Turno hoy solo tiene 3 estados (reservado, atendido, 
+     cancelado), pero la paleta define 5 (presente, pendiente, confirmado, 
+     cancelado/no-show, finalizado). ¿Cómo lo manejamos? → Mapear solo frontend 
+     (Recomendado)
+     · ¿Qué tono pastel usamos para navbar y sidebar (fondo general #F8F9FA)? → 
+     Lavanda pastel
+     · En desktop, al contraer la sidebar con el menú hamburguesa, ¿qué 
+     preferís? → Riel de íconos (Recomendado)
+
+● Updated plan
+  ⎿  /plan to preview
+
+● User approved Claude's plan
+  ⎿  Plan saved to: 
+     ~/.claude/plans/bien-ahora-quiero-implementar-noble-hellman.md · /plan to 
+     edit
+     Rediseño del frontend de TurnoFlex con Tailwind 4 (CDN) en Pug
+
+     Contexto
+
+     Las vistas Pug (src/views/) hoy usan un estilos.css genérico (nav azul,
+     tablas con bordes, sin responsive real). Se pide:
+     Tailwind 4 por CDN en todas las vistas, paleta de estados de turnos, fondo
+     neutro #F8F9FA, navbar + sidebar colapsable en tono pastel,
+     menú de usuario con iniciales, footer, login en tarjeta con logo,
+     formularios de alta a 2 columnas en desktop (máx. 1440px),
+     responsive (320 / 640 / 768 / 1024 / 1280) y una página de error mínima.
+     Todo en plantillas Pug y en español rioplatense.
+
+     Decisiones tomadas con el usuario:
+     - Estados: solo frontend, sin tocar el modelo. reservado → Azul cobalto
+       (confirmado), atendido → Gris claro (finalizado),
+       cancelado → Coral. Presente (oliva) y Pendiente (mostaza) quedan como
+       tokens del tema para uso futuro.
+     - Pastel de navbar/sidebar: Lavanda (#E6E3F3) con texto índigo oscuro.
+     - Sidebar en desktop: al contraer queda un riel de íconos (~72px) con
+       tooltip; en móvil/tablet es un drawer con overlay.
+     - Variantes elegidas de la paleta: mostaza #E9C46A y coral #E63946.
+
+     Nota: la skill frontend-design no está instalada en esta sesión; aplico sus
+     criterios a mano (jerarquía clara, espaciado
+     consistente, tokens de color, accesibilidad, estados de foco), siempre como
+     código Pug + clases Tailwind.
+
+     Enfoque
+
+     1. Tailwind 4 por CDN + tema (una sola fuente de verdad)
+
+     - Script en el <head>:
+       https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11 (versión exacta
+       fija).
+       El build de navegador observa el DOM, así que también estiliza
+       filas/botones que crea el JS.
+     - src/views/includes/tema.pug: un style(type="text/tailwindcss") con:
+       - @theme: --color-fondo: #F8F9FA, --color-pie: #DEE2E6 (dos tonos arriba
+         del fondo en la escala de grises),
+         lavanda --color-lavanda-50/100/200/300 (#F3F1FA, #E6E3F3, #D4CFEA,
+         #BEB6DE), --color-indigo-profundo: #2E2A5A (texto),
+         --color-marca: #4C3F91 (logo, foco), y estados --color-turno-presente 
+         #4F772D, -pendiente #E9C46A,
+         -confirmado #1D3557, -cancelado #E63946, -finalizado #E5E5E5. Fuente
+         Inter (Google Fonts) con fallback de sistema.
+       - Breakpoints: los defaults de Tailwind 4 coinciden exactamente con los
+         pedidos (sm 640, md 768, lg 1024, xl 1280); base = 320–639.
+       - @custom-variant colapsada (&:where([data-sidebar="colapsada"] *)) y
+         @custom-variant drawer-abierto (&:where([data-drawer="abierto"] *)).
+       - @layer components con @apply solo para lo que comparten Pug y el JS del
+         navegador (así el JS existente casi no cambia):
+         .btn, .btn-chico, .btn-primario (cobalto, texto blanco: contraste
+         alto), .btn-secundario (blanco + ring gris),
+         .btn-editar (mostaza, texto oscuro), .btn-atender (oliva, texto
+         blanco), .btn-cancelar/.btn-danger
+         (coral suave con texto rojo oscuro, nunca blanco sobre coral),
+         .etiqueta (pill con punto de color),
+         .estado-reservado|atendido|cancelado (+ presente|pendiente futuros),
+         .etiqueta-exito|peligro|info|neutra (usuarios/auditoría),
+         .fila-reservado|atendido|cancelado (franja izquierda vía
+         [&>td:first-child]:shadow-[inset_4px_0_0_...]; cancelado con tinte
+         coral
+         para que el bache resalte, atendido atenuado = "archivado"). Texto de
+         nombres siempre text-gray-900/oscuro.
+     - src/public/estilos.css: todas sus reglas son reproducibles con Tailwind
+       (el preflight ya trae [hidden]{display:none!important}),
+       así que se elimina el archivo y su link. Si al implementar aparece algo
+       no resoluble con Tailwind, va ahí.
+
+     2. Estructura de plantillas
+
+     - src/views/layouts/base.pug (nuevo): doctype, head (meta, block titulo,
+       Tailwind, fuente, include ../includes/tema,
+       script inline anti-parpadeo que lee localStorage con try/catch y setea
+       data-sidebar), body.min-h-dvh.flex.flex-col.bg-fondo.text-gray-900
+       con los data-* actuales, block cuerpo, footer, script(src="/js/api.js"),
+       block scripts.
+     - src/views/layout.pug (se reescribe, mismo nombre → las vistas de módulos
+       siguen con extends ../layout): extiende base y arma el shell:
+       navbar sticky + fila flex flex-1 con sidebar y
+       main.flex-1.min-w-0.p-4.md:p-6.xl:p-8 > .mx-auto.max-w-[1440px] → block 
+       content.
+       Carga /js/layout.js.
+     - src/views/includes/mixins.pug (nuevo, incluido en base): +logo(tamaño),
+       +icono(nombre, clases) (SVG inline estilo Lucide:
+       calendario, inicio, usuarios, maletín, escudo, portapapeles, menú, salir,
+       etc.), +seccion(titulo, descripcion) (tarjeta blanca
+       rounded-2xl border shadow-sm), +campo(id, etiqueta, attrs),
+       +campoSelect(...), +alerta(id) (div hidden role="alert" coral suave),
+       +tabla(columnas, idTbody) (contenedor overflow-x-auto rounded-xl border 
+       bg-white, estilos de th/td con [&_th]: / [&_td]:),
+       +modal(id, titulo), +formularioAlta (grid grid-cols-1 lg:grid-cols-2 
+       gap-x-6 gap-y-4, fila de botones lg:col-span-2 flex justify-end).
+     - src/views/includes/navbar.pug, sidebar.pug, footer.pug (nuevos).
+
+     3. Navbar
+
+     - header.sticky.top-0.z-40.h-16.bg-lavanda-100.border-b.border-lavanda-200.
+     - Izquierda: botón hamburguesa #btnSidebar (aria-controls/expanded) + +logo
+       (ícono calendario-con-check en baldosa bg-marca blanca) + "TurnoFlex".
+     - Derecha: botón avatar #btnMenuUsuario con iniciales calculadas en Pug
+       desde usuario.nombre (1–2 letras, mayúsculas).
+       Menú flotante #menuUsuario (hidden, absolute right-0 mt-2 w-64 rounded-xl
+       bg-white shadow-lg ring-1): nombre, @usuario,
+       etiqueta de rol, separador y botón "Cerrar sesión" con id="btnLogout"
+       (reutiliza el handler existente en src/public/js/api.js).
+
+     4. Sidebar
+
+     - Ítems con ícono, respetando puede(...) como hoy: Inicio, Turnos,
+       Clientes, Profesionales; sección "Administración": Usuarios, Auditoría.
+     - Ítem activo: aria-current="page" + resaltado (bg-white/70 font-semibold).
+       Para saberlo en Pug se agrega en src/index.js
+       un middleware de una línea antes de vistasRoutes: res.locals.rutaActual =
+       req.path.
+     - < lg: drawer fixed inset-y-0 left-0 w-64 -translate-x-full 
+       drawer-abierto:translate-x-0 + overlay bg-black/30; cierra con overlay,
+       Escape o click en link.
+     - ≥ lg: lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:translate-x-0 
+       lg:w-64 lg:colapsada:w-18; las etiquetas pasan a lg:colapsada:sr-only y
+       cada link lleva title.
+     - Mismo fondo lavanda que la navbar, borde border-lavanda-200.
+
+     5. src/public/js/layout.js (nuevo, vanilla)
+
+     Toggle de hamburguesa según matchMedia("(min-width: 64rem)") (desktop:
+     alterna data-sidebar y lo persiste en localStorage
+     con try/catch; móvil: alterna data-drawer), apertura/cierre del menú de
+     usuario (click afuera, Escape, aria-expanded).
+
+     6. Footer (includes/footer.pug, en base → aparece en todas las vistas, 
+     incluso login y error)
+
+     footer.bg-pie.text-sm.text-gray-700 con flex flex-wrap gap-x-2 alineado a
+     la izquierda:
+     #{new Date().getFullYear()} · TurnoFlex Sistema de Turnos · Desarrollado
+     por Valinor Cloud (separadores aria-hidden).
+     El año se calcula en cada render del servidor, así cambia solo.
+
+     7. Vistas
+
+     - login.pug: extiende base (sin shell). Centrado vertical; tarjeta w-full 
+       max-w-sm rounded-2xl border bg-white p-8 shadow-sm;
+       +logo grande centrado arriba de "TurnoFlex", subtítulo, campos y botón
+       primario a ancho completo. Mantiene #formLogin, #errorLogin, ids
+       usuario/password.
+     - error.pug: extiende base. Solo logo centrado + "TurnoFlex" + botón
+       "Volver al inicio" (href="/") + footer. titulo se usa en el <title> de la
+       pestaña
+       (no se muestra en página, como pediste; si después querés un texto chico
+       con el motivo, es una línea).
+     - home.pug: saludo + etiqueta de rol; 3 tarjetas de resumen (grid 
+       grid-cols-1 sm:grid-cols-3) con franja/ícono del color de estado
+       (Reservados cobalto, Atendidos gris, Cancelados coral); tabla de turnos
+       de hoy con +tabla.
+     - turnos, clientes, profesionales, usuarios: formulario de alta dentro de
+       +seccion usando +formularioAlta (2 columnas desde lg, 1024px;
+       contenedor max-w-[1440px]); listado en otra +seccion con +tabla; filtros
+       grid grid-cols-1 sm:flex sm:flex-wrap sm:items-end gap-3.
+       Modales de edición con +modal (max-w-2xl, campos md:grid-cols-2) por
+       consistencia.
+     - auditoria: filtros y tabla con los mismos mixins.
+     - Se conservan todos los ids/names/clases que usa el JS: formAlta,
+       formEditar, errorAlta|Listado|Edicion|Turnos|Auditoria,
+       modalEditar, .btn-cerrar-modal, tabla*, sinRegistros, sinTurnos,
+       formFiltros, btnLimpiarFiltros, cantidad*,
+       .select-rol, .select-profesional, name="activo", btnLogout.
+
+     8. Ajustes mínimos en JS del navegador
+
+     - src/public/js/api.js: crearBoton antepone btn btn-chico; la celda de
+       acciones de crearFila pasa de acciones a whitespace-nowrap space-x-2.
+     - src/public/js/turnosTabla.js: agrega fila-${turno.estado} a la fila;
+       nombre de cliente con texto oscuro.
+     - src/public/js/usuarios.js (estadoDe) y src/public/js/auditoria.js
+       (claseDeAccion): usan etiqueta-exito|peligro|info
+       en lugar de reutilizar estado-* (que queda reservado a turnos).
+
+     9. Documentación
+
+     Agregar en CLAUDE.md (Arquitectura) un bullet: Tailwind 4 por CDN,
+     tema/componentes en src/views/includes/tema.pug,
+     mixins en includes/mixins.pug, layouts/base.pug vs layout.pug. No se toca
+     README.md (tiene cambios tuyos sin commitear).
+
+     Archivos
+
+     Nuevos: src/views/layouts/base.pug,
+     src/views/includes/{tema,mixins,navbar,sidebar,footer}.pug,
+     src/public/js/layout.js.
+     Reescritos: src/views/{layout,login,error,home}.pug,
+     src/views/{turnos,clientes,profesionales,usuarios,auditoria}/index.pug.
+     Editados: src/public/js/{api,turnosTabla,usuarios,auditoria}.js,
+     src/index.js (1 línea), CLAUDE.md.
+     Eliminado: src/public/estilos.css.
+
+     Verificación
+
+     1. docker compose up --build -V (o npm run dev con Mongo local) y docker 
+        compose exec app npm run seed.
+     2. Login con admin/admin123, un usuario de recepción y uno profesional:
+        verificar que el sidebar muestra solo los módulos permitidos y el ítem
+        activo.
+     3. En DevTools (modo responsive) a 320, 375, 640, 768, 1024, 1280 y 1440px:
+        sin scroll horizontal de página (tablas scrollean en su contenedor),
+        drawer en móvil/tablet, riel de íconos en desktop y estado persistido al
+        recargar, formularios a 2 columnas desde 1024px.
+     4. Menú de usuario: iniciales correctas, abre/cierra (click afuera,
+        Escape), "Cerrar sesión" desloguea y redirige a /login.
+     5. CRUD funcional sin regresiones: alta/edición/baja de clientes,
+        profesionales, usuarios; reservar, atender, cancelar y eliminar turnos
+        (badges y franjas de color correctos en las filas generadas por JS);
+        filtros de turnos y auditoría.
+     6. /una-ruta-que-no-existe (404) y, como profesional, /usuarios (403):
+        página de error mínima con logo, botón y footer.
+     7. Footer con el año actual en todas las vistas; consola del navegador sin
+        errores.
+
+❯ Quiero que ejecutes el plan y que cuando lo termines generes en /docs un      
+  documento refactor-frontend.md con el detalle de todos los cambios            
+  realizados.                                                                   
+
+  Ran 5 shell commands (ctrl+o to expand)
+
+● Arranco con la implementación: primero el tema de Tailwind y los mixins,
+  después layout, vistas y JS.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(src/views/includes/tema.pug)
+  ⎿  Wrote 92 lines to src/views/includes/tema.pug
+       1 //- Configuración de Tailwind 4 (build de navegador). Única fuen
+         te de verdad de la paleta.
+       2 //- Las clases de @layer components son solo las que comparten l
+         as vistas Pug y el JS del
+       3 //- navegador (botones, etiquetas y filas que se crean dinámicam
+         ente); el resto son utilidades.
+       4 style(type="text/tailwindcss").
+       5   @theme {
+       6     --font-sans: "Inter", ui-sans-serif, system-ui, -apple-syste
+         m, "Segoe UI", Roboto, sans-serif;
+     … +86 lines (ctrl+o to expand)
+
+● Write(src/views/includes/mixins.pug)
+  ⎿  Wrote 128 lines to src/views/includes/mixins.pug
+      1 //- Componentes reutilizables de las vistas. Todo el estilo es co
+        n clases de Tailwind.
+      2 
+      3 //- Íconos SVG inline (trazos estilo Lucide, 24x24).
+      4 -
+      5   const iconos = {
+      6     calendario: ["M8 2v4", "M16 2v4", "M5 4h14a2 2 0 0 1 2 2v14a2
+         2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", "M3 10h18", "m9 1
+        6 2 2 4-4"],
+      7     inicio: ["M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8", "M3 10
+     … +122 lines (~7 KB) (ctrl+o to expand)
+
+● Write(src/views/layouts/base.pug)
+  ⎿  Wrote 32 lines to src/views/layouts/base.pug
+       1 include ../includes/mixins
+       2 
+       3 doctype html
+       4 html(lang="es")
+       5   head
+       6     meta(charset="UTF-8")
+       7     meta(name="viewport" content="width=device-width, initial-sc
+         ale=1.0")
+       8     title
+       9       block titulo
+     … +23 lines (ctrl+o to expand)
+
+● Write(src/views/includes/footer.pug)
+  ⎿  Wrote 8 lines to src/views/includes/footer.pug
+      1 //- El año se calcula en cada render del servidor, así cambia sol
+        o con el año en curso.
+      2 footer(class="border-t border-gray-300 bg-pie")
+      3   div(class="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-
+        4 text-sm text-gray-700 md:px-6 xl:px-8")
+      4     span= new Date().getFullYear()
+      5     span(class="text-gray-400" aria-hidden="true") |
+      6     span TurnoFlex Sistema de Turnos
+      7     span(class="text-gray-400" aria-hidden="true") |
+      8     span Desarrollado por Valinor Cloud
+
+● Write(src/views/includes/navbar.pug)
+  ⎿  Wrote 42 lines to src/views/includes/navbar.pug
+       1 -
+       2   const partesNombre = String(usuario.nombre || usuario.usuario 
+         || "").trim().split(/\s+/).filter(Boolean);
+       3   const iniciales = (partesNombre.length > 1
+       4     ? partesNombre[0][0] + partesNombre[partesNombre.length - 1]
+         [0]
+       5     : (partesNombre[0] || "?").slice(0, 2)
+       6   ).toUpperCase();
+       7 
+       8 header(class="sticky top-0 z-40 flex h-16 shrink-0 items-center 
+     … +35 lines (~2 KB) (ctrl+o to expand)
+
+● Write(src/views/includes/sidebar.pug)
+  ⎿  Wrote 37 lines to src/views/includes/sidebar.pug
+       1 -
+       2   const ruta = rutaActual || "";
+       3   const esActivo = (href) => (href === "/" ? ruta === "/" : ruta
+          === href || ruta.startsWith(href + "/"));
+       4   const modulos = [
+       5     { href: "/turnos", texto: "Turnos", icono: "calendario", per
+         miso: "turnos:read" },
+       6     { href: "/clientes", texto: "Clientes", icono: "clientes", p
+         ermiso: "clientes:read" },
+       7     { href: "/profesionales", texto: "Profesionales", icono: "pr
+     … +31 lines (~2 KB) (ctrl+o to expand)
+
+● Write(src/views/layout.pug)
+  ⎿  Added 12 lines, removed 33 lines
+       1 -doctype html                                                   
+       2 -html(lang="es")                                                
+       3 -  head                                                         
+       4 -    meta(charset="UTF-8")                                      
+       5 -    meta(name="viewport", content="width=device-width, initial-
+         -scale=1.0")                                                    
+       6 -    title TurnoFlex - Sistema de Gestión de Turnos             
+       7 -    link(rel="stylesheet", href="/estilos.css")                
+       8 -  body(                                                        
+       9 -    data-rol=usuario ? usuario.rol : false                     
+      10 -    data-usuario-id=usuario ? String(usuario._id) : false      
+      11 -    data-permisos=usuario ? JSON.stringify(permisos) : false   
+      12 -  )                                                            
+      13 -    if usuario                                                 
+      14 -      nav                                                      
+      15 -        .nav-links                                             
+      16 -          a(href="/") Inicio                                   
+      17 -          if puede("clientes:read")                            
+      18 -            a(href="/clientes") Clientes                       
+      19 -          if puede("profesionales:read")                       
+      20 -            a(href="/profesionales") Profesionales             
+      21 -          if puede("turnos:read")                              
+      22 -            a(href="/turnos") Turnos                           
+      23 -          if puede("usuarios:read")                            
+      24 -            a(href="/usuarios") Usuarios                       
+      25 -          if puede("auditoria:read")                           
+      26 -            a(href="/auditoria") Auditoría                     
+      27 -        .nav-usuario                                           
+      28 -          span #{usuario.nombre} (#{usuario.rol})              
+      29 -          button#btnLogout.btn-secundario(type="button") Salir 
+      30 -    .container                                                 
+      31 -      block content                                            
+      32 -    script(src="/js/api.js")                                   
+      33 -    block scripts                                              
+       1 +//- Shell de la aplicación para usuarios logueados: navbar + si
+         +debar + contenido.                                             
+       2 +//- Login y error extienden directamente layouts/base (sin shel
+         +l).                                                            
+       3 +extends layouts/base                                           
+       4 +                                                               
+       5 +block cuerpo                                                   
+       6 +  include includes/navbar                                      
+       7 +  div(class="flex flex-1")                                     
+       8 +    include includes/sidebar                                   
+       9 +    main(class="min-w-0 flex-1 p-4 md:p-6 xl:p-8")             
+      10 +      div(class="mx-auto flex max-w-[1440px] flex-col gap-6")  
+      11 +        block content                                          
+      12 +  script(src="/js/layout.js")                                  
+● Write(src/public/js/layout.js)
+  ⎿  Wrote 111 lines to src/public/js/layout.js
+       1 // Comportamiento del shell: sidebar (riel colapsable en desktop
+         , drawer en móvil/tablet)
+       2 // y menú flotante del usuario. Va en una IIFE para no chocar co
+         n las globales de api.js.
+       3 (() => {
+       4   const raiz = document.documentElement;
+       5   const botonSidebar = document.getElementById("btnSidebar");
+       6   const botonCerrarSidebar = document.getElementById("btnCerrarS
+         idebar");
+       7   const sidebar = document.getElementById("sidebar");
+     … +104 lines (ctrl+o to expand)
+
+● Write(src/views/login.pug)
+  ⎿  Added 16 lines, removed 14 lines
+       1 -extends layout                                                 
+       1 +extends layouts/base                                           
+       2  
+       3 -block content                                                  
+       4 -  .login                                                       
+       5 -    h1 TurnoFlex                                               
+       6 -    p Ingresá con tu usuario para continuar.                   
+       7 -    .error#errorLogin(hidden)                                  
+       8 -    form#formLogin                                             
+       9 -      .form-group                                              
+      10 -        label(for="usuario") Usuario                           
+      11 -        input#usuario(type="text" name="usuario" autocomplete="
+         -username" required autofocus)                                  
+      12 -      .form-group                                              
+      13 -        label(for="password") Contraseña                       
+      14 -        input#password(type="password" name="password" autocomp
+         -lete="current-password" required)                              
+      15 -      button(type="submit") Ingresar                           
+       3 +block titulo                                                   
+       4 +  | Ingresar · TurnoFlex                                       
+       5  
+       6 +block cuerpo                                                   
+       7 +  main(class="flex flex-1 items-center justify-center px-4 py-1
+         +0 sm:py-16")                                                   
+       8 +    div(class="w-full max-w-sm rounded-2xl border border-gray-2
+         +00 bg-white p-6 shadow-sm sm:p-8")                             
+       9 +      div(class="mb-6 flex flex-col items-center text-center") 
+      10 +        +logo("grande")                                        
+      11 +        h1(class="mt-4 text-2xl font-bold tracking-tight text-i
+         +ndigo-profundo") TurnoFlex                                     
+      12 +        p(class="mt-1 text-sm text-gray-600") Ingresá con tu us
+         +uario para continuar.                                          
+      13 +      +alerta("errorLogin")                                    
+      14 +      form#formLogin(class="flex flex-col gap-4")              
+      15 +        +campo("usuario", "Usuario", { sinMarca: true })(type="
+         +text" name="usuario" autocomplete="username" required autofocus
+         +)                                                              
+      16 +        +campo("password", "Contraseña", { sinMarca: true })(ty
+         +pe="password" name="password" autocomplete="current-password" r
+         +equired)                                                       
+      17 +        button.btn.btn-primario(type="submit" class="mt-2 w-ful
+         +l py-2.5") Ingresar                                            
+      18 +                                                               
+      19  block scripts
+      20    script(src="/js/login.js")
+
+● Write(src/views/error.pug)
+  ⎿  Added 14 lines, removed 5 lines
+       1 -extends layout                                                 
+       1 +extends layouts/base                                           
+       2  
+       3 -block content                                                  
+       4 -  h1= titulo                                                   
+       5 -  p= mensaje                                                   
+       6 -  a(href="/") Volver al inicio                                 
+       3 +block titulo                                                   
+       4 +  | #{titulo || "Error"} · TurnoFlex                           
+       5 +                                                               
+       6 +block cuerpo                                                   
+       7 +  main(class="flex flex-1 flex-col items-center justify-center 
+         +gap-8 px-4 py-16 text-center")                                 
+       8 +    div(class="flex flex-col items-center gap-4")              
+       9 +      +logo("grande")                                          
+      10 +      h1(class="text-3xl font-bold tracking-tight text-indigo-p
+         +rofundo") TurnoFlex                                            
+      11 +      //- El motivo queda disponible para lectores de pantalla,
+         + sin mostrarse en la página.                                   
+      12 +      p(class="sr-only") #{titulo}. #{mensaje}                 
+      13 +    a.btn.btn-primario(href="/" class="px-5 py-2.5")           
+      14 +      +icono("inicio")(class="size-4")                         
+      15 +      | Volver al inicio                                       
+
+● Write(src/views/home.pug)
+  ⎿  Added 16 lines, removed 29 lines
+       1  extends layout
+       2  
+       3  block content
+       4 -  h1 Hola, #{usuario.nombre}                                   
+       5 -  p                                                            
+       6 -    | Rol:                                                     
+       7 -    strong= usuario.rol                                        
+       8 -    if usuario.rol === "profesional"                           
+       9 -      |  - Ves únicamente tus propios turnos.                  
+       4 +  +encabezado("Hola, " + usuario.nombre)                       
+       5 +    p(class="flex flex-wrap items-center gap-2 text-sm text-gra
+         +y-600")                                                        
+       6 +      span Rol:                                                
+       7 +      span.etiqueta.etiqueta-info= usuario.rol                 
+       8 +      if usuario.rol === "profesional"                         
+       9 +        span Ves únicamente tus propios turnos.                
+      10  
+      11 -  h2 Turnos de hoy                                             
+      12 -  .resumen                                                     
+      13 -    .tarjeta                                                   
+      14 -      span.numero#cantidadReservados 0                         
+      15 -      span Reservados                                          
+      16 -    .tarjeta                                                   
+      17 -      span.numero#cantidadAtendidos 0                          
+      18 -      span Atendidos                                           
+      19 -    .tarjeta                                                   
+      20 -      span.numero#cantidadCancelados 0                         
+      21 -      span Cancelados                                          
+      11 +  section(aria-labelledby="tituloResumen")                     
+      12 +    h2#tituloResumen(class="mb-3 text-lg font-semibold text-gra
+         +y-900") Turnos de hoy                                          
+      13 +    div(class="grid grid-cols-1 gap-4 sm:grid-cols-3")         
+      14 +      +tarjetaResumen("cantidadReservados", "Reservados", "relo
+         +j", "confirmado")                                              
+      15 +      +tarjetaResumen("cantidadAtendidos", "Atendidos", "atendi
+         +do", "finalizado")                                             
+      16 +      +tarjetaResumen("cantidadCancelados", "Cancelados", "canc
+         +elado", "cancelado")                                           
+      17  
+      23 -  .error#errorTurnos(hidden)                                   
+      24 -  table                                                        
+      25 -    thead                                                      
+      26 -      tr                                                       
+      27 -        th Fecha                                               
+      28 -        th Hora                                                
+      29 -        th Cliente                                             
+      30 -        th Profesional                                         
+      31 -        th Estado                                              
+      32 -        th Acciones                                            
+      33 -    tbody#tablaTurnos                                          
+      34 -  p#sinTurnos(hidden) No hay turnos para hoy.                  
+      18 +  +seccion("Agenda del día")                                   
+      19 +    +alerta("errorTurnos")                                     
+      20 +    +tabla(["Fecha", "Hora", "Cliente", "Profesional", "Estado"
+         +, "Acciones"], "tablaTurnos")                                  
+      21 +    +vacio("sinTurnos", "No hay turnos para hoy.")             
+      22  
+      23  block scripts
+      24    script(src="/js/turnosTabla.js")
+
+● Write(src/views/clientes/index.pug)
+  ⎿  Added 31 lines, removed 58 lines
+       1  extends ../layout
+       2  
+       3  block content
+       4 -  h1 Gestión de Clientes                                       
+       4 +  +encabezado("Gestión de Clientes", "Alta, edición y baja de l
+         +os clientes del centro.")                                      
+       5  
+       6    if puede("clientes:create")
+       7 -    h2 Registrar Nuevo Cliente                                 
+       8 -    .error#errorAlta(hidden)                                   
+       9 -    form#formAlta                                              
+      10 -      .form-group                                              
+      11 -        label(for="nombre") Nombre *                           
+      12 -        input#nombre(type="text" name="nombre" required)       
+      13 -      .form-group                                              
+      14 -        label(for="apellido") Apellido *                       
+      15 -        input#apellido(type="text" name="apellido" required)   
+      16 -      .form-group                                              
+      17 -        label(for="dni") DNI *                                 
+      18 -        input#dni(type="text" name="dni" inputmode="numeric" re
+         -quired)                                                        
+      19 -      .form-group                                              
+      20 -        label(for="telefono") Teléfono                         
+      21 -        input#telefono(type="text" name="telefono")            
+      22 -      .form-group                                              
+      23 -        label(for="email") Email                               
+      24 -        input#email(type="email" name="email")                 
+      25 -      button(type="submit") Guardar Cliente                    
+      26 -    hr                                                         
+       7 +    +seccion("Registrar nuevo cliente")                        
+       8 +      +alerta("errorAlta")                                     
+       9 +      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:
+         +grid-cols-2")                                                  
+      10 +        +campo("nombre", "Nombre")(type="text" name="nombre" re
+         +quired)                                                        
+      11 +        +campo("apellido", "Apellido")(type="text" name="apelli
+         +do" required)                                                  
+      12 +        +campo("dni", "DNI")(type="text" name="dni" inputmode="
+         +numeric" placeholder="7 u 8 dígitos" required)                 
+      13 +        +campo("telefono", "Teléfono")(type="text" name="telefo
+         +no" inputmode="tel")                                           
+      14 +        +campo("email", "Email", { contenedor: "lg:col-span-2" 
+         +})(type="email" name="email")                                  
+      15 +        +botonera                                              
+      16 +          button.btn.btn-primario(type="submit")               
+      17 +            +icono("mas")(class="size-4")                      
+      18 +            | Guardar Cliente                                  
+      19  
+      28 -  h2 Listado de Clientes                                       
+      29 -  .error#errorListado(hidden)                                  
+      30 -  table                                                        
+      31 -    thead                                                      
+      32 -      tr                                                       
+      33 -        th Nombre                                              
+      34 -        th Apellido                                            
+      35 -        th DNI                                                 
+      36 -        th Teléfono                                            
+      37 -        th Email                                               
+      38 -        th Acciones                                            
+      39 -    tbody#tablaClientes                                        
+      40 -  p#sinRegistros(hidden) No hay clientes registrados actualment
+         -e.                                                             
+      20 +  +seccion("Listado de clientes")                              
+      21 +    +alerta("errorListado")                                    
+      22 +    +tabla(["Nombre", "Apellido", "DNI", "Teléfono", "Email", "
+         +Acciones"], "tablaClientes")                                   
+      23 +    +vacio("sinRegistros", "No hay clientes registrados actualm
+         +ente.")                                                        
+      24  
+      42 -  .modal#modalEditar(hidden)                                   
+      43 -    .modal-contenido                                           
+      44 -      h3 Editar Cliente                                        
+      45 -      .error#errorEdicion(hidden)                              
+      46 -      form#formEditar                                          
+      47 -        input(type="hidden" name="_id")                        
+      48 -        .form-group                                            
+      49 -          label(for="edit_nombre") Nombre *                    
+      50 -          input#edit_nombre(type="text" name="nombre" required)
+      51 -        .form-group                                            
+      52 -          label(for="edit_apellido") Apellido *                
+      53 -          input#edit_apellido(type="text" name="apellido" requi
+         -red)                                                           
+      54 -        .form-group                                            
+      55 -          label(for="edit_dni") DNI *                          
+      56 -          input#edit_dni(type="text" name="dni" inputmode="nume
+         -ric" required)                                                 
+      57 -        .form-group                                            
+      58 -          label(for="edit_telefono") Teléfono                  
+      59 -          input#edit_telefono(type="text" name="telefono")     
+      60 -        .form-group                                            
+      61 -          label(for="edit_email") Email                        
+      62 -          input#edit_email(type="email" name="email")          
+      63 -        .modal-botones                                         
+      64 -          button(type="submit") Guardar Cambios                
+      65 -          button.btn-secundario.btn-cerrar-modal(type="button")
+         - Cancelar                                                      
+      25 +  +modal("modalEditar", "Editar Cliente")                      
+      26 +    +alerta("errorEdicion")                                    
+      27 +    form#formEditar(class="grid grid-cols-1 gap-x-6 gap-y-4 md:
+         +grid-cols-2")                                                  
+      28 +      input(type="hidden" name="_id")                          
+      29 +      +campo("edit_nombre", "Nombre")(type="text" name="nombre"
+         + required)                                                     
+      30 +      +campo("edit_apellido", "Apellido")(type="text" name="ape
+         +llido" required)                                               
+      31 +      +campo("edit_dni", "DNI")(type="text" name="dni" inputmod
+         +e="numeric" required)                                          
+      32 +      +campo("edit_telefono", "Teléfono")(type="text" name="tel
+         +efono" inputmode="tel")                                        
+      33 +      +campo("edit_email", "Email", { contenedor: "md:col-span-
+         +2" })(type="email" name="email")                               
+      34 +      +botonera                                                
+      35 +        button.btn.btn-secundario.btn-cerrar-modal(type="button
+         +") Cancelar                                                    
+      36 +        button.btn.btn-primario(type="submit")                 
+      37 +          +icono("guardar")(class="size-4")                    
+      38 +          | Guardar Cambios                                    
+      39  
+      40  block scripts
+      41    script(src="/js/clientes.js")
+
+● Write(src/views/profesionales/index.pug)
+  ⎿  Added 29 lines, removed 51 lines
+       1  extends ../layout
+       2  
+       3  block content
+       4 -  h1 Gestión de Profesionales                                  
+       4 +  +encabezado("Gestión de Profesionales", "Alta, edición y baja
+         + de los profesionales que atienden los turnos.")               
+       5  
+       6    if puede("profesionales:create")
+       7 -    h2 Registrar Nuevo Profesional                             
+       8 -    .error#errorAlta(hidden)                                   
+       9 -    form#formAlta                                              
+      10 -      .form-group                                              
+      11 -        label(for="nombre") Nombre *                           
+      12 -        input#nombre(type="text" name="nombre" required)       
+      13 -      .form-group                                              
+      14 -        label(for="apellido") Apellido *                       
+      15 -        input#apellido(type="text" name="apellido" required)   
+      16 -      .form-group                                              
+      17 -        label(for="especialidad") Especialidad *               
+      18 -        input#especialidad(type="text" name="especialidad" requ
+         -ired)                                                          
+      19 -      .form-group                                              
+      20 -        label(for="matricula") Matrícula *                     
+      21 -        input#matricula(type="text" name="matricula" required) 
+      22 -      button(type="submit") Guardar Profesional                
+      23 -    hr                                                         
+       7 +    +seccion("Registrar nuevo profesional")                    
+       8 +      +alerta("errorAlta")                                     
+       9 +      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:
+         +grid-cols-2")                                                  
+      10 +        +campo("nombre", "Nombre")(type="text" name="nombre" re
+         +quired)                                                        
+      11 +        +campo("apellido", "Apellido")(type="text" name="apelli
+         +do" required)                                                  
+      12 +        +campo("especialidad", "Especialidad")(type="text" name
+         +="especialidad" required)                                      
+      13 +        +campo("matricula", "Matrícula")(type="text" name="matr
+         +icula" required)                                               
+      14 +        +botonera                                              
+      15 +          button.btn.btn-primario(type="submit")               
+      16 +            +icono("mas")(class="size-4")                      
+      17 +            | Guardar Profesional                              
+      18  
+      25 -  h2 Listado de Profesionales                                  
+      26 -  .error#errorListado(hidden)                                  
+      27 -  table                                                        
+      28 -    thead                                                      
+      29 -      tr                                                       
+      30 -        th Nombre                                              
+      31 -        th Apellido                                            
+      32 -        th Especialidad                                        
+      33 -        th Matrícula                                           
+      34 -        th Acciones                                            
+      35 -    tbody#tablaProfesionales                                   
+      36 -  p#sinRegistros(hidden) No hay profesionales registrados actua
+         -lmente.                                                        
+      19 +  +seccion("Listado de profesionales")                         
+      20 +    +alerta("errorListado")                                    
+      21 +    +tabla(["Nombre", "Apellido", "Especialidad", "Matrícula", 
+         +"Acciones"], "tablaProfesionales")                             
+      22 +    +vacio("sinRegistros", "No hay profesionales registrados ac
+         +tualmente.")                                                   
+      23  
+      38 -  .modal#modalEditar(hidden)                                   
+      39 -    .modal-contenido                                           
+      40 -      h3 Editar Profesional                                    
+      41 -      .error#errorEdicion(hidden)                              
+      42 -      form#formEditar                                          
+      43 -        input(type="hidden" name="_id")                        
+      44 -        .form-group                                            
+      45 -          label(for="edit_nombre") Nombre *                    
+      46 -          input#edit_nombre(type="text" name="nombre" required)
+      47 -        .form-group                                            
+      48 -          label(for="edit_apellido") Apellido *                
+      49 -          input#edit_apellido(type="text" name="apellido" requi
+         -red)                                                           
+      50 -        .form-group                                            
+      51 -          label(for="edit_especialidad") Especialidad *        
+      52 -          input#edit_especialidad(type="text" name="especialida
+         -d" required)                                                   
+      53 -        .form-group                                            
+      54 -          label(for="edit_matricula") Matrícula *              
+      55 -          input#edit_matricula(type="text" name="matricula" req
+         -uired)                                                         
+      56 -        .modal-botones                                         
+      57 -          button(type="submit") Guardar Cambios                
+      58 -          button.btn-secundario.btn-cerrar-modal(type="button")
+         - Cancelar                                                      
+      24 +  +modal("modalEditar", "Editar Profesional")                  
+      25 +    +alerta("errorEdicion")                                    
+      26 +    form#formEditar(class="grid grid-cols-1 gap-x-6 gap-y-4 md:
+         +grid-cols-2")                                                  
+      27 +      input(type="hidden" name="_id")                          
+      28 +      +campo("edit_nombre", "Nombre")(type="text" name="nombre"
+         + required)                                                     
+      29 +      +campo("edit_apellido", "Apellido")(type="text" name="ape
+         +llido" required)                                               
+      30 +      +campo("edit_especialidad", "Especialidad")(type="text" n
+         +ame="especialidad" required)                                   
+      31 +      +campo("edit_matricula", "Matrícula")(type="text" name="m
+         +atricula" required)                                            
+      32 +      +botonera                                                
+      33 +        button.btn.btn-secundario.btn-cerrar-modal(type="button
+         +") Cancelar                                                    
+      34 +        button.btn.btn-primario(type="submit")                 
+      35 +          +icono("guardar")(class="size-4")                    
+      36 +          | Guardar Cambios                                    
+      37  
+      38  block scripts
+      39    script(src="/js/profesionales.js")
+
+● Write(src/views/turnos/index.pug)
+  ⎿  Added 20 lines, removed 39 lines
+       1  extends ../layout
+       2  
+       3  block content
+       4 -  h1 Gestión de Turnos                                         
+       4 +  +encabezado("Gestión de Turnos", "Reservá turnos y seguí su e
+         +stado durante el día.")                                        
+       5  
+       6    if puede("turnos:create")
+       7 -    h2 Reservar Nuevo Turno                                    
+       8 -    .error#errorAlta(hidden)                                   
+       9 -    form#formAlta                                              
+      10 -      .form-group                                              
+      11 -        label(for="cliente") Cliente *                         
+      12 -        select#cliente(name="cliente" required)                
+       7 +    +seccion("Reservar nuevo turno")                           
+       8 +      +alerta("errorAlta")                                     
+       9 +      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:
+         +grid-cols-2")                                                  
+      10 +        +campoSelect("cliente", "Cliente")(name="cliente" requi
+         +red)                                                           
+      11            option(value="") Seleccioná un cliente
+      14 -      .form-group                                              
+      15 -        label(for="profesional") Profesional *                 
+      16 -        select#profesional(name="profesional" required)        
+      12 +        +campoSelect("profesional", "Profesional")(name="profes
+         +ional" required)                                               
+      13            option(value="") Seleccioná un profesional
+      18 -      .form-group                                              
+      19 -        label(for="fecha") Fecha *                             
+      20 -        input#fecha(type="date" name="fecha" required)         
+      21 -      .form-group                                              
+      22 -        label(for="hora") Hora *                               
+      23 -        input#hora(type="time" name="hora" required)           
+      24 -      button(type="submit") Reservar Turno                     
+      25 -    hr                                                         
+      14 +        +campo("fecha", "Fecha")(type="date" name="fecha" requi
+         +red)                                                           
+      15 +        +campo("hora", "Hora")(type="time" name="hora" required
+         +)                                                              
+      16 +        +botonera                                              
+      17 +          button.btn.btn-primario(type="submit")               
+      18 +            +icono("calendario")(class="size-4")               
+      19 +            | Reservar Turno                                   
+      20  
+      27 -  h2 Listado de Turnos                                         
+      28 -  form#formFiltros.filtros                                     
+      29 -    .form-group                                                
+      30 -      label(for="filtroEstado") Estado                         
+      31 -      select#filtroEstado(name="estado")                       
+      21 +  +seccion("Listado de turnos")                                
+      22 +    form#formFiltros(class="mb-4 grid grid-cols-1 gap-3 sm:flex
+         + sm:flex-wrap sm:items-end")                                   
+      23 +      +campoSelect("filtroEstado", "Estado", { contenedor: "sm:
+         +w-48" })(name="estado")                                        
+      24          option(value="") Todos
+      25          option(value="reservado") Reservado
+      26          option(value="atendido") Atendido
+      27          option(value="cancelado") Cancelado
+      36 -    .form-group                                                
+      37 -      label(for="filtroFecha") Fecha                           
+      38 -      input#filtroFecha(type="date" name="fecha")              
+      39 -    button.btn-secundario#btnLimpiarFiltros(type="button") Limp
+         -iar                                                            
+      28 +      +campo("filtroFecha", "Fecha", { contenedor: "sm:w-48" })
+         +(type="date" name="fecha")                                     
+      29 +      button.btn.btn-secundario#btnLimpiarFiltros(type="button"
+         +) Limpiar                                                      
+      30  
+      41 -  .error#errorTurnos(hidden)                                   
+      42 -  table                                                        
+      43 -    thead                                                      
+      44 -      tr                                                       
+      45 -        th Fecha                                               
+      46 -        th Hora                                                
+      47 -        th Cliente                                             
+      48 -        th Profesional                                         
+      49 -        th Estado                                              
+      50 -        th Acciones                                            
+      51 -    tbody#tablaTurnos                                          
+      52 -  p#sinTurnos(hidden) No hay turnos que coincidan.             
+      31 +    +alerta("errorTurnos")                                     
+      32 +    +tabla(["Fecha", "Hora", "Cliente", "Profesional", "Estado"
+         +, "Acciones"], "tablaTurnos")                                  
+      33 +    +vacio("sinTurnos", "No hay turnos que coincidan.")        
+      34  
+      35  block scripts
+      36    script(src="/js/turnosTabla.js")
+
+● Write(src/views/usuarios/index.pug)
+  ⎿  Added 34 lines, removed 60 lines
+       1  extends ../layout
+       2  
+       3  mixin camposUsuario(prefijo, esEdicion)
+       4 -  .form-group                                                  
+       5 -    label(for=prefijo + "usuario") Usuario *                   
+       6 -    input(id=prefijo + "usuario" type="text" name="usuario" req
+         -uired)                                                         
+       7 -  .form-group                                                  
+       8 -    label(for=prefijo + "nombre") Nombre *                     
+       9 -    input(id=prefijo + "nombre" type="text" name="nombre" requi
+         -red)                                                           
+      10 -  .form-group                                                  
+      11 -    label(for=prefijo + "password")= esEdicion ? "Nueva contras
+         -eña (vacío = no cambia)" : "Contraseña *"                      
+      12 -    input(id=prefijo + "password" type="text" name="password" m
+         -inlength="6" required=!esEdicion)                              
+      13 -  .form-group                                                  
+      14 -    label(for=prefijo + "rol") Rol *                           
+      15 -    select.select-rol(id=prefijo + "rol" name="rol")           
+      16 -      each rol in roles                                        
+      17 -        option(value=rol selected=rol === "profesional")= rol  
+      18 -  .form-group                                                  
+      19 -    label(for=prefijo + "profesional") Profesional vinculado   
+      20 -    select.select-profesional(id=prefijo + "profesional" name="
+         -profesional")                                                  
+      21 -      option(value="") Ninguno                                 
+      22 -  .form-group                                                  
+      23 -    label(for=prefijo + "expiraEl") Vence el (opcional)        
+      24 -    input(id=prefijo + "expiraEl" type="datetime-local" name="e
+         -xpiraEl")                                                      
+       4 +  +campo(prefijo + "usuario", "Usuario")(type="text" name="usua
+         +rio" required)                                                 
+       5 +  +campo(prefijo + "nombre", "Nombre")(type="text" name="nombre
+         +" required)                                                    
+       6 +  +campo(prefijo + "password", esEdicion ? "Nueva contraseña (v
+         +acío = no cambia)" : "Contraseña")(type="text" name="password" 
+         +minlength="6" required=!esEdicion)                             
+       7 +  +campoSelect(prefijo + "rol", "Rol")(class="select-rol" name=
+         +"rol" required)                                                
+       8 +    each rol in roles                                          
+       9 +      option(value=rol selected=rol === "profesional")= rol    
+      10 +  +campoSelect(prefijo + "profesional", "Profesional vinculado"
+         +)(class="select-profesional" name="profesional")               
+      11 +    option(value="") Ninguno                                   
+      12 +  +campo(prefijo + "expiraEl", "Vence el (opcional)")(type="dat
+         +etime-local" name="expiraEl")                                  
+      13    if esEdicion
+      26 -    .form-group.checkbox                                       
+      27 -      label                                                    
+      28 -        input(type="checkbox" name="activo")                   
+      29 -        |  Activo                                              
+      14 +    label(class="flex items-center gap-2 self-end py-2 text-sm 
+         +font-medium text-gray-800")                                    
+      15 +      input(type="checkbox" name="activo" class="size-4 rounded
+         + border-gray-300 accent-marca")                                
+      16 +      | Activo                                                 
+      17  
+      18  block content
+      32 -  h1 Gestión de Usuarios                                       
+      19 +  +encabezado("Gestión de Usuarios", "Cuentas de acceso, roles 
+         +y vencimientos.")                                              
+      20  
+      21    if puede("usuarios:create")
+      35 -    h2 Crear Usuario                                           
+      36 -    p.ayuda Por mínimo privilegio, el rol por defecto es "profe
+         -sional".                                                       
+      37 -    .error#errorAlta(hidden)                                   
+      38 -    form#formAlta                                              
+      39 -      +camposUsuario("alta_", false)                           
+      40 -      button(type="submit") Crear Usuario                      
+      41 -    hr                                                         
+      22 +    +seccion("Crear usuario", 'Por mínimo privilegio, el rol po
+         +r defecto es "profesional".')                                  
+      23 +      +alerta("errorAlta")                                     
+      24 +      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:
+         +grid-cols-2")                                                  
+      25 +        +camposUsuario("alta_", false)                         
+      26 +        +botonera                                              
+      27 +          button.btn.btn-primario(type="submit")               
+      28 +            +icono("mas")(class="size-4")                      
+      29 +            | Crear Usuario                                    
+      30  
+      43 -  h2 Listado de Usuarios                                       
+      44 -  .error#errorListado(hidden)                                  
+      45 -  .tabla-scroll                                                
+      46 -    table                                                      
+      47 -      thead                                                    
+      48 -        tr                                                     
+      49 -          th Usuario                                           
+      50 -          th Nombre                                            
+      51 -          th Rol                                               
+      52 -          th Profesional                                       
+      53 -          th Estado                                            
+      54 -          th Vence                                             
+      55 -          th Creado                                            
+      56 -          th Modificado                                        
+      57 -          th Último acceso                                     
+      58 -          th Acciones                                          
+      59 -      tbody#tablaUsuarios                                      
+      31 +  +seccion("Listado de usuarios")                              
+      32 +    +alerta("errorListado")                                    
+      33 +    +tabla(["Usuario", "Nombre", "Rol", "Profesional", "Estado"
+         +, "Vence", "Creado", "Modificado", "Último acceso", "Acciones"]
+         +, "tablaUsuarios")                                             
+      34  
+      61 -  .modal#modalEditar(hidden)                                   
+      62 -    .modal-contenido                                           
+      63 -      h3 Editar Usuario                                        
+      64 -      .error#errorEdicion(hidden)                              
+      65 -      form#formEditar                                          
+      66 -        input(type="hidden" name="_id")                        
+      67 -        +camposUsuario("edit_", true)                          
+      68 -        .modal-botones                                         
+      69 -          button(type="submit") Guardar Cambios                
+      70 -          button.btn-secundario.btn-cerrar-modal(type="button")
+         - Cancelar                                                      
+      35 +  +modal("modalEditar", "Editar Usuario")                      
+      36 +    +alerta("errorEdicion")                                    
+      37 +    form#formEditar(class="grid grid-cols-1 gap-x-6 gap-y-4 md:
+         +grid-cols-2")                                                  
+      38 +      input(type="hidden" name="_id")                          
+      39 +      +camposUsuario("edit_", true)                            
+      40 +      +botonera                                                
+      41 +        button.btn.btn-secundario.btn-cerrar-modal(type="button
+         +") Cancelar                                                    
+      42 +        button.btn.btn-primario(type="submit")                 
+      43 +          +icono("guardar")(class="size-4")                    
+      44 +          | Guardar Cambios                                    
+      45  
+      46  block scripts
+      47    script(src="/js/usuarios.js")
+
+● Write(src/views/auditoria/index.pug)
+  ⎿  Added 11 lines, removed 23 lines
+       1  extends ../layout
+       2  
+       3  block content
+       4 -  h1 Auditoría                                                 
+       5 -  p.ayuda Últimos 100 eventos registrados, del más reciente al 
+         -más antiguo.                                                   
+       4 +  +encabezado("Auditoría", "Últimos 100 eventos registrados, de
+         +l más reciente al más antiguo.")                               
+       5  
+       7 -  form#formFiltros.filtros                                     
+       8 -    .form-group                                                
+       9 -      label(for="filtroAccion") Acción                         
+      10 -      select#filtroAccion(name="accion")                       
+       6 +  +seccion()                                                   
+       7 +    form#formFiltros(class="mb-4 grid grid-cols-1 gap-3 sm:flex
+         + sm:flex-wrap sm:items-end")                                   
+       8 +      +campoSelect("filtroAccion", "Acción", { contenedor: "sm:
+         +w-56" })(name="accion")                                        
+       9          option(value="") Todas
+      10          each accion in acciones
+      11            option(value=accion)= accion
+      14 -    .form-group                                                
+      15 -      label(for="filtroUsuario") Usuario                       
+      16 -      input#filtroUsuario(type="text" name="usuario" placeholde
+         -r="ej: admin")                                                 
+      17 -    button(type="submit") Filtrar                              
+      12 +      +campo("filtroUsuario", "Usuario", { contenedor: "sm:w-56
+         +" })(type="text" name="usuario" placeholder="ej: admin")       
+      13 +      button.btn.btn-primario(type="submit")                   
+      14 +        +icono("filtro")(class="size-4")                       
+      15 +        | Filtrar                                              
+      16  
+      19 -  .error#errorAuditoria(hidden)                                
+      20 -  .tabla-scroll                                                
+      21 -    table                                                      
+      22 -      thead                                                    
+      23 -        tr                                                     
+      24 -          th Fecha                                             
+      25 -          th Usuario                                           
+      26 -          th Acción                                            
+      27 -          th Entidad                                           
+      28 -          th Detalle                                           
+      29 -          th IP                                                
+      30 -      tbody#tablaAuditoria                                     
+      31 -  p#sinRegistros(hidden) No hay eventos que coincidan.         
+      17 +    +alerta("errorAuditoria")                                  
+      18 +    +tabla(["Fecha", "Usuario", "Acción", "Entidad", "Detalle",
+         + "IP"], "tablaAuditoria")                                      
+      19 +    +vacio("sinRegistros", "No hay eventos que coincidan.")    
+      20  
+      21  block scripts
+      22    script(src="/js/auditoria.js")
+
+● Vistas listas; ahora ajusto el JS del navegador (botones, filas y etiquetas) y
+  el middleware de ruta activa.
+
+● Bash(python3 - <<'EOF'
+      import re,pathlib…)
+  ⎿   M README.md
+      M src/index.js
+     D  src/public/estilos.css
+     … +17 lines (ctrl+o to expand)
+  ⎿  Updated src/public/js/api.js (+2 -2)
+      51    const boton = document.createElement("button");
+      52    boton.type = "button";
+      53    boton.textContent = texto;
+      54 -  if (clase) boton.className = clase;                          
+      54 +  boton.className = ["btn btn-chico", clase].filter(Boolean).jo
+         +in(" ");                                                       
+      55    boton.addEventListener("click", alHacerClick);
+      56    return boton;
+      57  };
+     ...
+      66    });
+      67    if (acciones !== null) {
+      68      const celdaAcciones = document.createElement("td");
+      69 -    celdaAcciones.className = "acciones";                      
+      69 +    celdaAcciones.className = "whitespace-nowrap space-x-2";   
+      70      acciones.forEach((boton) => celdaAcciones.appendChild(boton
+          ));
+      71      fila.appendChild(celdaAcciones);
+      72    }
+  ⎿  Updated src/public/js/usuarios.js (+3 -3)
+      30  
+      31  const estadoDe = (usuario) => {
+      32    const vencido = usuario.expiraEl && new Date(usuario.expiraEl
+          ) <= new Date();
+      33 -  if (!usuario.activo) return crearEtiqueta("inactivo", "estado
+         --cancelado");                                                  
+      34 -  if (vencido) return crearEtiqueta("vencido", "estado-cancelad
+         -o");                                                           
+      35 -  return crearEtiqueta("activo", "estado-atendido");           
+      33 +  if (!usuario.activo) return crearEtiqueta("inactivo", "etique
+         +ta-peligro");                                                  
+      34 +  if (vencido) return crearEtiqueta("vencido", "etiqueta-peligr
+         +o");                                                           
+      35 +  return crearEtiqueta("activo", "etiqueta-exito");            
+      36  };
+      37  
+      38  const abrirEdicion = (usuario) => {
+  ⎿  Updated src/public/js/auditoria.js (+3 -3)
+       5  
+       6  const claseDeAccion = (accion) => {
+       7    if (["ACCESO_DENEGADO", "LOGIN_FALLIDO", "SESION_REVOCADA"].i
+          ncludes(accion)) {
+       8 -    return "estado-cancelado";                                 
+       8 +    return "etiqueta-peligro";                                 
+       9    }
+      10 -  if (["LOGIN", "LOGOUT"].includes(accion)) return "estado-rese
+         -rvado";                                                        
+      11 -  return "estado-atendido";                                    
+      10 +  if (["LOGIN", "LOGOUT"].includes(accion)) return "etiqueta-in
+         +fo";                                                           
+      11 +  return "etiqueta-exito";                                     
+      12  };
+      13  
+      14  const cargarAuditoria = async () => {
+  ⎿  Updated src/public/js/turnosTabla.js (+13 -2)
+      15    return true;
+      16  };
+      17  
+      18 +// Nombre del cliente siempre en texto oscuro y resaltado, sea 
+         +cual sea el estado del turno.                                  
+      19 +const textoDestacado = (texto) => {                            
+      20 +  const elemento = document.createElement("span");             
+      21 +  elemento.className = "font-medium text-gray-900";            
+      22 +  elemento.textContent = texto;                                
+      23 +  return elemento;                                             
+      24 +};                                                             
+      25 +                                                               
+      26  const crearFilaTurno = (turno, alTerminar, alFallar) => {
+      27    const ejecutar = (operacion) => async () => {
+      28      try {
+     ...
+      47      acciones.push(crearBoton("Eliminar", "btn-danger", ejecutar
+          (() => eliminarTurno(turno))));
+      48    }
+      49  
+      42 -  return crearFila(                                            
+      50 +  const fila = crearFila(                                      
+      51      [
+      52        turno.fecha,
+      53        turno.hora,
+      46 -      nombreCompleto(turno.cliente),                           
+      54 +      textoDestacado(nombreCompleto(turno.cliente)),           
+      55        nombreCompleto(turno.profesional),
+      56        crearEtiqueta(turno.estado, `estado-${turno.estado}`),
+      57      ],
+      58      acciones
+      59    );
+      60 +  // Franja de color según el estado (clases fila-* definidas e
+         +n includes/tema.pug).                                          
+      61 +  fila.classList.add(`fila-${turno.estado}`);                  
+      62 +  return fila;                                                 
+      63  };
+  ⎿  Updated src/index.js (+5 -0)
+      34  app.use("/api/turnos", turnosRoutes);
+      35  app.use("/api/usuarios", usuariosRoutes);
+      36  app.use("/api/auditoria", auditoriaRoutes);
+      37 +// Ruta actual para marcar el ítem activo de la sidebar en las 
+         +vistas.                                                        
+      38 +app.use((req, res, next) => {                                  
+      39 +  res.locals.rutaActual = req.path;                            
+      40 +  next();                                                      
+      41 +});                                                            
+      42  app.use("/", vistasRoutes);
+      43  
+      44  app.use(notFound);
+  ⎿  … 1 more file changed
+
+  Ran 5 shell commands (ctrl+o to expand)
+
+● Las vistas responden bien en el servidor (200, y 404 en la de error). Ahora
+  instalo un Chromium temporal en el directorio del job para tomar capturas y
+  comprobar que Tailwind compila los estilos.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Sin errores de consola (los 404 son la propia ruta /no-existe) ni scroll
+  horizontal. Reviso las capturas.
+
+  Read 6 files (ctrl+o to expand)
+
+● La sidebar lavanda se corta bajo el primer viewport en páginas largas, así que
+  voy a hacer que la columna ocupe toda la altura y que solo el nav interno sea
+  sticky.
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  Shell cwd was reset to /home/matiasae/Code/Valinor_Cloud
+  ⎿  Updated src/views/includes/sidebar.pug (+3 -2)
+      16  
+      17  aside#sidebar(
+      18    aria-label="Menú principal"
+      19 -  class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-ful
+         -l flex-col border-r border-lavanda-200 bg-lavanda-100 text-indi
+         -go-profundo transition-[translate,visibility,width] duration-20
+         -0 max-lg:invisible max-lg:drawer-abierto:visible max-lg:drawer-
+         -abierto:translate-x-0 max-lg:drawer-abierto:shadow-xl lg:sticky
+         - lg:top-16 lg:z-30 lg:h-[calc(100dvh-4rem)] lg:shrink-0 lg:tran
+         -slate-x-0 lg:colapsada:w-18"                                   
+      19 +  class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-ful
+         +l flex-col border-r border-lavanda-200 bg-lavanda-100 text-indi
+         +go-profundo transition-[translate,visibility,width] duration-20
+         +0 max-lg:invisible max-lg:drawer-abierto:visible max-lg:drawer-
+         +abierto:translate-x-0 max-lg:drawer-abierto:shadow-xl lg:static
+         + lg:z-auto lg:shrink-0 lg:translate-x-0 lg:colapsada:w-18"     
+      20  )
+      21    //- Cabecera del drawer en móvil/tablet (en desktop ya está l
+          a navbar).
+      22    div(class="flex h-16 shrink-0 items-center justify-between bo
+          rder-b border-lavanda-200 px-4 lg:hidden")
+     ...
+      26      button#btnCerrarSidebar(type="button" aria-label="Cerrar el
+           menú" class="inline-flex size-10 cursor-pointer items-center j
+          ustify-center rounded-lg hover:bg-lavanda-200 focus-visible:out
+          line-2 focus-visible:outline-marca")
+      27        +icono("cerrar")(class="size-5")
+      28  
+      29 -  nav(class="flex flex-1 flex-col gap-1 overflow-y-auto p-3")  
+      29 +  //- En desktop la columna ocupa todo el alto y solo el menú q
+         +ueda fijo al hacer scroll.                                     
+      30 +  nav(class="flex flex-1 flex-col gap-1 overflow-y-auto p-3 lg:
+         +sticky lg:top-16 lg:max-h-[calc(100dvh-4rem)] lg:flex-none")   
+      31      +enlaceSidebar("/", "Inicio", "inicio", esActivo("/"))
+      32      each modulo in modulos
+      33        +enlaceSidebar(modulo.href, modulo.texto, modulo.icono, e
+          sActivo(modulo.href))
+  ⎿  (timeout 2m)
+
+  Read 5 files (ctrl+o to expand)
+
+● Visualmente todo correcto. Hago una prueba funcional rápida (alta/baja de
+  cliente desde la UI y sidebar con rol profesional).
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Todo funciona. Ahora actualizo CLAUDE.md y escribo docs/refactor-frontend.md.
+
+● Update(CLAUDE.md)
+  ⎿  Added 1 line
+      29  ## Arquitectura
+      30  
+      31  - **Vistas y API separadas.** `src/routes/vistasRoutes.js` solo
+           renderiza el esqueleto de cada página con Pug; los datos los c
+          arga el JS del navegador (`src/public/js/*.js`, usando `api.js`
+           como wrapper de `fetch`) contra `/api/...`, que siempre respon
+          de JSON.
+      32 +- **Frontend con Tailwind 4 por CDN** (`@tailwindcss/browser`, 
+         +sin build ni CSS propio). La paleta, las variantes custom (`col
+         +apsada`, `drawer-abierto`) y los pocos componentes compartidos 
+         +con el JS del navegador (`.btn*`, `.etiqueta`, `.estado-*`, `.e
+         +tiqueta-*`, `.fila-*`) viven en `src/views/includes/tema.pug`; 
+         +los componentes de vista (campos, tablas, modales, íconos SVG, 
+         +logo) son mixins en `src/views/includes/mixins.pug`. `layouts/b
+         +ase.pug` es el esqueleto HTML + footer (lo usan `login` y `erro
+         +r`); `layout.pug` lo extiende con navbar + sidebar para las pág
+         +inas logueadas; `src/public/js/layout.js` maneja sidebar y menú
+         + de usuario. Usá clases de Tailwind directamente en Pug. Detall
+         +e en `docs/refactor-frontend.md`.                              
+      33  - **Autenticación stateless (Passport + JWT):** no hay sesiones
+           en el servidor. Estrategias en `src/config/passport.js`: `loca
+          l` (login, compara con bcrypt) y `jwt` (token HS256 tomado de `
+          Authorization: Bearer` o de la cookie httpOnly `token`). Firma 
+          y cookie en `src/helpers/token.js`. El login devuelve el token 
+          en el JSON y lo setea en la cookie (las vistas Pug dependen de 
+          la cookie). Detalle completo en `docs/refactor-passport-jwt.md`
+          .
+      34  - **Cadena de middlewares por ruta:** `requiereLogin` → `requie
+          rePermiso("recurso:accion")` → controlador (`src/middlewares/au
+          th.js`). `requiereLogin` usa la estrategia `jwt`, cuyo `verify`
+           vuelve a leer el usuario desde Mongo: si está desactivado, eli
+          minado o vencido (`expiraEl`) rechaza el token y audita `SESION
+          _REVOCADA`; si `payload.ver !== usuario.tokenVersion` (logout o
+           cambio de contraseña) también lo rechaza. Renueva la cookie cu
+          ando el token consumió la mitad de su vida. Distingue API de vi
+          stas por el prefijo `/api` (401 JSON vs. redirect a `/login`). 
+          `usuarioOpcional` carga el usuario sin cortar la request (lo us
+          a `/login`).
+      35  - **Permisos:** la matriz CRUD vive solo en `src/config/roles.j
+          s`. Los roles son jerárquicos por spread de arrays (`profesiona
+          l` ⊂ `recepcion` ⊂ `admin`). Para agregar un permiso, definilo 
+          ahí y usalo en la ruta.
+
+● Write(docs/refactor-frontend.md)
+  ⎿  Wrote 278 lines to docs/refactor-frontend.md
+      1 # Refactor: rediseño del frontend con Tailwind 4
+      2 
+      3 Este documento detalla el rediseño visual de las vistas Pug de Tu
+        rnoFlex: qué se pidió, qué decisiones se tomaron, qué archivos ca
+        mbiaron y cómo se verificó que la aplicación siga funcionando igu
+        al.
+      4 
+      5 ---
+      6 
+      7 ## 1. Motivación
+     … +271 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Terminé el plan completo y dejé el detalle de todos los cambios en
+  docs/refactor-frontend.md. Lo probé contra la app que ya tenías corriendo en
+  Docker: navegué todas las vistas con un Chromium headless a 320, 768, 1024 y
+  1440px. No hubo errores de consola ni scroll horizontal en ninguna, e hice una
+  prueba funcional desde la UI.
+
+  Qué quedó
+  - Tailwind 4 por CDN (@tailwindcss/browser@4.3.3, versión fija). La paleta y
+    los tokens están en un solo lugar: src/views/includes/tema.pug. No quedó 
+    nada de CSS propio, así que eliminé src/public/estilos.css.
+  - Plantillas: layouts/base.pug tiene el esqueleto y el footer, y lo usan login
+    y error. layout.pug le agrega navbar y sidebar, y las vistas de módulos lo
+    siguen extendiendo igual que antes. Los componentes repetidos (campos,
+    tablas, modales, íconos, logo) son mixins en includes/mixins.pug.
+  - Navbar y sidebar en lavanda:
+    - Hamburguesa y logo a la izquierda; a la derecha, el avatar con las
+      iniciales abre un menú con nombre, usuario, rol y "Cerrar sesión".
+    - En desktop, la sidebar se contrae a una columna de íconos y recuerda el
+      estado al recargar. En móvil y tablet se abre como panel lateral sobre el
+      contenido.
+  - Footer #DEE2E6 en todas las vistas, con el año calculado en cada render.
+  - Login en una tarjeta con el logo centrado. Página de error con solo logo,
+    nombre, "Volver al inicio" y footer.
+  - Formularios de alta a 2 columnas desde 1024px, con un máximo de 1440px. Los
+    modales de edición también pasan a 2 columnas, desde 768px.
+  - Estados de turnos:
+    - reservado → azul cobalto, atendido → gris, cancelado → coral, con una
+      franja de color en cada fila.
+    - El texto de las etiquetas y los nombres de clientes siempre es oscuro.
+    - Presente (oliva) y pendiente (mostaza) quedan definidos para cuando
+      existan esos estados.
+
+  Prueba funcional
+  - Alta y baja de un cliente desde la UI.
+  - Cierre de sesión desde el menú del avatar.
+  - Con profesional1 la sidebar muestra solo sus módulos, y /usuarios devuelve
+    la página de error con "Acceso denegado" en la pestaña.
+
+  Cambios fuera de las vistas Pug
+  - src/index.js: un middleware de una línea (res.locals.rutaActual) para marcar
+    el ítem activo de la sidebar.
+  - JS del navegador: ajustes de clases en api.js, turnosTabla.js, usuarios.js y
+    auditoria.js, sin cambios de lógica. Además hay un archivo nuevo,
+    layout.js, que maneja la sidebar y el menú del usuario.
+  - CLAUDE.md: agregué un apartado sobre la nueva estructura del frontend.
+
+  Para tener en cuenta
+  - La skill frontend-design no está instalada en esta sesión, así que apliqué
+    esos criterios a mano.
+  - README.md todavía menciona estilos.css en el árbol de carpetas. No lo toqué
+    porque tenía cambios tuyos sin commitear.
+  - No hice ningún commit. Todo está en el working tree de la rama matias.
+
+✻ Crunched for 12m 37s · done 20:40
+❯ Acabo de volver para atras los cambios que hice en el archivo @README.md ya   
+  podes actualizarlo con lo último que hicimos (quitar las referencias a        
+  estilos.css y actualizar lo que esté relacionado con el frontend)             
+  ⎿  Read README.md (237 lines)
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿   README.md | 24 +++++++++++++++++++-----
+      1 file changed, 19 insertions(+), 5 deletions(-)
+  ⎿  Updated README.md (+19 -5)
+       8  - **Roles jerárquicos y permisos CRUD**: `admin` > `recepcion` 
+          > `profesional`.
+       9  - **Auditoría** de todas las acciones relevantes.
+      10  - **Front con `fetch`**: las pantallas cargan y guardan datos d
+          e forma asincrónica, sin recargar la página.
+      11 +- **Interfaz con Tailwind CSS 4** (por CDN, sin paso de build):
+         + navbar y sidebar colapsable, menú de usuario, colores por esta
+         +do de turno y diseño responsive para móviles, tablets, portátil
+         +es y escritorio.                                               
+      12  
+      13  ---
+      14  
+     ...
+      70  ├── docs/
+      71  │   ├── TurnoFlex.postman_collection.json
+      72  │   ├── refactor-passport-jwt.md         Detalle del paso de ex
+          press-session a Passport + JWT
+      73 +│   ├── refactor-frontend.md             Detalle del rediseño d
+         +el frontend con Tailwind 4                                     
+      74  │   └── Docker/docker-readme.md          Guía para levantar el 
+          proyecto con Docker
+      75  └── src/
+      76      ├── index.js                         Configura Express, coo
+          kies, Passport, rutas y errores; conecta a Mongo
+     ...
+       95      │   ├── auditoria.js                 registrarAuditoria()
+       96      │   ├── campos.js                    tomarCampos(): solo a
+           cepta campos permitidos
+       97      │   └── token.js                     Firma del JWT y manej
+           o de la cookie
+       96 -    ├── views/                           Plantillas Pug (layou
+          -t, login, panel y ABMs)                                       
+       98 +    ├── views/                           Plantillas Pug       
+       99 +    │   ├── layouts/base.pug             Esqueleto HTML: Tailw
+          +ind, tema, footer y scripts comunes                           
+      100 +    │   ├── layout.pug                   Shell de la app logue
+          +ada: navbar + sidebar + contenido                             
+      101 +    │   ├── includes/                                         
+      102 +    │   │   ├── tema.pug                 Configuración de Tail
+          +wind: paleta, variantes y componentes                         
+      103 +    │   │   ├── mixins.pug               Componentes de vista:
+          + campos, tablas, modales, íconos, logo                        
+      104 +    │   │   └── navbar.pug  sidebar.pug  footer.pug           
+      105 +    │   ├── login.pug  error.pug         Páginas sin shell (ex
+          +tienden layouts/base)                                         
+      106 +    │   └── home.pug  clientes/  profesionales/  turnos/  usua
+          +rios/  auditoria/                                             
+      107      └── public/
+       98 -        ├── estilos.css                                       
+       99 -        └── js/                          JS del navegador (fet
+          -ch a la API)                                                  
+      108 +        └── js/                          JS del navegador (fet
+          +ch a la API y layout.js para sidebar y menú)                  
+      109  ```
+      110  
+      111  ### Cómo funciona
+     ...
+      113  1. **Vistas y API separadas.** Las rutas de `vistasRoutes.js` 
+           solo renderizan la estructura de cada página con Pug. Los dato
+           s los pide el navegador con `fetch` a `/api/...`, que siempre 
+           responde JSON.
+      114  2. **Sin recargas.** Al guardar, editar o eliminar, el JS enví
+           a la petición, espera la respuesta con `await` y vuelve a dibu
+           jar la tabla. Si hay un error de validación, se muestra al lad
+           o del formulario.
+      115  3. **Autenticación sin estado.** El login (`POST /api/auth/log
+           in`) verifica la contraseña con la estrategia `local` de Passp
+           ort, firma un JWT, lo guarda en la cookie `token` (`httpOnly`,
+            `sameSite=strict`) y también lo devuelve en el JSON. El servi
+           dor no guarda sesiones: en cada request la estrategia `jwt` to
+           ma el token del header `Authorization: Bearer` o de la cookie 
+           y verifica su firma y vencimiento. Así funcionan tanto las pág
+           inas Pug (el navegador manda la cookie solo) como clientes ext
+           ernos como Postman (header Bearer).
+      107 -4. **Middlewares en cadena.** Cada ruta pasa por `requiereLogi
+          -n` y luego por `requierePermiso("recurso:accion")` antes de ll
+          -egar al controlador.                                          
+      108 -5. **Errores centralizados.** Express 5 envía al `errorHandler
+          -` los errores de los controladores `async`. Ese middleware tra
+          -duce los errores de Mongoose a respuestas claras:             
+      116 +4. **Estilos con Tailwind.** Tailwind 4 se carga por CDN y com
+          +pila las clases en el navegador, incluidas las de los elemento
+          +s que crea el JS. La paleta (fondo neutro `#F8F9FA`, lavanda p
+          +ara navbar y sidebar, y los colores de estado de los turnos) s
+          +e define una sola vez en `src/views/includes/tema.pug`; no hay
+          + hojas de estilo propias. En los turnos, `reservado` se muestr
+          +a en azul cobalto, `atendido` en gris claro y `cancelado` en c
+          +oral. El detalle está en [`docs/refactor-frontend.md`](docs/re
+          +factor-frontend.md).                                          
+     … 20 more lines (ctrl+o to expand)
+
+● Actualizo también la nota de docs/refactor-frontend.md que decía que el README
+  había quedado pendiente.
+
+● Update(docs/refactor-frontend.md)
+  ⎿  Added 1 line, removed 4 lines
+      243  - `src/public/js/api.js`, `turnosTabla.js`, `usuarios.js`, `au
+           ditoria.js`
+      244  - `src/index.js` (middleware `res.locals.rutaActual`)
+      245  - `CLAUDE.md` (sección Arquitectura)
+      246 +- `README.md` (descripción, estructura del proyecto, "Cómo fun
+          +ciona", declaración de uso de IA y bibliografía; se quitó `est
+          +ilos.css`)                                                    
+      247  
+      248  **Eliminado**
+      249  
+      250  - `src/public/estilos.css`: todas sus reglas se reemplazaron c
+           on utilidades de Tailwind (el preflight de Tailwind ya incluye
+            `[hidden] { display: none !important }`, que era la única reg
+           la "estructural"). No hizo falta CSS propio.
+      251  
+      251 -**Pendiente fuera de este cambio**                            
+      252 -                                                              
+      253 -- `README.md` todavía lista `estilos.css` en el árbol de carpe
+          -tas. No se tocó porque tenía cambios locales sin commitear.   
+      254 -                                                              
+      252  ## 5. Ids y clases preservados
+      253  
+      254  Para que el JS existente siga funcionando sin cambios de lógic
+           a, todas las vistas conservan: `formAlta`, `formEditar`, `form
+           Filtros`, `formLogin`, `errorAlta`, `errorListado`, `errorEdic
+           ion`, `errorTurnos`, `errorAuditoria`, `errorLogin`, `modalEdi
+           tar`, `.btn-cerrar-modal`, `tablaTurnos`, `tablaClientes`, `ta
+           blaProfesionales`, `tablaUsuarios`, `tablaAuditoria`, `sinRegi
+           stros`, `sinTurnos`, `btnLimpiarFiltros`, `cantidadReservados`
+           , `cantidadAtendidos`, `cantidadCancelados`, `.select-rol`, `.
+           select-profesional`, `name="activo"`, `btnLogout`, y los `data
+           -rol`, `data-usuario-id` y `data-permisos` del `<body>`.
+
+● Actualicé el README.md con el rediseño del frontend y ya no queda ninguna
+  referencia a estilos.css.
+
+  Cambios en el README
+  - Descripción inicial: agregué un ítem sobre la interfaz con Tailwind CSS 4
+    por CDN: navbar, sidebar colapsable, menú de usuario, colores por estado y
+    responsive.
+  - Estructura del proyecto:
+    - En docs/ agregué refactor-frontend.md.
+    - views/ ahora muestra cómo está organizado: layouts/base.pug, layout.pug,
+      includes/ (tema, mixins, navbar, sidebar y footer), login, error y los
+      módulos.
+    - En public/ saqué estilos.css y mencioné layout.js.
+  - Cómo funciona: agregué el punto 4, "Estilos con Tailwind". Explica dónde se
+    define la paleta y qué color tiene cada estado de turno, y enlaza a
+    docs/refactor-frontend.md. Los puntos siguientes se renumeraron.
+  - Declaración de uso de IA: agregué un ítem sobre el rediseño de las vistas y
+    su documentación.
+  - Bibliografía: agregué Tailwind CSS 4, su uso por CDN y Pug.
+
+  También borré de docs/refactor-frontend.md la nota que decía que el README
+  había quedado pendiente, y lo sumé a la lista de archivos editados.
+
+  Sigue todo sin commitear en la rama matias.
+
+✻ Baked for 26s · done 20:43
+
+❯ Como último cambio, me gustaría cambiar el estilo de letra por la fuente      
+  Poppins  en el proyecto (todas las vistas) y que las filas de las tablas      
+  tengan un borde fino en color negro por debajo (excepto la última) para que   
+  la tabla tenga una mejor visualización y no todo parezca un bloque            
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  33:| Tablas | Ancho completo, se desbordaban en móvil | Scroll horizon
+     tal dentro de su propio contenedor; la página nunca scrollea en horizo
+     ntal |
+  ⎿  Updated src/views/layouts/base.pug (+1 -1)
+      10          | TurnoFlex - Sistema de Gestión de Turnos
+      11      link(rel="preconnect" href="https://fonts.googleapis.com")
+      12      link(rel="preconnect" href="https://fonts.gstatic.com" cros
+          sorigin)
+      13 -    link(rel="stylesheet" href="https://fonts.googleapis.com/cs
+         -s2?family=Inter:wght@400;500;600;700&display=swap")            
+      13 +    link(rel="stylesheet" href="https://fonts.googleapis.com/cs
+         +s2?family=Poppins:wght@400;500;600;700&display=swap")          
+      14      script(src="https://cdn.jsdelivr.net/npm/@tailwindcss/brows
+          er@4.3.3")
+      15      include ../includes/tema
+      16      //- Aplica el estado guardado de la sidebar antes de pintar
+          , para evitar el parpadeo.
+  ⎿  Updated src/views/includes/tema.pug (+1 -1)
+      3  //- navegador (botones, etiquetas y filas que se crean dinámicam
+         ente); el resto son utilidades.
+      4  style(type="text/tailwindcss").
+      5    @theme {
+      6 -    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-syste
+        -m, "Segoe UI", Roboto, sans-serif;                              
+      6 +    --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-sys
+        +tem, "Segoe UI", Roboto, sans-serif;                            
+      7  
+      8      /* Fondo neutro de la aplicación y footer (dos tonos más arr
+         iba en la escala de grises) */
+      9      --color-fondo: #F8F9FA;
+  ⎿  Updated src/views/includes/mixins.pug (+3 -2)
+       89  mixin tabla(columnas, idTbody)
+       90    div(class="overflow-x-auto rounded-xl border border-gray-200
+           ")
+       91      table(class="min-w-full text-left text-sm text-gray-800 [&
+           _td]:px-4 [&_td]:py-3 [&_td]:align-middle")
+       92 -      thead(class="bg-gray-50 text-xs font-semibold tracking-w
+          -ide text-gray-600 uppercase")                                 
+       92 +      thead(class="border-b border-black bg-gray-50 text-xs fo
+          +nt-semibold tracking-wide text-gray-600 uppercase")           
+       93          tr
+       94            each columna in columnas
+       95              th(scope="col" class="px-4 py-3 whitespace-nowrap"
+           )= columna
+       96 -      tbody(id=idTbody class="divide-y divide-gray-100 bg-whit
+          -e")                                                           
+       96 +      //- divide-y: borde fino negro entre filas (debajo de ca
+          +da una, salvo la última).                                     
+       97 +      tbody(id=idTbody class="divide-y divide-black bg-white")
+       98  
+       99  //- Texto para listados vacíos.
+      100  mixin vacio(id, texto)
+  ⎿  Updated docs/refactor-frontend.md (+1 -1)
+      68  | `--color-turno-confirmado` | `#1D3557` | Azul cobalto: seña p
+          agada / confirmado |
+      69  | `--color-turno-cancelado` | `#E63946` | Coral: cancelado / au
+          sente sin aviso |
+      70  | `--color-turno-finalizado` | `#E5E5E5` | Gris claro: turno fi
+          nalizado |
+      71 -| `--font-sans` | Inter + fallback de sistema | Tipografía (Int
+         -er se carga de Google Fonts) |                                 
+      71 +| `--font-sans` | Poppins + fallback de sistema | Tipografía (P
+         +oppins se carga de Google Fonts, pesos 400 a 700) |            
+      72  
+      73  De las alternativas propuestas se eligieron el mostaza `#E9C46A
+          ` (el `#E29578` es más salmón que mostaza) y el coral `#E63946`
+           (resalta más rápido el bache libre).
+      74  
+
+● Agrego al documento de refactor una sección con este último ajuste y verifico
+  en el navegador.
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+● La fuente ya es Poppins en todas las vistas y las tablas tienen un borde negro
+  de 1px entre filas. Lo verifiqué en el navegador: Poppins se carga y la
+  última fila no lleva borde.
+
+  Cambios
+  - Fuente: en src/views/layouts/base.pug cambié Inter por Poppins (Google
+    Fonts, pesos 400 a 700). En src/views/includes/tema.pug actualicé
+    --font-sans. Como el <body> usa font-sans, el cambio llega a toda la app,
+    incluidos login y error.
+  - Tablas: en el mixin +tabla de src/views/includes/mixins.pug:
+    - El <tbody> pasó de divide-y divide-gray-100 a divide-y divide-black, que
+      pone el borde debajo de cada fila menos la última. Vale también para las
+      filas que crea el JS.
+    - Agregué border-b border-black al encabezado, para separarlo de la primera
+      fila. No lo pediste explícitamente; si no lo querés, es sacar esas dos
+      clases.
+  - Documentación: en docs/refactor-frontend.md agregué la sección 3.13,
+    "Tipografía y separadores de tablas". También actualicé la tabla de
+    antes/después y la fila de --font-sans. El README.md no menciona la fuente,
+    así que no hizo falta tocarlo.
+
+  Volví a recorrer todas las vistas a 320, 768, 1024 y 1440px. Poppins es más
+  ancha que Inter, pero no apareció scroll horizontal ni errores de consola.
+
+  Sigue todo sin commitear en la rama matias.
+
+✻ Crunched for 1m 32s · done 20:49
+
+❯ Los pills de reservado, atendido y cancelado quiero que tengan color de fondo 
+  según la paleta de colores, porque con el color en la letra no se distinguen  
+  a simple vista los estados                                                    
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  [
+       'reservado: bg rgb(29, 53, 87) color rgb(255, 255, 255)',
+       'atendido: bg rgb(229, 229, 229) color oklch(0.278 0.033 256.848)',
+     … +2 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /home/matiasae/Code/Valinor_Cloud
+  ⎿  Updated src/views/includes/tema.pug (+19 -7)
+      59      .etiqueta {
+      60        @apply inline-flex items-center gap-1.5 rounded-full px-2
+          .5 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-i
+          nset before:size-1.5 before:shrink-0 before:rounded-full before
+          :bg-current before:content-[''];
+      61      }
+      62 -    .estado-reservado,                                         
+      62 +    /* Estados de turnos: fondo sólido con el color de la palet
+         +a para distinguirlos a simple vista.                           
+      63 +       Texto blanco solo sobre colores oscuros (cobalto, oliva)
+         +; sobre gris, mostaza y coral, texto oscuro. */                
+      64 +    .estado-reservado {                                        
+      65 +      @apply bg-turno-confirmado text-white ring-turno-confirma
+         +do;                                                            
+      66 +    }                                                          
+      67 +    .estado-atendido {                                         
+      68 +      @apply bg-turno-finalizado text-gray-800 ring-gray-400;  
+      69 +    }                                                          
+      70 +    .estado-cancelado {                                        
+      71 +      @apply bg-turno-cancelado text-gray-950 ring-turno-cancel
+         +ado;                                                           
+      72 +    }                                                          
+      73 +    .estado-presente {                                         
+      74 +      @apply bg-turno-presente text-white ring-turno-presente; 
+      75 +    }                                                          
+      76 +    .estado-pendiente {                                        
+      77 +      @apply bg-turno-pendiente text-gray-950 ring-turno-pendie
+         +nte;                                                           
+      78 +    }                                                          
+      79 +                                                               
+      80 +    /* Etiquetas genéricas (rol, estado de usuario, auditoría):
+         + fondo tenue para no competir con los turnos */                
+      81      .etiqueta-info {
+      82        @apply bg-turno-confirmado/10 text-turno-confirmado ring-
+          turno-confirmado/25 before:bg-turno-confirmado;
+      83      }
+      66 -    .estado-atendido,                                          
+      84      .etiqueta-neutra {
+      85        @apply bg-turno-finalizado text-gray-700 ring-gray-300 be
+          fore:bg-gray-500;
+      86      }
+      70 -    .estado-cancelado,                                         
+      87      .etiqueta-peligro {
+      88        @apply bg-turno-cancelado/10 text-red-900 ring-turno-canc
+          elado/35 before:bg-turno-cancelado;
+      89      }
+      74 -    .estado-presente,                                          
+      90      .etiqueta-exito {
+      91        @apply bg-turno-presente/15 text-[#2C4419] ring-turno-pre
+          sente/35 before:bg-turno-presente;
+      92      }
+      78 -    .estado-pendiente {                                        
+      79 -      @apply bg-turno-pendiente/30 text-amber-950 ring-turno-pe
+         -ndiente/70 before:bg-turno-pendiente;                          
+     … 4 more lines (ctrl+o to expand)
+
+  Read 1 file (ctrl+o to expand)
+
+● Los estados ahora se distinguen bien. Actualizo la documentación.
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  ok
+  ⎿  Updated docs/refactor-frontend.md (+9 -5)
+       95  | `.btn-atender` | Verde oliva con texto blanco |
+       96  | `.btn-cancelar`, `.btn-danger` | Coral suave con texto rojo 
+           oscuro |
+       97  | `.etiqueta` | Pill con punto de color |
+       98 -| `.estado-reservado` / `-atendido` / `-cancelado` | Estados d
+          -e turno (ver 3.3) |                                           
+       98 +| `.estado-reservado` / `-atendido` / `-cancelado` | Estados d
+          +e turno con fondo sólido del color de la paleta (ver 3.3) |   
+       99  | `.estado-presente` / `-pendiente` | Listos para cuando exist
+           an esos estados |
+      100  | `.etiqueta-info` / `-exito` / `-peligro` / `-neutra` | Etiqu
+           etas genéricas (rol, estado de usuario, acciones de auditoría)
+            |
+      101  | `.fila-reservado` / `-atendido` / `-cancelado` | Franja izqu
+           ierda de 4px con el color del estado en las filas de turnos |
+     ...
+      106  
+      107  | Estado del modelo | Color | Significado en la paleta | Trata
+           miento |
+      108  |---|---|---|---|
+      109 -| `reservado` | Azul cobalto | Confirmado | Etiqueta azul tenu
+          -e con texto cobalto; franja cobalto |                         
+      110 -| `atendido` | Gris claro | Finalizado | Etiqueta gris; fila c
+          -on fondo gris (queda "archivada" visualmente) |               
+      111 -| `cancelado` | Coral | Cancelado / no-show | Etiqueta coral t
+          -enue con texto rojo oscuro; fila con tinte coral para que el b
+          -ache resalte |                                                
+      109 +| `reservado` | Azul cobalto | Confirmado | Etiqueta con fondo
+          + cobalto `#1D3557` y texto blanco; franja cobalto |           
+      110 +| `atendido` | Gris claro | Finalizado | Etiqueta con fondo gr
+          +is `#E5E5E5` y texto gris oscuro; fila con fondo gris (queda "
+          +archivada" visualmente) |                                     
+      111 +| `cancelado` | Coral | Cancelado / no-show | Etiqueta con fon
+          +do coral `#E63946` y texto casi negro; fila con tinte coral pa
+          +ra que el bache resalte |                                     
+      112  
+      113  Presente (oliva) y Pendiente (mostaza) quedan definidos como t
+           okens y clases (`.estado-presente`, `.estado-pendiente`) para 
+           cuando se agreguen esos estados al modelo.
+      114  
+      115 -Regla de contraste: **nunca texto blanco sobre fondos pastel o
+          - claros**. Las etiquetas usan un fondo con baja opacidad del c
+          -olor del estado y texto oscuro; el color "fuerte" queda en el 
+          -punto de la etiqueta y en la franja de la fila. El nombre del 
+          -cliente se muestra siempre en `font-medium text-gray-900`. El 
+          -texto blanco solo aparece sobre colores oscuros (cobalto, oliv
+          -a, `marca`).                                                  
+      115 +Las etiquetas de estado de turno tienen **fondo sólido con el 
+          +color de la paleta**, para que los estados se distingan a simp
+          +le vista (en una primera versión tenían un fondo tenue y el co
+          +lor solo en el texto, y costaba diferenciarlos).              
+      116  
+      117 +Regla de contraste: **nunca texto blanco sobre fondos pastel o
+          + claros**. El texto blanco solo va sobre colores oscuros: coba
+          +lto (contraste ≈ 12:1), oliva (≈ 5,3:1) y `marca`. Sobre gris,
+          + mostaza y coral el texto es oscuro: en el coral `#E63946` el 
+          +texto casi negro da ≈ 5:1, mientras que el blanco daría ≈ 4,2:
+          +1, por debajo del mínimo AA para texto chico. El nombre del cl
+          +iente se muestra siempre en `font-medium text-gray-900`.      
+      118 +                                                              
+      119 +Las etiquetas genéricas (`.etiqueta-info`, `-exito`, `-peligro
+          +`, `-neutra`), que se usan para el rol, el estado de los usuar
+          +ios y las acciones de auditoría, mantienen el fondo tenue con 
+          +texto oscuro para no competir visualmente con los estados de l
+          +os turnos.                                                    
+      120 +                                                              
+      121  ### 3.4 Estructura de plantillas
+      122  
+      123  ```
+
+● Las pills de estado ahora tienen fondo sólido con el color de la paleta, así
+  que se distinguen a simple vista. Lo verifiqué en el navegador en la tabla de
+  turnos y aplica a todas las tablas de turnos, incluido el panel de inicio.
+
+  ┌───────────┬──────────────────────┬─────────────┐
+  │  Estado   │        Fondo         │    Texto    │
+  ├───────────┼──────────────────────┼─────────────┤
+  │ reservado │ Azul cobalto #1D3557 │ Blanco      │
+  ├───────────┼──────────────────────┼─────────────┤
+  │ atendido  │ Gris claro #E5E5E5   │ Gris oscuro │
+  ├───────────┼──────────────────────┼─────────────┤
+  │ cancelado │ Coral #E63946        │ Casi negro  │
+  └───────────┴──────────────────────┴─────────────┘
+
+  El texto del cancelado va oscuro y no blanco por legibilidad. Blanco sobre ese
+  coral da un contraste de ≈4,2:1, por debajo del mínimo recomendado (WCAG AA)
+  para letra chica; el texto oscuro da ≈5:1. Si preferís blanco igual por
+  estética, es cambiar una clase.
+
+  Cambios
+  - src/views/includes/tema.pug: separé las clases .estado-* de las .etiqueta-*,
+    que antes compartían estilo. Los estados de turno pasan a fondo sólido, y
+    presente (oliva) y pendiente (mostaza) quedan definidos igual para cuando
+    existan.
+  - Etiquetas genéricas sin cambios: las del rol, el estado de los usuarios y la
+    auditoría mantienen el fondo tenue, para no competir con los turnos.
+  - docs/refactor-frontend.md: actualicé la sección 3.3 con los nuevos colores y
+    el criterio de contraste, y la tabla de componentes.
+
+  Sigue todo sin commitear en la rama matias.
+
+✻ Baked for 49s · done 20:58
+
+※ recap: Rediseñamos el frontend de TurnoFlex con Tailwind 4: Poppins, bordes entre filas y pills de estado con fondo sólido ya están hechos y verificados. Lo siguiente es que revises los cambios y los commitees en la rama `matias`. (disable recaps in /config)

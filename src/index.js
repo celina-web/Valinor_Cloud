@@ -34,6 +34,11 @@ app.use("/api/profesionales", profesionalesRoutes);
 app.use("/api/turnos", turnosRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/auditoria", auditoriaRoutes);
+// Ruta actual para marcar el ítem activo de la sidebar en las vistas.
+app.use((req, res, next) => {
+  res.locals.rutaActual = req.path;
+  next();
+});
 app.use("/", vistasRoutes);
 
 app.use(notFound);

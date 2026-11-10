@@ -1,0 +1,32 @@
+include ../includes/mixins
+
+doctype html
+html(lang="es")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title
+      block titulo
+        | TurnoFlex - Sistema de Gestión de Turnos
+    link(rel="preconnect" href="https://fonts.googleapis.com")
+    link(rel="preconnect" href="https://fonts.gstatic.com" crossorigin)
+    link(rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap")
+    script(src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3")
+    include ../includes/tema
+    //- Aplica el estado guardado de la sidebar antes de pintar, para evitar el parpadeo.
+    script.
+      try {
+        if (localStorage.getItem("turnoflex:sidebar") === "colapsada") {
+          document.documentElement.dataset.sidebar = "colapsada";
+        }
+      } catch (error) {}
+  body(
+    class="flex min-h-dvh flex-col bg-fondo font-sans text-gray-900 antialiased"
+    data-rol=usuario ? usuario.rol : false
+    data-usuario-id=usuario ? String(usuario._id) : false
+    data-permisos=usuario ? JSON.stringify(permisos) : false
+  )
+    block cuerpo
+    include ../includes/footer
+    script(src="/js/api.js")
+    block scripts

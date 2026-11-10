@@ -1,61 +1,39 @@
 extends ../layout
 
 block content
-  h1 Gestión de Profesionales
+  +encabezado("Gestión de Profesionales", "Alta, edición y baja de los profesionales que atienden los turnos.")
 
   if puede("profesionales:create")
-    h2 Registrar Nuevo Profesional
-    .error#errorAlta(hidden)
-    form#formAlta
-      .form-group
-        label(for="nombre") Nombre *
-        input#nombre(type="text" name="nombre" required)
-      .form-group
-        label(for="apellido") Apellido *
-        input#apellido(type="text" name="apellido" required)
-      .form-group
-        label(for="especialidad") Especialidad *
-        input#especialidad(type="text" name="especialidad" required)
-      .form-group
-        label(for="matricula") Matrícula *
-        input#matricula(type="text" name="matricula" required)
-      button(type="submit") Guardar Profesional
-    hr
+    +seccion("Registrar nuevo profesional")
+      +alerta("errorAlta")
+      form#formAlta(class="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2")
+        +campo("nombre", "Nombre")(type="text" name="nombre" required)
+        +campo("apellido", "Apellido")(type="text" name="apellido" required)
+        +campo("especialidad", "Especialidad")(type="text" name="especialidad" required)
+        +campo("matricula", "Matrícula")(type="text" name="matricula" required)
+        +botonera
+          button.btn.btn-primario(type="submit")
+            +icono("mas")(class="size-4")
+            | Guardar Profesional
 
-  h2 Listado de Profesionales
-  .error#errorListado(hidden)
-  table
-    thead
-      tr
-        th Nombre
-        th Apellido
-        th Especialidad
-        th Matrícula
-        th Acciones
-    tbody#tablaProfesionales
-  p#sinRegistros(hidden) No hay profesionales registrados actualmente.
+  +seccion("Listado de profesionales")
+    +alerta("errorListado")
+    +tabla(["Nombre", "Apellido", "Especialidad", "Matrícula", "Acciones"], "tablaProfesionales")
+    +vacio("sinRegistros", "No hay profesionales registrados actualmente.")
 
-  .modal#modalEditar(hidden)
-    .modal-contenido
-      h3 Editar Profesional
-      .error#errorEdicion(hidden)
-      form#formEditar
-        input(type="hidden" name="_id")
-        .form-group
-          label(for="edit_nombre") Nombre *
-          input#edit_nombre(type="text" name="nombre" required)
-        .form-group
-          label(for="edit_apellido") Apellido *
-          input#edit_apellido(type="text" name="apellido" required)
-        .form-group
-          label(for="edit_especialidad") Especialidad *
-          input#edit_especialidad(type="text" name="especialidad" required)
-        .form-group
-          label(for="edit_matricula") Matrícula *
-          input#edit_matricula(type="text" name="matricula" required)
-        .modal-botones
-          button(type="submit") Guardar Cambios
-          button.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+  +modal("modalEditar", "Editar Profesional")
+    +alerta("errorEdicion")
+    form#formEditar(class="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2")
+      input(type="hidden" name="_id")
+      +campo("edit_nombre", "Nombre")(type="text" name="nombre" required)
+      +campo("edit_apellido", "Apellido")(type="text" name="apellido" required)
+      +campo("edit_especialidad", "Especialidad")(type="text" name="especialidad" required)
+      +campo("edit_matricula", "Matrícula")(type="text" name="matricula" required)
+      +botonera
+        button.btn.btn-secundario.btn-cerrar-modal(type="button") Cancelar
+        button.btn.btn-primario(type="submit")
+          +icono("guardar")(class="size-4")
+          | Guardar Cambios
 
 block scripts
   script(src="/js/profesionales.js")

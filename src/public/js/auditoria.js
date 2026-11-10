@@ -5,10 +5,10 @@ const formFiltros = document.getElementById("formFiltros");
 
 const claseDeAccion = (accion) => {
   if (["ACCESO_DENEGADO", "LOGIN_FALLIDO", "SESION_REVOCADA"].includes(accion)) {
-    return "estado-cancelado";
+    return "etiqueta-peligro";
   }
-  if (["LOGIN", "LOGOUT"].includes(accion)) return "estado-reservado";
-  return "estado-atendido";
+  if (["LOGIN", "LOGOUT"].includes(accion)) return "etiqueta-info";
+  return "etiqueta-exito";
 };
 
 const cargarAuditoria = async () => {

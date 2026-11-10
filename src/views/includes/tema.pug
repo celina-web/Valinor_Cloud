@@ -1,0 +1,104 @@
+//- Configuración de Tailwind 4 (build de navegador). Única fuente de verdad de la paleta.
+//- Las clases de @layer components son solo las que comparten las vistas Pug y el JS del
+//- navegador (botones, etiquetas y filas que se crean dinámicamente); el resto son utilidades.
+style(type="text/tailwindcss").
+  @theme {
+    --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    /* Fondo neutro de la aplicación y footer (dos tonos más arriba en la escala de grises) */
+    --color-fondo: #F8F9FA;
+    --color-pie: #DEE2E6;
+
+    /* Navbar y sidebar: lavanda pastel con texto índigo oscuro */
+    --color-lavanda-50: #F3F1FA;
+    --color-lavanda-100: #E6E3F3;
+    --color-lavanda-200: #D4CFEA;
+    --color-lavanda-300: #BEB6DE;
+    --color-indigo-profundo: #2E2A5A;
+    --color-marca: #4C3F91;
+
+    /* Estados de turnos */
+    --color-turno-presente: #4F772D;
+    --color-turno-pendiente: #E9C46A;
+    --color-turno-confirmado: #1D3557;
+    --color-turno-cancelado: #E63946;
+    --color-turno-finalizado: #E5E5E5;
+  }
+
+  /* Breakpoints: se usan los de Tailwind 4 (sm 640, md 768, lg 1024, xl 1280), que coinciden con los pedidos. */
+
+  @custom-variant colapsada (&:where([data-sidebar="colapsada"] *));
+  @custom-variant drawer-abierto (&:where([data-drawer="abierto"] *));
+
+  @layer components {
+    /* Botones */
+    .btn {
+      @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:cursor-not-allowed disabled:opacity-60;
+    }
+    .btn-chico {
+      @apply gap-1.5 px-3 py-1.5 text-xs;
+    }
+    .btn-primario {
+      @apply bg-turno-confirmado text-white shadow-sm hover:bg-turno-confirmado/90;
+    }
+    .btn-secundario {
+      @apply bg-white text-gray-800 ring-1 ring-gray-300 ring-inset hover:bg-gray-50;
+    }
+    .btn-editar {
+      @apply bg-turno-pendiente text-gray-900 hover:bg-turno-pendiente/80;
+    }
+    .btn-atender {
+      @apply bg-turno-presente text-white hover:bg-turno-presente/90;
+    }
+    .btn-cancelar,
+    .btn-danger {
+      @apply bg-turno-cancelado/10 text-red-900 ring-1 ring-turno-cancelado/40 ring-inset hover:bg-turno-cancelado/20;
+    }
+
+    /* Etiquetas (pill con punto de color). El texto siempre es oscuro. */
+    .etiqueta {
+      @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-inset before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-[''];
+    }
+    /* Estados de turnos: fondo sólido con el color de la paleta para distinguirlos a simple vista.
+       Texto blanco solo sobre colores oscuros (cobalto, oliva); sobre gris, mostaza y coral, texto oscuro. */
+    .estado-reservado {
+      @apply bg-turno-confirmado text-white ring-turno-confirmado;
+    }
+    .estado-atendido {
+      @apply bg-turno-finalizado text-gray-800 ring-gray-400;
+    }
+    .estado-cancelado {
+      @apply bg-turno-cancelado text-white ring-turno-cancelado;
+    }
+    .estado-presente {
+      @apply bg-turno-presente text-white ring-turno-presente;
+    }
+    .estado-pendiente {
+      @apply bg-turno-pendiente text-gray-950 ring-turno-pendiente;
+    }
+
+    /* Etiquetas genéricas (rol, estado de usuario, auditoría): fondo tenue para no competir con los turnos */
+    .etiqueta-info {
+      @apply bg-turno-confirmado/10 text-turno-confirmado ring-turno-confirmado/25 before:bg-turno-confirmado;
+    }
+    .etiqueta-neutra {
+      @apply bg-turno-finalizado text-gray-700 ring-gray-300 before:bg-gray-500;
+    }
+    .etiqueta-peligro {
+      @apply bg-turno-cancelado/10 text-red-900 ring-turno-cancelado/35 before:bg-turno-cancelado;
+    }
+    .etiqueta-exito {
+      @apply bg-turno-presente/15 text-[#2C4419] ring-turno-presente/35 before:bg-turno-presente;
+    }
+
+    /* Filas de turnos: franja izquierda con el color del estado */
+    .fila-reservado {
+      @apply [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-turno-confirmado)];
+    }
+    .fila-atendido {
+      @apply bg-turno-finalizado/40 [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-gray-400)];
+    }
+    .fila-cancelado {
+      @apply bg-turno-cancelado/5 [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-turno-cancelado)];
+    }
+  }

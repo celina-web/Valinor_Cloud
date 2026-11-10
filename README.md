@@ -8,6 +8,7 @@ turnos de un centro de atención. Permite administrar profesionales, clientes y 
 - **Roles jerárquicos y permisos CRUD**: `admin` > `recepcion` > `profesional`.
 - **Auditoría** de todas las acciones relevantes.
 - **Front con `fetch`**: las pantallas cargan y guardan datos de forma asincrónica, sin recargar la página.
+- **Interfaz con Tailwind CSS 4** (por CDN, sin paso de build): navbar y sidebar colapsable, menú de usuario, colores por estado de turno y diseño responsive para móviles, tablets, portátiles y escritorio.
 
 ---
 
@@ -69,6 +70,7 @@ Valinor_Cloud/
 ├── docs/
 │   ├── TurnoFlex.postman_collection.json
 │   ├── refactor-passport-jwt.md         Detalle del paso de express-session a Passport + JWT
+│   ├── refactor-frontend.md             Detalle del rediseño del frontend con Tailwind 4
 │   └── Docker/docker-readme.md          Guía para levantar el proyecto con Docker
 └── src/
     ├── index.js                         Configura Express, cookies, Passport, rutas y errores; conecta a Mongo
@@ -78,7 +80,9 @@ Valinor_Cloud/
     │   ├── passport.js                  Estrategias local (login) y jwt (requests autenticadas)
     │   └── roles.js                     Roles, jerarquía y permisos CRUD
     ├── models/                          Esquemas de Mongoose
-    │   ├── Cliente.js  Profesional.js  Turno.js
+    │   ├── Cliente.js  
+    │   ├── Profesional.js  
+    │   ├── Turno.js
     │   ├── Usuario.js                   Usuario, rol, estado, vencimiento, fechas y hash de contraseña
     │   └── Auditoria.js                 Registro de eventos
     ├── controllers/                     Lógica de cada recurso (async/await)
@@ -93,10 +97,17 @@ Valinor_Cloud/
     │   ├── auditoria.js                 registrarAuditoria()
     │   ├── campos.js                    tomarCampos(): solo acepta campos permitidos
     │   └── token.js                     Firma del JWT y manejo de la cookie
-    ├── views/                           Plantillas Pug (layout, login, panel y ABMs)
+    ├── views/                           Plantillas Pug
+    │   ├── layouts/base.pug             Esqueleto HTML: Tailwind, tema, footer y scripts comunes
+    │   ├── layout.pug                   Shell de la app logueada: navbar + sidebar + contenido
+    │   ├── includes/
+    │   │   ├── tema.pug                 Configuración de Tailwind: paleta, variantes y componentes
+    │   │   ├── mixins.pug               Componentes de vista: campos, tablas, modales, íconos, logo
+    │   │   └── navbar.pug  sidebar.pug  footer.pug
+    │   ├── login.pug  error.pug         Páginas sin shell (extienden layouts/base)
+    │   └── home.pug  clientes/  profesionales/  turnos/  usuarios/  auditoria/
     └── public/
-        ├── estilos.css
-        └── js/                          JS del navegador (fetch a la API)
+        └── js/                          JS del navegador (fetch a la API y layout.js para sidebar y menú)
 ```
 
 ### Cómo funciona
@@ -104,8 +115,9 @@ Valinor_Cloud/
 1. **Vistas y API separadas.** Las rutas de `vistasRoutes.js` solo renderizan la estructura de cada página con Pug. Los datos los pide el navegador con `fetch` a `/api/...`, que siempre responde JSON.
 2. **Sin recargas.** Al guardar, editar o eliminar, el JS envía la petición, espera la respuesta con `await` y vuelve a dibujar la tabla. Si hay un error de validación, se muestra al lado del formulario.
 3. **Autenticación sin estado.** El login (`POST /api/auth/login`) verifica la contraseña con la estrategia `local` de Passport, firma un JWT, lo guarda en la cookie `token` (`httpOnly`, `sameSite=strict`) y también lo devuelve en el JSON. El servidor no guarda sesiones: en cada request la estrategia `jwt` toma el token del header `Authorization: Bearer` o de la cookie y verifica su firma y vencimiento. Así funcionan tanto las páginas Pug (el navegador manda la cookie solo) como clientes externos como Postman (header Bearer).
-4. **Middlewares en cadena.** Cada ruta pasa por `requiereLogin` y luego por `requierePermiso("recurso:accion")` antes de llegar al controlador.
-5. **Errores centralizados.** Express 5 envía al `errorHandler` los errores de los controladores `async`. Ese middleware traduce los errores de Mongoose a respuestas claras:
+4. **Estilos con Tailwind.** Tailwind 4 se carga por CDN y compila las clases en el navegador, incluidas las de los elementos que crea el JS. La paleta (fondo neutro `#F8F9FA`, lavanda para navbar y sidebar, y los colores de estado de los turnos) se define una sola vez en `src/views/includes/tema.pug`; no hay hojas de estilo propias. En los turnos, `reservado` se muestra en azul cobalto, `atendido` en gris claro y `cancelado` en coral. El detalle está en [`docs/refactor-frontend.md`](docs/refactor-frontend.md).
+5. **Middlewares en cadena.** Cada ruta pasa por `requiereLogin` y luego por `requierePermiso("recurso:accion")` antes de llegar al controlador.
+6. **Errores centralizados.** Express 5 envía al `errorHandler` los errores de los controladores `async`. Ese middleware traduce los errores de Mongoose a respuestas claras:
 
    | Error | Respuesta |
    |---|---|
@@ -216,6 +228,7 @@ En esta entrega usamos **Claude Code** como asistente de programación para:
 - proponer un plan de trabajo acotado al alcance pedido.
 - generar correcciones del código de la migración a MongoDB/Mongoose, del sistema de usuarios, roles, permisos y auditoría, y del front.
 - planificar e implementar el cambio de `express-session` a Passport + JWT, verificarlo y documentarlo en `docs/refactor-passport-jwt.md`.
+- rediseñar las vistas Pug con Tailwind CSS 4 (paleta, navbar, sidebar, formularios y responsive), verificarlo y documentarlo en `docs/refactor-frontend.md`.
 - redactar este README.
 
 El grupo revisó, probó y ajustó todo el código generado. Las decisiones de diseño (roles, permisos CRUD, alcance del MVP) fueron nuestras.
@@ -232,5 +245,8 @@ El grupo revisó, probó y ajustó todo el código generado. Las decisiones de d
 - bcryptjs: https://github.com/dcodeIO/bcrypt.js
 - RFC 7519, JSON Web Token: https://datatracker.ietf.org/doc/html/rfc7519
 - Express 5, manejo de errores: https://expressjs.com/en/guide/error-handling.html
+- Tailwind CSS 4: https://tailwindcss.com/docs
+- Tailwind CSS, uso por CDN (Play CDN): https://tailwindcss.com/docs/installation/play-cdn
+- Pug: https://pugjs.org/api/getting-started.html
 - MDN, Fetch API: https://developer.mozilla.org/es/docs/Web/API/Fetch_API
 - MongoDB Manual: https://www.mongodb.com/docs/manual/

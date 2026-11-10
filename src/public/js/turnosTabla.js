@@ -15,6 +15,14 @@ const eliminarTurno = async (turno) => {
   return true;
 };
 
+// Nombre del cliente siempre en texto oscuro y resaltado, sea cual sea el estado del turno.
+const textoDestacado = (texto) => {
+  const elemento = document.createElement("span");
+  elemento.className = "font-medium text-gray-900";
+  elemento.textContent = texto;
+  return elemento;
+};
+
 const crearFilaTurno = (turno, alTerminar, alFallar) => {
   const ejecutar = (operacion) => async () => {
     try {
@@ -39,14 +47,17 @@ const crearFilaTurno = (turno, alTerminar, alFallar) => {
     acciones.push(crearBoton("Eliminar", "btn-danger", ejecutar(() => eliminarTurno(turno))));
   }
 
-  return crearFila(
+  const fila = crearFila(
     [
       turno.fecha,
       turno.hora,
-      nombreCompleto(turno.cliente),
+      textoDestacado(nombreCompleto(turno.cliente)),
       nombreCompleto(turno.profesional),
       crearEtiqueta(turno.estado, `estado-${turno.estado}`),
     ],
     acciones
   );
+  // Franja de color según el estado (clases fila-* definidas en includes/tema.pug).
+  fila.classList.add(`fila-${turno.estado}`);
+  return fila;
 };

@@ -1,18 +1,20 @@
-extends layout
+extends layouts/base
 
-block content
-  .login
-    h1 TurnoFlex
-    p Ingresá con tu usuario para continuar.
-    .error#errorLogin(hidden)
-    form#formLogin
-      .form-group
-        label(for="usuario") Usuario
-        input#usuario(type="text" name="usuario" autocomplete="username" required autofocus)
-      .form-group
-        label(for="password") Contraseña
-        input#password(type="password" name="password" autocomplete="current-password" required)
-      button(type="submit") Ingresar
+block titulo
+  | Ingresar · TurnoFlex
+
+block cuerpo
+  main(class="flex flex-1 items-center justify-center px-4 py-10 sm:py-16")
+    div(class="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8")
+      div(class="mb-6 flex flex-col items-center text-center")
+        +logo("grande")
+        h1(class="mt-4 text-2xl font-bold tracking-tight text-indigo-profundo") TurnoFlex
+        p(class="mt-1 text-sm text-gray-600") Ingresá con tu usuario para continuar.
+      +alerta("errorLogin")
+      form#formLogin(class="flex flex-col gap-4")
+        +campo("usuario", "Usuario", { sinMarca: true })(type="text" name="usuario" autocomplete="username" required autofocus)
+        +campo("password", "Contraseña", { sinMarca: true })(type="password" name="password" autocomplete="current-password" required)
+        button.btn.btn-primario(type="submit" class="mt-2 w-full py-2.5") Ingresar
 
 block scripts
   script(src="/js/login.js")
