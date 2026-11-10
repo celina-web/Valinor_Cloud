@@ -152,6 +152,7 @@ src/views/
 | `+tabla(columnas, idTbody)` | Tabla con encabezados, scroll horizontal propio y `tbody` vacío para el JS |
 | `+vacio(id, texto)` | Mensaje de listado vacío |
 | `+modal(id, titulo)` | Modal de edición (overlay + panel con scroll) controlado por el atributo `hidden` |
+| `+modalConfirmacion` | Modal de confirmación de acciones (`#modalConfirmacion`, `role="alertdialog"`), uno por página, incluido en `layout.pug`; lo maneja `confirmar()` de `api.js` |
 | `+tarjetaResumen(id, texto, icono, variante)` | Tarjeta del panel con la cantidad de turnos por estado |
 | `+enlaceSidebar(href, texto, icono, activo)` | Link de la sidebar con `aria-current="page"` y tooltip (`title`) |
 
@@ -194,7 +195,20 @@ Tarjeta blanca `rounded-2xl` centrada vertical y horizontalmente (ancho máximo 
 
 ### 3.11 Página de error
 
-Solo muestra el logo centrado, "TurnoFlex" y el botón **"Volver al inicio"** (`href="/"`, el panel principal), más el footer. No tiene navbar ni sidebar. El `titulo` que envía el servidor ("Página no encontrada", "Acceso denegado"…) se usa en el `<title>` de la pestaña y, junto con el mensaje, en un texto `sr-only` para lectores de pantalla; no se muestra visualmente, como se pidió.
+Logo chico con "TurnoFlex" arriba y una tarjeta blanca centrada con un ícono según el error (lupa para 404, candado para 403, alerta para el resto), el código (`Error 404`), el `titulo` y el `mensaje` que envía el servidor, y el botón **"Volver al inicio"** (`href="/"`). No tiene navbar ni sidebar. El servidor pasa `codigo`, `titulo` y `mensaje` desde `notFound`/`errorHandler` (`src/middlewares/errores.js`) y `requierePermiso` (`src/middlewares/auth.js`); si falta alguno, la vista usa textos genéricos.
+
+> Antes el motivo del error solo quedaba en un texto `sr-only`: el usuario veía el logo y el botón sin saber qué había pasado.
+
+### 3.11.1 Favicon
+
+`src/public/favicon.svg` reproduce el `+logo("grande")` (baldosa `#4C3F91` con el ícono `calendario` en blanco). `favicon.ico` (16/32/48 px) y `apple-touch-icon.png` (180 px, sin esquinas transparentes porque iOS las redondea solo) se generaron desde el SVG con ImageMagick:
+
+```bash
+magick -background none -density 384 src/public/favicon.svg -define icon:auto-resize=48,32,16 src/public/favicon.ico
+magick -background "#4C3F91" -density 384 src/public/favicon.svg -resize 180x180 -flatten -depth 8 -strip src/public/apple-touch-icon.png
+```
+
+Si cambia el logo, hay que actualizar el SVG y regenerar ambos. Los `<link rel="icon">` están en `layouts/base.pug`.
 
 ### 3.12 Formularios y responsive
 
@@ -227,6 +241,7 @@ Cambios mínimos, sin tocar la lógica:
 | `src/public/js/usuarios.js` | `estadoDe` usa `etiqueta-exito` (activo) y `etiqueta-peligro` (inactivo/vencido) en lugar de reutilizar `estado-*` |
 | `src/public/js/auditoria.js` | `claseDeAccion` usa `etiqueta-peligro` (accesos denegados, logins fallidos, sesiones revocadas), `etiqueta-info` (login/logout) y `etiqueta-exito` (el resto) |
 | `src/public/js/layout.js` | Nuevo (ver 3.8) |
+| `src/public/js/api.js` | `confirmar({ titulo, mensaje, textoConfirmar, textoCancelar, variante })` reemplaza a `window.confirm()`: abre `+modalConfirmacion` y devuelve una promesa con `true`/`false`. Variantes `peligro` (botón `.btn-peligro`, foco inicial en "Cancelar"), `exito` (`.btn-atender`) y `primario`. Escape, el click fuera del cuadro y "Cancelar" cancelan; el foco queda atrapado en los botones y vuelve al elemento previo al cerrar. Lo usan `turnosTabla.js`, `clientes.js`, `profesionales.js`, `usuarios.js` y `chat.js` |
 
 Las clases `estado-*` quedan reservadas a los turnos.
 

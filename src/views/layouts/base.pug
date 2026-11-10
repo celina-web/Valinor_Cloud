@@ -8,6 +8,11 @@ html(lang="es")
     title
       block titulo
         | TurnoFlex - Sistema de Gestión de Turnos
+    //- Favicon: el mismo logo del mixin logo() (src/public/favicon.svg). El .ico es el respaldo
+    //- para navegadores sin soporte de SVG y el PNG es el ícono de acceso directo en iOS.
+    link(rel="icon" href="/favicon.ico" sizes="48x48")
+    link(rel="icon" href="/favicon.svg" type="image/svg+xml")
+    link(rel="apple-touch-icon" href="/apple-touch-icon.png")
     link(rel="preconnect" href="https://fonts.googleapis.com")
     link(rel="preconnect" href="https://fonts.gstatic.com" crossorigin)
     link(rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap")

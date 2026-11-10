@@ -14,7 +14,13 @@ const abrirEdicion = (cliente) => {
 };
 
 const eliminarCliente = async (cliente) => {
-  if (!confirm(`¿Eliminar a ${cliente.nombre} ${cliente.apellido}?`)) return;
+  const confirmado = await confirmar({
+    titulo: "Eliminar cliente",
+    mensaje: `¿Eliminar a ${cliente.nombre} ${cliente.apellido}? Esta acción no se puede deshacer.`,
+    textoConfirmar: "Eliminar",
+    variante: "peligro",
+  });
+  if (!confirmado) return;
   try {
     await api(`/api/clientes/${cliente._id}`, { method: "DELETE" });
     await cargarClientes();

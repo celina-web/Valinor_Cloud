@@ -3,8 +3,9 @@ const esApi = (req) => req.originalUrl.startsWith("/api");
 const notFound = (req, res) => {
   if (esApi(req)) return res.status(404).json({ error: "Ruta inexistente" });
   res.status(404).render("error", {
+    codigo: 404,
     titulo: "Página no encontrada",
-    mensaje: "La página que buscás no existe.",
+    mensaje: "La página que buscás no existe o cambió de dirección. Revisá que la URL esté bien escrita o volvé al inicio.",
   });
 };
 
@@ -37,7 +38,7 @@ const errorHandler = (err, req, res, next) => {
   if (status === 500) console.error("Error no controlado:", err);
 
   if (esApi(req)) return res.status(status).json({ error: mensaje });
-  res.status(status).render("error", { titulo: "Ocurrió un error", mensaje });
+  res.status(status).render("error", { codigo: status, titulo: "Ocurrió un error", mensaje });
 };
 
 module.exports = { notFound, errorHandler };

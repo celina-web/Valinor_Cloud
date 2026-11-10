@@ -14,7 +14,13 @@ const abrirEdicion = (profesional) => {
 };
 
 const eliminarProfesional = async (profesional) => {
-  if (!confirm(`¿Eliminar a ${profesional.nombre} ${profesional.apellido}?`)) return;
+  const confirmado = await confirmar({
+    titulo: "Eliminar profesional",
+    mensaje: `¿Eliminar a ${profesional.nombre} ${profesional.apellido}? Esta acción no se puede deshacer.`,
+    textoConfirmar: "Eliminar",
+    variante: "peligro",
+  });
+  if (!confirmado) return;
   try {
     await api(`/api/profesionales/${profesional._id}`, { method: "DELETE" });
     await cargarProfesionales();

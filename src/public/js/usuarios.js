@@ -57,7 +57,13 @@ const cambiarActivo = async (usuario) => {
 };
 
 const eliminarUsuario = async (usuario) => {
-  if (!confirm(`¿Eliminar el usuario ${usuario.usuario}?`)) return;
+  const confirmado = await confirmar({
+    titulo: "Eliminar usuario",
+    mensaje: `¿Eliminar el usuario ${usuario.usuario}? Esta acción no se puede deshacer.`,
+    textoConfirmar: "Eliminar",
+    variante: "peligro",
+  });
+  if (!confirmado) return;
   try {
     await api(`/api/usuarios/${usuario._id}`, { method: "DELETE" });
     await cargarUsuarios();

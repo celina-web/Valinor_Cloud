@@ -21,6 +21,10 @@
     mensajes: ["M7.9 20A9 9 0 1 0 4 16.1L2 22Z", "M8 12h.01", "M12 12h.01", "M16 12h.01"],
     enviar: ["M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z", "M6 12h16"],
     volver: ["m12 19-7-7 7-7", "M19 12H5"],
+    alerta: ["m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3", "M12 9v4", "M12 17h.01"],
+    pregunta: ["M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3", "M12 17h.01"],
+    noEncontrado: ["M3 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0", "m21 21-4.3-4.3", "M11 8v4", "M11 16h.01"],
+    candado: ["M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z", "M7 11V7a5 5 0 0 1 10 0v4"],
   };
 
   const claseControl = "block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs placeholder:text-gray-400 focus:border-marca focus:outline-none focus:ring-2 focus:ring-marca/30 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
@@ -109,6 +113,26 @@ mixin modal(id, titulo)
     div(class="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl")
       h3(id=id + "Titulo" class="mb-4 text-lg font-semibold text-gray-900")= titulo
       block
+
+//- Modal de confirmación de acciones (reemplaza a window.confirm). Uno solo por página:
+//- lo abre confirmar() de src/public/js/api.js, que completa los textos y elige la variante.
+//- Hay un ícono por variante; el JS muestra el que corresponde.
+mixin modalConfirmacion
+  div#modalConfirmacion(hidden role="alertdialog" aria-modal="true" aria-labelledby="modalConfirmacionTitulo" aria-describedby="modalConfirmacionMensaje" class="fixed inset-0 z-60 flex items-center justify-center bg-gray-900/40 p-4")
+    div(class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl")
+      div(class="flex items-start gap-4")
+        span(data-variante="peligro" class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-turno-cancelado/10 text-turno-cancelado")
+          +icono("alerta")(class="size-6")
+        span(data-variante="exito" class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-turno-presente/15 text-turno-presente")
+          +icono("atendido")(class="size-6")
+        span(data-variante="primario" class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-lavanda-100 text-marca")
+          +icono("pregunta")(class="size-6")
+        div(class="min-w-0 flex-1 pt-1")
+          h3#modalConfirmacionTitulo(class="text-lg font-semibold text-gray-900")
+          p#modalConfirmacionMensaje(class="mt-2 text-sm text-gray-600")
+      div(class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end")
+        button#modalConfirmacionCancelar.btn.btn-secundario(type="button") Cancelar
+        button#modalConfirmacionAceptar.btn.btn-primario(type="button") Confirmar
 
 //- Tarjeta de resumen del panel (cantidad de turnos por estado).
 mixin tarjetaResumen(id, texto, icono, variante)

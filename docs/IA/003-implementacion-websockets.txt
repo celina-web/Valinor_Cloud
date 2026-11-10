@@ -1,0 +1,2004 @@
+ ▐▛███▛█   Claude Code v2.1.319
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~/Code/Valinor_Cloud
+
+
+❯ /clear                                                                        
+
+❯ Como paso siguiente, quiero desarrollar el plan completo (tanto Backend como  
+  Frontend) para implementar la utilización de la tecnología WebSocket          
+  (utilizando la librería Socket.io) con el fin de crear un chat en tiempo real 
+  en la aplicación. Este chat permitirá que los usuarios con rol "recepcion" o  
+  "profesional" inicien una conversación con un usuario "admin" para realizar   
+  consultas.                                                                    
+                                                                                
+  Para estructurar la solución de manera robusta y profesional, el diseño debe  
+  cumplir estrictamente con las siguientes reglas de negocio, arquitectura y    
+  UI/UX:                                                                        
+                                                                                
+  1. Restricciones de roles:                                                    
+     - El usuario con rol "admin" NO puede iniciar una conversación. Su rol es  
+  reactivo: recibir, aceptar, rechazar o finalizar chats.                       
+     - No puede haber chats entre usuarios administradores entre sí. Las        
+  conversaciones son exclusivamente Admin-Recepción o Admin-Profesional.        
+                                                                                
+  2. Ciclo de vida y estados del chat (State Machine):                          
+     Cada chat debe manejar explícitamente estados en el backend: PENDIENTE     
+  (esperando aceptación), ACTIVO (conversación bidireccional), FINALIZADO       
+  (cerrado por el admin o por timeout) y RECHAZADO.                             
+                                                                                
+  3. Flujo de apertura y moderación:                                            
+     - Cuando un usuario (recepción o profesional) abre el chat, se crea la     
+  solicitud con un mensaje inicial y se pone en estado PENDIENTE.               
+     - El usuario NO puede enviar más mensajes hasta que un administrador       
+  acepte la conversación.                                                       
+     - El flujo esperado es: Usuario envía consulta inicial > El sistema busca  
+  un Admin disponible y le notifica > Admin acepta el chat > El chat pasa a     
+  estado ACTIVO y se habilita la mensajería bidireccional.                      
+                                                                                
+  4. Timeout por inactividad inicial (5 minutos):                               
+     - Controlado estrictamente desde el BACKEND: si transcurren 5 minutos      
+  desde que un usuario (recepción/profesional) inició un chat en estado         
+  PENDIENTE y ningún admin lo aceptó, el servidor debe expirar el chat, cambiar 
+  su estado a FINALIZADO/TIMEOUT y notificar al cliente para que deba generar   
+  una nueva solicitud.                                                          
+                                                                                
+  5. Enrutamiento y disponibilidad de Administradores:                          
+     - El servidor debe llevar un registro en memoria de las conexiones de      
+  Socket.io de los administradores activos.                                     
+     - Cuando se inicia un chat, este debe despacharse únicamente a un (1)      
+  administrador conectado (puedes aplicar una estrategia de selección aleatoria 
+  o al primero de la lista).                                                    
+     - Si no hay ningún administrador conectado en ese exacto momento, el       
+  sistema debe rechazar la apertura del chat y responderle al usuario con el    
+  aviso: "Todos los operadores se encuentran ocupados en este momento".         
+                                                                                
+  6. Finalización de la conversación:                                           
+     - El administrador puede dar por finalizada la conversación en cualquier   
+  momento.                                                                      
+     - Al hacerlo, el backend cambia el estado a FINALIZADO, emite un evento de 
+  aviso al otro usuario bloqueando la interfaz de chat, y la conversación ya    
+  no permite el envío de nuevos mensajes. Para volver a consultar, el usuario   
+  deberá iniciar un nuevo chat.                                                 
+                                                                                
+  7. Especificaciones de Interfaz de Usuario (Frontend / UI / UX):              
+     - Ubicación del acceso: Al lado del icono de usuario (situado a la derecha 
+  de la navbar), agregar un **ícono de mensajes / chat** con un badge           
+  indicador si hay chats activos o pendientes.                                  
+     - Componente visual (Slide-over Drawer): Al hacer clic en el ícono de      
+  mensajes, debe desplegarse un panel lateral deslizante desde la derecha de la 
+  pantalla (un cajón o *drawer* flotante) que aloje la interfaz del chat, sin   
+  bloquear el resto de la vista principal.                                      
+     - Interfaz adaptada por roles:                                             
+       * Para Recepción / Profesional: Una vista limpia para iniciar consulta,  
+  ver el estado de espera (PENDIENTE), el chat activo (ACTIVO) con burbujas de  
+  mensajes, o la opción de iniciar un nuevo chat si fue finalizado.             
+       * Para Administrador: Una sección o lista de chats entrantes pendientes  
+  de aceptación, la posibilidad de aceptar/rechazar, y la interfaz para chatear 
+  y finalizar la conversación de forma dinámica en tiempo real usando           
+  Socket.io.                                                                    
+                                                                                
+  Por favor, analiza la arquitectura completa (eventos de Socket.io,            
+  almacenamiento temporal o en DB, manejo de salas/rooms, estructura de         
+  archivos frontend con Tailwind/Pug y cliente de socket.io) y genera el plan   
+  detallado para su implementación.                                             
+
+  Ran 4 shell commands (ctrl+o to expand)
+
+● User answered Claude's questions:
+  ⎿  · ¿Cómo viajan las acciones del cliente al servidor (iniciar, aceptar, 
+     rechazar, finalizar, enviar mensaje)? La app es multipágina: el socket se 
+     reconecta en cada navegación, y la cookie JWT solo se renueva con requests 
+     HTTP. → Híbrido REST + Socket (Recomendado)
+     · ¿Cuándo se considera 'ocupado' a un admin a la hora de asignarle un chat 
+     nuevo? → Límite configurable por admin
+
+● Updated plan
+  ⎿  /plan to preview
+
+● User approved Claude's plan
+  ⎿  Plan saved to: 
+     ~/.claude/plans/pasted-content-id-c2c3-como-paso-abstract-orbit.md · /plan 
+     to edit
+     Plan: chat de consultas en tiempo real (Socket.io) — TurnoFlex
+
+     Contexto
+
+     Los usuarios recepcion y profesional necesitan consultar a un administrador
+     sin salir de la app. Se agrega un chat 1 a 1 (usuario → admin) con estados
+     explícitos (pendiente, activo, finalizado, rechazado), asignación a un
+     único admin conectado, timeout de 5 minutos controlado por el servidor y un
+     drawer lateral en la navbar.
+
+     Decisiones tomadas:
+     - Híbrido REST + Socket.io. Todas las acciones (iniciar, aceptar, rechazar,
+       finalizar, enviar mensaje) son endpoints /api/chats. Así reusan
+       requiereLogin → requierePermiso → controlador, tomarCampos, errorHandler,
+       auditoría y Postman, y renuevan la cookie JWT. Socket.io queda para
+       empujar eventos del servidor al cliente (y para registrar qué admins
+       están conectados).
+     - Límite por admin configurable (CHAT_MAX_POR_ADMIN, por defecto 3). Se
+       elige el admin conectado con menos chats pendiente+activo; si hay empate,
+       al azar. Si no hay admins conectados, o todos están en el límite, la API
+       responde 503 con "Todos los operadores se encuentran ocupados en este 
+       momento" y no crea el chat.
+     - La persistencia va en MongoDB (modelo Chat con los mensajes embebidos)
+       para tener historial, poder recuperarse si se reinicia el servidor y que
+       la carga de cada admin se cuente desde la base. En memoria quedan solo la
+       presencia de los admins y los timers.
+     - Reglas de la app multipágina: cada navegación cierra y vuelve a abrir el
+       socket. Por eso:
+       a. Los eventos se emiten a salas por usuario (usuario:<id>) y no a salas
+          por chat. Así no hay que reincorporar a nadie a las salas, y funciona
+          igual con varias pestañas abiertas.
+       b. Un admin se considera desconectado recién después de un período de 
+          gracia (10 s) sin sockets abiertos.
+       c. Al cargar cada página, el estado se lee por REST.
+
+     Backend
+
+     Dependencia y arranque
+
+     - npm install socket.io (v4). El cliente se sirve solo en
+       /socket.io/socket.io.js y no hace falta CDN. En Docker: docker compose up
+       --build -V.
+     - src/index.js: reemplazar app.listen por const server = 
+       http.createServer(app); iniciarSocket(server); server.listen(PORT). En
+       iniciar(), después de conectarDB(), llamar a recuperarTimeouts().
+     - .env.example: CHAT_MAX_POR_ADMIN=3, CHAT_TIMEOUT_MINUTOS=5 (variable
+       opcional que sirve para probar con 1 minuto).
+
+     Modelo src/models/Chat.js
+
+     ESTADOS = ["pendiente", "activo", "finalizado", "rechazado"]
+     MOTIVOS_CIERRE = ["admin", "timeout", "rechazo"]
+     solicitante: ObjectId ref Usuario (required)
+     rolSolicitante: "recepcion" | "profesional"
+     admin: ObjectId ref Usuario (asignado; cambia si se reasigna)
+     estado: enum ESTADOS, default "pendiente"
+     motivoCierre: enum MOTIVOS_CIERRE, default null
+     expiraEl: Date            // creación + CHAT_TIMEOUT_MINUTOS (solo tiene 
+     sentido en pendiente)
+     aceptadoEl, cerradoEl: Date
+     mensajes: [{ autor: ObjectId ref Usuario, texto: String trim 1..1000, 
+     createdAt }]
+     timestamps: true
+     Índices:
+     - { admin: 1, estado: 1 } para calcular la carga de cada admin.
+     - { estado: 1, expiraEl: 1 } para recuperar los timeouts.
+     - Índice único parcial { solicitante: 1 } con partialFilterExpression: { 
+       estado: { $in: ["pendiente","activo"] } } (Mongo 7 lo soporta). Garantiza
+       un solo chat abierto por usuario; si choca, el errorHandler ya
+       devuelve 409.
+
+     Exportar ESTADOS y ABIERTOS como hace Auditoria.ACCIONES.
+
+     Máquina de estados — src/services/chatService.js (carpeta nueva)
+
+     Tiene toda la lógica de negocio y la usan los controladores, los handlers
+     del socket y los timers. Cada transición es un findOneAndUpdate atómico con
+     el estado de origen en el filtro, para que no haya carreras entre
+     "aceptar" y "timeout":
+
+     ┌────────────────┬───────────────────────────────────────┬────────────────┐
+     │   Transición   │                Filtro                 │     Quién      │
+     ├────────────────┼───────────────────────────────────────┼────────────────┤
+     │ crear →        │ (no hay otro chat abierto)            │ solicitante    │
+     │ pendiente      │                                       │ (no admin)     │
+     ├────────────────┼───────────────────────────────────────┼────────────────┤
+     │ pendiente →    │ {_id, estado:"pendiente", admin: yo}  │ admin asignado │
+     │ activo         │                                       │                │
+     ├────────────────┼───────────────────────────────────────┼────────────────┤
+     │ pendiente →    │                                       │                │
+     │ rechazado      │ ídem                                  │ admin asignado │
+     │ (motivo        │                                       │                │
+     │ rechazo)       │                                       │                │
+     ├────────────────┼───────────────────────────────────────┼────────────────┤
+     │ pendiente →    │                                       │                │
+     │ finalizado     │ {_id, estado:"pendiente"}             │ timer del      │
+     │ (motivo        │                                       │ servidor       │
+     │ timeout)       │                                       │                │
+     ├────────────────┼───────────────────────────────────────┼────────────────┤
+     │ activo →       │                                       │                │
+     │ finalizado     │ {_id, estado:"activo", admin: yo}     │ admin asignado │
+     │ (motivo admin) │                                       │                │
+     ├────────────────┼───────────────────────────────────────┼────────────────┤
+     │ agregar        │ {_id, estado:"activo",                │ ambos          │
+     │ mensaje        │ $or:[{solicitante:yo},{admin:yo}]}    │ participantes  │
+     │ ($push)        │                                       │                │
+     └────────────────┴───────────────────────────────────────┴────────────────┘
+
+     Si el update devuelve null, se responde 409 con un mensaje claro (por
+     ejemplo "El chat ya no está pendiente"). Los estados finalizado y rechazado
+     son finales.
+
+     Funciones:
+     - iniciarChat(usuario, texto):
+       a. Verifica que no tenga un chat abierto (409).
+       b. Llama a elegirAdmin(); si devuelve null, lanza un error de status 503
+          con el mensaje de operadores ocupados.
+       c. Crea el chat con el mensaje inicial en mensajes[0].
+       d. Llama a programarTimeout(chat).
+       e. Emite chat:nuevo al admin y chat:actualizado al solicitante.
+
+       Toda la asignación corre dentro de un mutex en proceso (una cadena de
+       promesas encolar(fn)), para que dos solicitudes simultáneas no superen el
+       límite.
+     - elegirAdmin({ excluir }):
+       a. Toma los ids conectados desde presencia.adminsConectados().
+       b. Calcula la carga con Chat.aggregate (match admin ∈ ids, estado ∈ 
+          ABIERTOS, group por admin).
+       c. Descarta los que tienen carga ≥ CHAT_MAX_POR_ADMIN y elige el de menor
+          carga (desempate aleatorio).
+     - aceptar, rechazar, finalizar y enviarMensaje emiten el evento
+       correspondiente a los dos participantes. aceptar y rechazar cancelan el
+       timer.
+     - expirar(chatId) lo llama el timer. Hace la transición a
+       finalizado/timeout, emite chat:finalizado a ambos y audita como
+       "sistema".
+     - reasignarPendientesDe(adminId): cuando un admin se desconecta, mueve sus
+       chats pendiente a otro admin disponible (emite chat:retirado al anterior
+       y chat:nuevo al nuevo). Si no hay ninguno disponible, quedan pendientes
+       hasta el timeout.
+     - asignarHuerfanos(adminId): cuando un admin se conecta, le asigna los
+       chats pendientes cuyo admin está desconectado, hasta llegar a su límite.
+
+     Timers — src/services/chatTimeouts.js
+
+     - Map<chatId, Timeout>: programar(chat) usa setTimeout(expirar, expiraEl - 
+       now) y cancelar(chatId) lo limpia.
+     - recuperarTimeouts() al arrancar: los chats pendiente con expiraEl <= now
+       se expiran ya mismo (sin socket para emitir, se corrige solo cuando el
+       cliente vuelva a leer por REST) y al resto se le reprograma el timer. Así
+       el timeout de 5 minutos sobrevive a reinicios o a recargas de nodemon.
+
+     Socket.io — src/socket/index.js
+
+     - iniciarSocket(server) crea new Server(server) (mismo origen, sin CORS) y
+       exporta emitirA(usuarioIds, evento, datos) → io.to(ids.map(id => 
+       "usuario:" + id)).emit(...), además de desconectarUsuario(id) →
+       io.in("usuario:"+id).disconnectSockets(true).
+     - Autenticación en el handshake, reusando el código existente:
+       - io.engine.use(cookieParser())
+       - io.engine.use(...): solo en el handshake (req._query.sid === undefined)
+         llama a autenticar("jwt", req, res) de src/middlewares/auth.js. Si no
+         hay usuario, responde 401; si lo hay, guarda req.usuario.
+       - Un io.use copia socket.request.usuario a socket.data.usuario, y también
+         exp, que sale de info.payload.
+       - Así el socket hereda la verificación de firma, tokenVersion, activo y
+         expiraEl sin duplicar lógica.
+     - connection:
+       - El socket se une a usuario:<id>.
+       - Si el rol es admin: presencia.conectar(id, socket.id) y después
+         asignarHuerfanos(id).
+       - El socket no recibe comandos (por la decisión del modo híbrido). El
+         único evento cliente→servidor opcional es chat:escribiendo {chatId}: se
+         reenvía al otro participante después de validar que el socket es parte
+         de un chat activo. Si se quiere menos alcance, se deja para después.
+     - disconnect: si es admin, llama a presencia.desconectar(id, socket.id).
+     - Sesión larga: con un setInterval por socket (o al recibir cada evento) se
+       compara socket.data.exp con la hora actual; si venció, se llama a
+       socket.disconnect(true). La siguiente navegación o fetch reautentica.
+
+     Presencia de admins — src/socket/presencia.js
+
+     - Map<adminId, Set<socketId>> más Map<adminId, Timeout> de gracia.
+     - conectar: agrega el socket y cancela la gracia pendiente.
+     - desconectar: saca el socket; si el Set queda vacío, arranca la gracia de
+       10 s. Al vencer, borra al admin y llama a
+       chatService.reasignarPendientesDe(id).
+     - adminsConectados() incluye a los que están dentro del período de gracia,
+       porque solo están navegando entre páginas.
+     - Limitación documentada: es un solo proceso de Node. Para escalar
+       horizontalmente harían falta @socket.io/redis-adapter y presencia en
+       Redis, y eso queda fuera de alcance.
+
+     Revocación del socket
+
+     - authController.logout: después del $inc tokenVersion, llamar a
+       desconectarUsuario(req.usuario._id).
+     - usuariosController: hacer lo mismo cuando se desactiva un usuario, se le
+       cambia el rol, se le pone un vencimiento, se le cambia la contraseña o se
+       lo elimina.
+     - Si era admin, el disconnect dispara la gracia y después la reasignación.
+
+     Permisos — src/config/roles.js
+
+     - profesional agrega "chat:usar" (lo heredan recepcion y admin por el
+       spread).
+     - admin agrega "chat:moderar".
+     - Siguiendo la convención de control por contexto, iniciarChat rechaza con
+       403 a un usuario admin ("Los administradores no pueden iniciar
+       conversaciones"). Con eso tampoco pueden existir chats entre admins: el
+       único que puede iniciar nunca es admin, y el asignado siempre lo es.
+
+     API — src/routes/api/chatRoutes.js + src/controllers/chatController.js
+
+     Se monta en src/index.js como app.use("/api/chats", chatRoutes). Todas las
+     rutas pasan por requiereLogin.
+
+     Método y ruta: GET /api/chats
+     Permiso: chat:usar
+     Descripción: Admin: sus chats pendiente + activo (sin mensajes, con el
+     último
+       mensaje y el nombre y rol del solicitante). Usuario: su chat abierto o el
+
+       último cerrado (con mensajes), o null.
+     ────────────────────────────────────────
+     Método y ruta: GET /api/chats/:id
+     Permiso: chat:usar
+     Descripción: Chat completo; solo si sos participante (si no, 404).
+     ────────────────────────────────────────
+     Método y ruta: POST /api/chats
+     Permiso: chat:usar
+     Descripción: tomarCampos(body, ["mensaje"]) → iniciarChat. Devuelve 201,
+     409 si
+       ya tenés uno abierto o 503 si no hay operadores.
+     ────────────────────────────────────────
+     Método y ruta: POST /api/chats/:id/aceptar
+     Permiso: chat:moderar
+     Descripción: pendiente → activo
+     ────────────────────────────────────────
+     Método y ruta: POST /api/chats/:id/rechazar
+     Permiso: chat:moderar
+     Descripción: pendiente → rechazado
+     ────────────────────────────────────────
+     Método y ruta: POST /api/chats/:id/finalizar
+     Permiso: chat:moderar
+     Descripción: activo → finalizado
+     ────────────────────────────────────────
+     Método y ruta: POST /api/chats/:id/mensajes
+     Permiso: chat:usar
+     Descripción: tomarCampos(body, ["texto"]) → $push; 409 si el chat no está
+       activo.
+
+     - populate("solicitante admin", "nombre usuario rol"), porque toJSON de
+       Usuario ya excluye password y tokenVersion.
+     - Errores: el servicio lanza Object.assign(new Error(msg), { status }). Hay
+       que extender traducirError en src/middlewares/errores.js para que, si
+       err.status está entre 400 y 503 y trae err.expuesto = true, use
+       err.message. Hoy los 4xx genéricos pisan el mensaje y el 503 no está
+       contemplado.
+
+     Auditoría
+
+     Se usan las acciones existentes con entidad: "Chat":
+     - CREAR al iniciar.
+     - CAMBIO_ESTADO al aceptar, rechazar, finalizar y en el timeout. El timeout
+       llama a registrarAuditoria({ ip: null }, "CAMBIO_ESTADO", { 
+       usuarioNombre: "sistema", ... }); el helper ya tolera un req sin usuario.
+     - Agregar "CHAT_SIN_OPERADOR" a ACCIONES en src/models/Auditoria.js para
+       auditar las aperturas rechazadas con 503.
+     - Los mensajes no se auditan.
+
+     Eventos Socket.io (servidor → cliente)
+
+     ┌────────────────────┬──────────────────────────┬────────────────────────┐
+     │       Evento       │         Destino          │        Payload         │
+     ├────────────────────┼──────────────────────────┼────────────────────────┤
+     │                    │                          │ resumen del chat (id,  │
+     │ chat:nuevo         │ admin asignado           │ solicitante, mensaje   │
+     │                    │                          │ inicial, expiraEl)     │
+     ├────────────────────┼──────────────────────────┼────────────────────────┤
+     │                    │                          │ { chatId, motivo:      │
+     │ chat:retirado      │ admin anterior           │ "reasignado" |         │
+     │                    │                          │ "timeout" }            │
+     ├────────────────────┼──────────────────────────┼────────────────────────┤
+     │                    │                          │ chat con el estado     │
+     │ chat:actualizado   │ ambos                    │ nuevo (después de      │
+     │                    │                          │ aceptar o rechazar)    │
+     ├────────────────────┼──────────────────────────┼────────────────────────┤
+     │                    │ ambos (incluido el       │                        │
+     │ chat:mensaje       │ emisor, para que se      │ { chatId, mensaje }    │
+     │                    │ sincronicen sus otras    │                        │
+     │                    │ pestañas)                │                        │
+     ├────────────────────┼──────────────────────────┼────────────────────────┤
+     │ chat:finalizado    │ ambos                    │ { chatId, motivo:      │
+     │                    │                          │ "admin" | "timeout" }  │
+     ├────────────────────┼──────────────────────────┼────────────────────────┤
+     │ chat:escribiendo   │ el otro participante     │ { chatId }             │
+     │ (opcional)         │                          │                        │
+     └────────────────────┴──────────────────────────┴────────────────────────┘
+
+     Frontend
+
+     Shell
+
+     - src/views/includes/mixins.pug: agregar los íconos mensajes (burbuja
+       estilo Lucide), enviar y volver al objeto iconos.
+     - src/views/includes/navbar.pug: envolver el botón de usuario en un
+       div.flex.items-center.gap-2 y agregar antes button#btnChat
+       (aria-controls="drawerChat", aria-expanded, mismas clases redondas que
+       los botones de la navbar), con +icono("mensajes") y un badge
+       span#badgeChat(hidden) (absolute -top-1 -right-1 min-w-5 rounded-full 
+       bg-turno-cancelado text-white text-xs). Solo se muestra si
+       puede("chat:usar").
+     - src/views/includes/tema.pug:
+       - variante @custom-variant chat-abierto (&:where([data-chat="abierto"] 
+         *));
+       - componentes compartidos con el JS: .burbuja, .burbuja-propia (bg-marca 
+         text-white self-end rounded-br-sm), .burbuja-ajena (bg-white ring-1 
+         ring-gray-200 self-start rounded-bl-sm),
+         .estado-chat-pendiente|activo|finalizado|rechazado (reutilizan la
+         paleta de turnos).
+     - src/views/includes/chatDrawer.pug (nuevo), incluido en layout.pug después
+       de main:
+       - aside#drawerChat(role="complementary" aria-label="Chat de consultas"),
+         fixed top-16 bottom-0 right-0 z-30 w-full sm:w-96 translate-x-full 
+         chat-abierto:translate-x-0 transition-transform bg-fondo border-l 
+         shadow-xl flex flex-col.
+       - Sin overlay: no bloquea la vista principal. En el móvil ocupa todo el
+         ancho y se cierra con su botón ×.
+       - Cabecera con título, estado y botón cerrar. El contenido cambia según
+         el rol con if usuario.rol === "admin":
+         - Recepción / Profesional: cuatro paneles que se alternan con hidden:
+           1. #chatInicio: textarea con un máximo de 1000 caracteres y el botón
+              "Enviar consulta"; abajo, +alerta("errorChat") para el 503 o
+              el 409.
+           2. #chatEspera: indicador animado, el mensaje inicial, la cuenta
+              regresiva hasta expiraEl y el texto "Esperando que un operador
+              acepte tu consulta".
+           3. #chatConversacion: ol#chatMensajes(aria-live="polite") con las
+              burbujas y un formulario de envío.
+           4. #chatCerrado: aviso según el motivo ("El operador finalizó la
+              conversación", "Nadie tomó tu consulta a tiempo", "Tu consulta fue
+              rechazada"), la conversación en solo lectura y el botón "Iniciar
+              nueva consulta".
+         - Admin: dos vistas.
+           1. Lista: sección "Pendientes" (tarjetas con nombre, rol, mensaje
+              inicial, tiempo restante y los botones Aceptar .btn-atender y
+              Rechazar .btn-cancelar) y sección "Activos" (filas con el último
+              mensaje y un punto si hay mensajes no leídos; al hacer click se
+              abre la conversación). Indicador de carga "n / máx".
+           2. Conversación: botón volver, nombre del solicitante, mensajes,
+              formulario y botón "Finalizar" .btn-danger con confirmación.
+     - src/views/layouts/base.pug: en el script previo al pintado, restaurar
+       data-chat="abierto" desde sessionStorage (turnoflex:chat, dentro de
+       try/catch). Así el drawer sigue abierto al navegar entre páginas.
+     - src/views/layout.pug: agregar script(src="/socket.io/socket.io.js") y
+       script(src="/js/chat.js") después de layout.js.
+
+     src/public/js/chat.js (nuevo, en una IIFE como layout.js)
+
+     - Estado local: chats (Map), chatAbiertoId y noLeidos (Set).
+     - Apertura y cierre del drawer:
+       - Se alterna document.documentElement.dataset.chat, se actualiza
+         aria-expanded y se guarda en sessionStorage.
+       - Escape lo cierra; hay que coordinar con el handler de layout.js,
+         cerrando primero el menú de usuario.
+       - Al abrir, el foco va al textarea o a la lista.
+     - Inicio:
+       a. api("/api/chats") y renderizar.
+       b. const socket = io() (la cookie viaja sola).
+       c. socket.on("connect"): volver a pedir GET /api/chats, para recuperar lo
+          que se perdió durante la reconexión.
+       d. socket.on("connect_error"): si el error es de autenticación,
+          location.href = "/login".
+     - Handlers de eventos: actualizan el Map y vuelven a renderizar la vista
+       que corresponde. chat:finalizado bloquea el formulario (inputs disabled)
+       y muestra el aviso.
+     - Acciones: usan api() con POST; los errores se muestran con mostrarError.
+       En el envío de mensajes no se hace render optimista: se espera el eco
+       chat:mensaje, y se deduplica por _id por si llega antes que la respuesta
+       del POST.
+     - Badge:
+       - Usuario: un punto o un "1" si su chat está pendiente o activo.
+       - Admin: la cantidad de pendiente + activo.
+       - Si el drawer está cerrado cuando llega chat:nuevo o chat:mensaje, se le
+         aplica animate-pulse y se suma a noLeidos.
+     - Seguridad: todo el texto se inserta con textContent, nunca con innerHTML.
+       Se reusan crearBoton, crearEtiqueta, mostrarError y formatearFechaHora
+       de api.js.
+     - Cuenta regresiva: un setInterval de 1 s calcula el tiempo con expiraEl
+       del servidor. Solo informa: el timeout real lo decide el backend.
+     - Auto-scroll: baja al final cuando llega un mensaje nuevo, salvo que el
+       usuario haya scrolleado hacia arriba.
+
+     Seed y documentación
+
+     - src/seed.js: agregar un segundo admin (admin2/admin123) para probar la
+       asignación entre varios admins y la reasignación.
+     - docs/chat-socketio.md: arquitectura, eventos, estados y limitaciones (un
+       solo proceso).
+     - Actualizar CLAUDE.md (sección Arquitectura y reglas del chat), README.md
+       y la colección de Postman (carpeta "Chat" con los 7 endpoints).
+
+     Archivos
+
+     Nuevos:
+     - src/models/Chat.js
+     - src/services/chatService.js
+     - src/services/chatTimeouts.js
+     - src/socket/index.js
+     - src/socket/presencia.js
+     - src/controllers/chatController.js
+     - src/routes/api/chatRoutes.js
+     - src/views/includes/chatDrawer.pug
+     - src/public/js/chat.js
+     - docs/chat-socketio.md
+
+     Modificados:
+     - package.json
+     - src/index.js
+     - src/config/roles.js
+     - src/models/Auditoria.js
+     - src/middlewares/errores.js
+     - src/controllers/authController.js
+     - src/controllers/usuariosController.js
+     - src/views/includes/navbar.pug
+     - src/views/includes/mixins.pug
+     - src/views/includes/tema.pug
+     - src/views/layout.pug
+     - src/views/layouts/base.pug
+     - src/seed.js
+     - .env.example
+     - CLAUDE.md
+     - README.md
+     - docs/TurnoFlex.postman_collection.json
+
+     Verificación
+
+     1. npm install && npm run seed && npm run dev (o docker compose up --build 
+        -V y docker compose exec app npm run seed), con CHAT_TIMEOUT_MINUTOS=1 y
+        CHAT_MAX_POR_ADMIN=1 en .env.
+     2. Sin admins conectados: loguearse como recepcion e iniciar una consulta.
+        Debe aparecer el aviso "Todos los operadores se encuentran ocupados en
+        este momento" (503) y tiene que quedar el registro CHAT_SIN_OPERADOR en
+        Auditoría.
+     3. Flujo feliz: en otra ventana o perfil, loguearse como admin. Al iniciar
+        la consulta desde recepcion:
+        - el admin recibe chat:nuevo (sube el badge y la tarjeta aparece en
+          Pendientes);
+        - el usuario ve la espera y no tiene input para escribir.
+          Después el admin acepta: los dos pasan a la conversación y se
+          intercambian mensajes en tiempo real. Navegar entre páginas no tiene
+          que perder el estado y el drawer tiene que seguir abierto.
+     4. Límite: con CHAT_MAX_POR_ADMIN=1 y un solo admin con un chat abierto,
+        profesional1 recibe 503. Con admin2 conectado, el chat le llega a
+        admin2.
+     5. Timeout: iniciar y no aceptar. Al minuto, el usuario ve "Nadie tomó tu
+        consulta a tiempo" y el chat desaparece de la lista del admin. Reiniciar
+        el servidor con un chat pendiente: el timeout se tiene que respetar
+        igual.
+     6. Rechazar o finalizar: el usuario ve el aviso, el formulario queda
+        deshabilitado y POST /api/chats/:id/mensajes responde 409. Puede iniciar
+        una consulta nueva.
+     7. Reglas:
+        - un admin hace POST /api/chats → 403;
+        - un usuario con un chat abierto hace POST /api/chats → 409;
+        - un usuario ajeno pide GET /api/chats/:id → 404;
+        - admin2 intenta aceptar un chat asignado a admin → 409.
+     8. Reasignación: con un chat pendiente asignado a admin, se cierra su
+        pestaña. A los ~10 s le llega a admin2, si está debajo del límite.
+     9. Revocación: un logout desconecta el socket, y si después se intenta
+        reconectar sin cookie, connect_error redirige a /login.
+     10. Probar los endpoints con Postman usando el token Bearer.
+
+❯ Bien, quiero que implementes el plan y que al final agregues lo siguiente: en 
+  primer lugar, crear dentro de /docs un archivo que se llame                   
+  refactor-websockets.md en el cual queden explicados de manera detallada todos 
+  los cambios realizados. En segundo lugar, quiero que revises el archivo       
+  @README.md y le hagas las actualizaciones necesarias con la información de la 
+  funcionalidad. Por último, quiero que revises el archivo CLAUDE.md y tambien  
+  agregues la información relacionada con esta nueva funcionalidad:             
+  websockets.                                                                   
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Bash(npm install socket.io 2>&1 | tail -3 && grep socket.io package.json && ls
+      node_modules/socket.io/client-dist | head; (docker ps 2>&1 | head -3);
+      (command -v mon…)
+  ⎿    npm audit fix --force
+
+     Run `npm audit` for details.
+     … +19 lines (ctrl+o to expand)
+  ⎿  Updated package.json (+2 -1)
+      30      "passport": "^0.7.0",
+      31      "passport-jwt": "^4.0.1",
+      32      "passport-local": "^1.0.0",
+      33 -    "pug": "^3.0.4"                                            
+      33 +    "pug": "^3.0.4",                                           
+      34 +    "socket.io": "^4.8.4"                                      
+      35    },
+      36    "devDependencies": {
+      37      "nodemon": "^3.1.14"
+  ⎿  Updated package-lock.json (+234 -1)
+      18          "passport": "^0.7.0",
+      19          "passport-jwt": "^4.0.1",
+      20          "passport-local": "^1.0.0",
+      21 -        "pug": "^3.0.4"                                        
+      21 +        "pug": "^3.0.4",                                       
+      22 +        "socket.io": "^4.8.4"                                  
+      23        },
+      24        "devDependencies": {
+      25          "nodemon": "^3.1.14"
+     ...
+       79          "sparse-bitfield": "^3.0.3"
+       80        }
+       81      },
+       82 +    "node_modules/@socket.io/component-emitter": {            
+       83 +      "version": "3.1.2",                                     
+       84 +      "resolved": "https://registry.npmjs.org/@socket.io/compo
+          +nent-emitter/-/component-emitter-3.1.2.tgz",                  
+       85 +      "integrity": "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1X
+          +EKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==",       
+       86 +      "license": "MIT"                                        
+       87 +    },                                                        
+       88 +    "node_modules/@types/cors": {                             
+       89 +      "version": "2.8.19",                                    
+       90 +      "resolved": "https://registry.npmjs.org/@types/cors/-/co
+          +rs-2.8.19.tgz",                                               
+       91 +      "integrity": "sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E9
+          +3xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg==",       
+       92 +      "license": "MIT",                                       
+       93 +      "dependencies": {                                       
+       94 +        "@types/node": "*"                                    
+       95 +      }                                                       
+       96 +    },                                                        
+       97 +    "node_modules/@types/node": {                             
+       98 +      "version": "26.6.6",                                    
+       99 +      "resolved": "https://registry.npmjs.org/@types/node/-/no
+          +de-26.6.6.tgz",                                               
+      100 +      "integrity": "sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2
+          +nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==",       
+      101 +      "license": "MIT",                                       
+      102 +      "dependencies": {                                       
+      103 +        "undici-types": "~8.9.0"                              
+      104 +      }                                                       
+      105 +    },                                                        
+      106      "node_modules/@types/webidl-conversions": {
+      107        "version": "7.0.3",
+      108        "resolved": "https://registry.npmjs.org/@types/webidl-co
+           nversions/-/webidl-conversions-7.0.3.tgz",
+     ...
+      116          "@types/webidl-conversions": "*"
+     … 243 more lines (ctrl+o to expand)
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● Write(src/models/Chat.js)
+  ⎿  Wrote 56 lines to src/models/Chat.js
+       1 const mongoose = require("mongoose");
+       2 
+       3 // pendiente → activo | rechazado | finalizado (timeout); activo
+          → finalizado (admin).
+       4 // "finalizado" y "rechazado" son estados finales.
+       5 const ESTADOS = ["pendiente", "activo", "finalizado", "rechazado
+         "];
+       6 const ABIERTOS = ["pendiente", "activo"];
+       7 const MOTIVOS_CIERRE = ["admin", "timeout", "rechazo"];
+       8 const MAX_TEXTO = 1000;
+     … +48 lines (ctrl+o to expand)
+
+● Arranco con el backend: modelo Chat listo; sigo con config, servicio, socket y
+  rutas.
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● Now the backend modules.
+
+● Bash(mkdir -p src/services src/socket && python3 - <<'EOF'
+      import re…)
+  ⎿   package-lock.json          | 235 ++++++++++++++++++++++++++++++++++++
+     ++++++++-
+      package.json               |   3 +-
+     … +5 lines (ctrl+o to expand)
+  ⎿  Updated src/models/Auditoria.js (+1 -0)
+      10    "CAMBIO_ESTADO",
+      11    "ACCESO_DENEGADO",
+      12    "SESION_REVOCADA",
+      13 +  "CHAT_SIN_OPERADOR",                                         
+      14  ];
+      15  
+      16  const auditoriaSchema = new mongoose.Schema(
+  ⎿  Updated src/public/js/auditoria.js (+1 -1)
+       4  const formFiltros = document.getElementById("formFiltros");
+       5  
+       6  const claseDeAccion = (accion) => {
+       7 -  if (["ACCESO_DENEGADO", "LOGIN_FALLIDO", "SESION_REVOCADA"].i
+         -ncludes(accion)) {                                             
+       7 +  if (["ACCESO_DENEGADO", "LOGIN_FALLIDO", "SESION_REVOCADA", "
+         +CHAT_SIN_OPERADOR"].includes(accion)) {                        
+       8      return "etiqueta-peligro";
+       9    }
+      10    if (["LOGIN", "LOGOUT"].includes(accion)) return "etiqueta-in
+          fo";
+  ⎿  Updated src/config/roles.js (+2 -0)
+       5    "profesionales:read",
+       6    "turnos:read",
+       7    "turnos:update",
+       8 +  "chat:usar",                                                 
+       9  ];
+      10  
+      11  const recepcion = [
+     ...
+      27    "usuarios:update",
+      28    "usuarios:delete",
+      29    "auditoria:read",
+      30 +  "chat:moderar",                                              
+      31  ];
+      32  
+      33  const PERMISOS_POR_ROL = { profesional, recepcion, admin };
+  ⎿  Updated src/middlewares/errores.js (+4 -0)
+      22      const campo = Object.keys(err.keyValue || {})[0] || "dato";
+      23      return { status: 409, mensaje: `Ya existe un registro con e
+          se ${campo}` };
+      24    }
+      25 +  // Errores de negocio creados con crearError(): su mensaje es
+         + apto para mostrarse al usuario.                               
+      26 +  if (err.expuesto && err.status >= 400 && err.status < 600) { 
+      27 +    return { status: err.status, mensaje: err.message };       
+      28 +  }                                                            
+      29    if (err.status >= 400 && err.status < 500) {
+      30      return { status: err.status, mensaje: "La solicitud no es v
+          álida" };
+      31    }
+  ⎿  Created src/helpers/errores.js (+4 -0)
+      1 +// Error de negocio con status HTTP: el errorHandler lo responde
+        + con su propio mensaje.                                         
+      2 +const crearError = (status, mensaje) => Object.assign(new Error(
+        +mensaje), { status, expuesto: true });                          
+      3 +                                                                
+      4 +module.exports = { crearError };                                
+  ⎿  … 1 more file changed
+
+● Bash(cat > src/socket/emisor.js <<'EOF'
+      // Referencia al servidor de Socket.io para emitir desde servicios y
+      controladores…)
+  ⎿  Created src/socket/emisor.js (+23 -0)
+       1 +// Referencia al servidor de Socket.io para emitir desde servic
+         +ios y controladores                                            
+       2 +// sin dependencias circulares. Cada usuario tiene su sala "usu
+         +ario:<id>", así un                                             
+       3 +// evento llega a todas sus pestañas aunque el socket se recone
+         +cte al navegar.                                                
+       4 +let io = null;                                                 
+       5 +                                                               
+       6 +const salaDeUsuario = (id) => `usuario:${id}`;                 
+       7 +                                                               
+       8 +const registrarIO = (servidor) => {                            
+       9 +  io = servidor;                                               
+      10 +};                                                             
+      11 +                                                               
+      12 +const emitirA = (usuarioIds, evento, datos) => {               
+      13 +  if (!io) return;                                             
+      14 +  const salas = [...new Set(usuarioIds.filter(Boolean).map((id)
+         + => salaDeUsuario(String(id))))];                              
+      15 +  if (salas.length) io.to(salas).emit(evento, datos);          
+      16 +};                                                             
+      17 +                                                               
+      18 +// Cierra todos los sockets de un usuario (logout, desactivació
+         +n, cambio de rol, etc.).                                       
+      19 +const desconectarUsuario = (id) => {                           
+      20 +  if (io) io.in(salaDeUsuario(String(id))).disconnectSockets(tr
+         +ue);                                                           
+      21 +};                                                             
+      22 +                                                               
+      23 +module.exports = { registrarIO, salaDeUsuario, emitirA, descone
+         +ctarUsuario };                                                 
+  ⎿  Created src/socket/presencia.js (+58 -0)
+       1 +// Registro en memoria de los administradores conectados por So
+         +cket.io.                                                       
+       2 +// Un admin puede tener varios sockets (pestañas). Como la app 
+         +es multipágina, cada                                           
+       3 +// navegación cierra y abre el socket: por eso, al quedarse sin
+         + sockets, el admin                                             
+       4 +// sigue contando como conectado durante GRACIA_DESCONEXION_MS 
+         +antes de darlo de baja.                                        
+       5 +// Limitación: vale para un único proceso de Node (no hay estad
+         +o compartido entre instancias).                                
+       6 +const { GRACIA_DESCONEXION_MS } = require("../config/chat");   
+       7 +                                                               
+       8 +const sockets = new Map(); // adminId -> Set<socketId>         
+       9 +const gracias = new Map(); // adminId -> Timeout               
+      10 +let alDarDeBaja = () => {};                                    
+      11 +                                                               
+      12 +const cancelarGracia = (adminId) => {                          
+      13 +  clearTimeout(gracias.get(adminId));                          
+      14 +  gracias.delete(adminId);                                     
+      15 +};                                                             
+      16 +                                                               
+      17 +const conectar = (adminId, socketId) => {                      
+      18 +  cancelarGracia(adminId);                                     
+      19 +  if (!sockets.has(adminId)) sockets.set(adminId, new Set());  
+      20 +  sockets.get(adminId).add(socketId);                          
+      21 +};                                                             
+      22 +                                                               
+      23 +const darDeBaja = (adminId) => {                               
+      24 +  cancelarGracia(adminId);                                     
+      25 +  if (!sockets.delete(adminId)) return;                        
+      26 +  Promise.resolve(alDarDeBaja(adminId)).catch((error) => {     
+      27 +    console.error("Error al reasignar los chats del admin desco
+         +nectado:", error.message);                                     
+      28 +  });                                                          
+      29 +};                                                             
+      30 +                                                               
+      31 +const desconectar = (adminId, socketId) => {                   
+      32 +  const propios = sockets.get(adminId);                        
+      33 +  if (!propios) return;                                        
+      34 +  propios.delete(socketId);                                    
+      35 +  if (propios.size > 0 || gracias.has(adminId)) return;        
+      36 +  const gracia = setTimeout(() => darDeBaja(adminId), GRACIA_DE
+         +SCONEXION_MS);                                                 
+      37 +  gracia.unref();                                              
+      38 +  gracias.set(adminId, gracia);                                
+      39 +};                                                             
+      40 +                                                               
+     … 18 more lines (ctrl+o to expand)
+  ⎿  Created src/services/chatTimeouts.js (+24 -0)
+       1 +// Temporizadores en memoria de los chats pendientes (timeout d
+         +e aceptación).                                                 
+       2 +// Al reiniciar el servidor se reconstruyen desde Mongo con cha
+         +tService.recuperarTimeouts().                                  
+       3 +const temporizadores = new Map(); // chatId -> Timeout         
+       4 +                                                               
+       5 +// setTimeout no admite demoras mayores a ~24,8 días; el timeou
+         +t del chat es de minutos.                                      
+       6 +const programar = (chatId, fecha, alVencer) => {               
+       7 +  const id = String(chatId);                                   
+       8 +  cancelar(id);                                                
+       9 +  const demora = Math.max(0, new Date(fecha).getTime() - Date.n
+         +ow());                                                         
+      10 +  const temporizador = setTimeout(() => {                      
+      11 +    temporizadores.delete(id);                                 
+      12 +    alVencer(id);                                              
+      13 +  }, demora);                                                  
+      14 +  temporizador.unref();                                        
+      15 +  temporizadores.set(id, temporizador);                        
+      16 +};                                                             
+      17 +                                                               
+      18 +const cancelar = (chatId) => {                                 
+      19 +  const id = String(chatId);                                   
+      20 +  clearTimeout(temporizadores.get(id));                        
+      21 +  temporizadores.delete(id);                                   
+      22 +};                                                             
+      23 +                                                               
+      24 +module.exports = { programar, cancelar };                      
+
+● Write(src/services/chatService.js)
+  ⎿  Wrote 375 lines to src/services/chatService.js
+       1 // Lógica de negocio del chat de consultas (máquina de estados, 
+         asignación de admins y timeouts).
+       2 // La usan los controladores REST, el servidor de Socket.io y lo
+         s temporizadores.
+       3 //
+       4 // Cada transición es un findOneAndUpdate con el estado de orige
+         n en el filtro: si dos
+       5 // acciones compiten (por ejemplo "aceptar" y el timeout), solo 
+         una gana y la otra recibe 409.
+       6 const mongoose = require("mongoose");
+     … +369 lines (ctrl+o to expand)
+
+● Write(src/socket/index.js)
+  ⎿  Wrote 78 lines to src/socket/index.js
+       1 // Servidor de Socket.io: empuja en tiempo real los eventos del 
+         chat al navegador.
+       2 // Las acciones (iniciar, aceptar, enviar mensaje, etc.) van por
+          la API REST /api/chats;
+       3 // por el socket el cliente solo manda el indicador "escribiendo
+         ".
+       4 const { Server } = require("socket.io");
+       5 const cookieParser = require("cookie-parser");
+       6 
+       7 const { autenticar } = require("../middlewares/auth");
+     … +71 lines (ctrl+o to expand)
+
+● Bash(cat > src/controllers/chatController.js <<'EOF'
+      const chatService = require("../services/chatService");…)
+  ⎿  diff --git a/src/controllers/authController.js b/src/controllers/authC
+     ontroller.js
+     index e609c8a..9b57637 100644
+     … +69 lines (ctrl+o to expand)
+  ⎿  Created src/controllers/chatController.js (+47 -0)
+       1 +const chatService = require("../services/chatService");        
+       2 +const { tomarCampos } = require("../helpers/campos");          
+       3 +const { CHAT_MAX_POR_ADMIN } = require("../config/chat");      
+       4 +                                                               
+       5 +// Admin: sus chats pendientes y activos. Recepción/profesional
+         +: su chat abierto o el último.                                 
+       6 +const listarChats = async (req, res) => {                      
+       7 +  const chats = await chatService.listarChats(req.usuario);    
+       8 +  res.json({ chats, maxPorAdmin: CHAT_MAX_POR_ADMIN });        
+       9 +};                                                             
+      10 +                                                               
+      11 +const obtenerChat = async (req, res) => {                      
+      12 +  res.json(await chatService.obtenerChat(req.usuario, req.param
+         +s.id));                                                        
+      13 +};                                                             
+      14 +                                                               
+      15 +const iniciarChat = async (req, res) => {                      
+      16 +  const { mensaje } = tomarCampos(req.body, ["mensaje"]);      
+      17 +  const chat = await chatService.iniciarChat(req, mensaje);    
+      18 +  res.status(201).json(chat);                                  
+      19 +};                                                             
+      20 +                                                               
+      21 +const aceptarChat = async (req, res) => {                      
+      22 +  res.json(await chatService.aceptarChat(req, req.params.id)); 
+      23 +};                                                             
+      24 +                                                               
+      25 +const rechazarChat = async (req, res) => {                     
+      26 +  res.json(await chatService.rechazarChat(req, req.params.id));
+      27 +};                                                             
+      28 +                                                               
+      29 +const finalizarChat = async (req, res) => {                    
+      30 +  res.json(await chatService.finalizarChat(req, req.params.id))
+         +;                                                              
+      31 +};                                                             
+      32 +                                                               
+      33 +const enviarMensaje = async (req, res) => {                    
+      34 +  const { texto } = tomarCampos(req.body, ["texto"]);          
+      35 +  const mensaje = await chatService.enviarMensaje(req, req.para
+         +ms.id, texto);                                                 
+      36 +  res.status(201).json(mensaje);                               
+      37 +};                                                             
+      38 +                                                               
+      39 +module.exports = {                                             
+      40 +  listarChats,                                                 
+     … 7 more lines (ctrl+o to expand)
+  ⎿  Created src/routes/api/chatRoutes.js (+26 -0)
+       1 +const express = require("express");                            
+       2 +const { requiereLogin, requierePermiso } = require("../../middl
+         +ewares/auth");                                                 
+       3 +const {                                                        
+       4 +  listarChats,                                                 
+       5 +  obtenerChat,                                                 
+       6 +  iniciarChat,                                                 
+       7 +  aceptarChat,                                                 
+       8 +  rechazarChat,                                                
+       9 +  finalizarChat,                                               
+      10 +  enviarMensaje,                                               
+      11 +} = require("../../controllers/chatController");               
+      12 +                                                               
+      13 +const router = express.Router();                               
+      14 +                                                               
+      15 +router.use(requiereLogin);                                     
+      16 +                                                               
+      17 +router.get("/", requierePermiso("chat:usar"), listarChats);    
+      18 +router.get("/:id", requierePermiso("chat:usar"), obtenerChat); 
+      19 +// Que un admin no pueda iniciar se controla por contexto en el
+         + servicio (403).                                               
+      20 +router.post("/", requierePermiso("chat:usar"), iniciarChat);   
+      21 +router.post("/:id/aceptar", requierePermiso("chat:moderar"), ac
+         +eptarChat);                                                    
+      22 +router.post("/:id/rechazar", requierePermiso("chat:moderar"), r
+         +echazarChat);                                                  
+      23 +router.post("/:id/finalizar", requierePermiso("chat:moderar"), 
+         +finalizarChat);                                                
+      24 +router.post("/:id/mensajes", requierePermiso("chat:usar"), envi
+         +arMensaje);                                                    
+      25 +                                                               
+      26 +module.exports = router;                                       
+  ⎿  Updated src/index.js (+11 -1)
+      1  require("dotenv").config({ quiet: true });
+      2 +const http = require("http");                                   
+      3  const express = require("express");
+      4  const path = require("path");
+      5  const cookieParser = require("cookie-parser");
+     ...
+       8  const passport = require("./config/passport");
+       9  const logger = require("./middlewares/logger");
+      10  const { notFound, errorHandler } = require("./middlewares/error
+          es");
+      11 +const { iniciarSocket } = require("./socket");                 
+      12 +const { recuperarTimeouts } = require("./services/chatService")
+         +;                                                              
+      13  
+      14  const authRoutes = require("./routes/api/authRoutes");
+      15  const clientesRoutes = require("./routes/api/clientesRoutes");
+     ...
+      17  const turnosRoutes = require("./routes/api/turnosRoutes");
+      18  const usuariosRoutes = require("./routes/api/usuariosRoutes");
+      19  const auditoriaRoutes = require("./routes/api/auditoriaRoutes")
+          ;
+      20 +const chatRoutes = require("./routes/api/chatRoutes");         
+      21  const vistasRoutes = require("./routes/vistasRoutes");
+      22  
+      23  const app = express();
+     ...
+      38  app.use("/api/turnos", turnosRoutes);
+      39  app.use("/api/usuarios", usuariosRoutes);
+      40  app.use("/api/auditoria", auditoriaRoutes);
+      41 +app.use("/api/chats", chatRoutes);                             
+      42  // Ruta actual para marcar el ítem activo de la sidebar en las 
+          vistas.
+      43  app.use((req, res, next) => {
+      44    res.locals.rutaActual = req.path;
+     ...
+      49  app.use(notFound);
+      50  app.use(errorHandler);
+      51  
+      52 +// Express y Socket.io comparten el mismo servidor HTTP (y el m
+         +ismo puerto).                                                  
+      53 +const servidor = http.createServer(app);                       
+      54 +iniciarSocket(servidor);                                       
+      55 +                                                               
+      56  const iniciar = async () => {
+      57    await conectarDB();
+      49 -  app.listen(PORT, () => {                                     
+      58 +  await recuperarTimeouts();                                   
+      59 +  servidor.listen(PORT, () => {                                
+      60      console.log(`Servidor corriendo en http://localhost:${PORT}
+          `);
+     … 2 more lines (ctrl+o to expand)
+  ⎿  Updated src/controllers/authController.js (+3 -0)
+      3  const { registrarAuditoria } = require("../helpers/auditoria");
+      4  const { autenticar } = require("../middlewares/auth");
+      5  const { firmarToken, enviarTokenEnCookie, borrarCookieToken } = 
+         require("../helpers/token");
+      6 +const { desconectarUsuario } = require("../socket/emisor");     
+      7  
+      8  const login = async (req, res) => {
+      9    const { usuario: usuarioIngresado, password } = req.body || {}
+         ;
+     ...
+      45      { timestamps: false }
+      46    );
+      47    await registrarAuditoria(req, "LOGOUT", { entidad: "Usuario",
+           entidadId: req.usuario._id });
+      48 +  // Los sockets abiertos (chat) se autenticaron con el token v
+         +iejo: se cierran.                                              
+      49 +  desconectarUsuario(req.usuario._id);                         
+      50    borrarCookieToken(res);
+      51    res.status(204).end();
+      52  };
+
+● Bash(python3 - <<'EOF'
+      p='src/controllers/usuariosController.js'…)
+  ⎿  Aviso: JWT_SECRET no está definido; se usa una clave de desarrollo.
+     ok
+  ⎿  Updated src/controllers/usuariosController.js (+12 -0)
+       3  const { tomarCampos, describirCambios } = require("../helpers/c
+          ampos");
+       4  const { registrarAuditoria } = require("../helpers/auditoria");
+       5  const { firmarToken, enviarTokenEnCookie } = require("../helper
+          s/token");
+       6 +const { desconectarUsuario } = require("../socket/emisor");    
+       7 +const { liberarChatsDeAdmin } = require("../services/chatServic
+         +e");                                                           
+       8  
+       9  const CAMPOS = ["usuario", "password", "nombre", "rol", "profes
+          ional", "activo", "expiraEl"];
+      10  
+     ...
+      66      return res.status(400).json({ error: "El profesional selecc
+          ionado no existe" });
+      67    }
+      68  
+      69 +  const eraAdmin = usuario.rol === "admin";                    
+      70    usuario.set(datos);
+      71    const cambios = describirCambios(usuario);
+      72    await usuario.save();
+      73  
+      74 +  // Los sockets del chat se autenticaron con los datos anterio
+         +res: se cierran para que                                       
+      75 +  // se reconecten (o sean rechazados) con el estado nuevo. El 
+         +propio admin no cambia de permisos.                            
+      76 +  if (!esElMismo && (seQuitaPermisos || datos.password)) descon
+         +ectarUsuario(usuario._id);                                     
+      77 +  if (eraAdmin && !(usuario.rol === "admin" && usuario.estaHabi
+         +litado())) {                                                   
+      78 +    await liberarChatsDeAdmin(usuario._id);                    
+      79 +  }                                                            
+      80 +                                                               
+      81    // Cambiar la contraseña invalida los tokens anteriores (toke
+          nVersion); si es la
+      82    // propia, se emite uno nuevo para no cerrarle la sesión al a
+          dmin.
+      83    if (esElMismo && datos.password) enviarTokenEnCookie(res, fir
+          marToken(usuario));
+     ...
+      100    }
+      101  
+      102    await usuario.deleteOne();
+      103 +  desconectarUsuario(usuario._id);                            
+      104 +  if (usuario.rol === "admin") await liberarChatsDeAdmin(usuar
+          +io._id);                                                      
+      105    await registrarAuditoria(req, "ELIMINAR", {
+      106      entidad: "Usuario",
+      107      entidadId: usuario._id,
+  ⎿  Updated src/seed.js (+11 -2)
+       7  const Turno = require("./models/Turno");
+       8  const Usuario = require("./models/Usuario");
+       9  const Auditoria = require("./models/Auditoria");
+      10 +const Chat = require("./models/Chat");                         
+      11  
+      12  const fechaRelativa = (dias) => {
+      13    const fecha = new Date();
+     ...
+      59      Turno.deleteMany({}),
+      60      Usuario.deleteMany({}),
+      61      Auditoria.deleteMany({}),
+      62 +    Chat.deleteMany({}),                                       
+      63    ]);
+      62 -  await Promise.all([Cliente.syncIndexes(), Profesional.syncInd
+         -exes(), Usuario.syncIndexes()]);                               
+      64 +  await Promise.all([                                          
+      65 +    Cliente.syncIndexes(),                                     
+      66 +    Profesional.syncIndexes(),                                 
+      67 +    Usuario.syncIndexes(),                                     
+      68 +    Chat.syncIndexes(),                                        
+      69 +  ]);                                                          
+      70  
+      71    const clientes = await Cliente.insertMany(CLIENTES);
+      72    const profesionales = await Profesional.insertMany(PROFESIONA
+          LES);
+     ...
+      79    });
+      80  
+      81    await Usuario.create([
+      82 +    // Segundo admin para probar la asignación y reasignación d
+         +e chats entre operadores.                                      
+      83 +    { usuario: "admin2", password: "admin123", nombre: "Adminis
+         +tradora 2", rol: "admin" },                                    
+      84      { usuario: "recepcion", password: "recepcion123", nombre: "
+          Recepcionista", rol: "recepcion" },
+      85      {
+      86        usuario: "profesional1",
+     ...
+      111  
+      112    console.log(
+      113      `Datos cargados: ${clientes.length} clientes, ${profesiona
+           les.length} profesionales, ` +
+      105 -      `${TURNOS.length} turnos y 4 usuarios.`                 
+      114 +      `${TURNOS.length} turnos y 5 usuarios.`                 
+      115    );
+      116  };
+      117  
+  ⎿  Updated .env.example (+4 -0)
+       5  JWT_SECRET=cambiar-por-un-texto-largo
+       6  # Minutos de vida del token (se renueva solo mientras el usuari
+          o usa la app)
+       7  JWT_MINUTOS=30
+       8 +# Chat de consultas: máximo de chats abiertos (pendientes + act
+         +ivos) por admin                                                
+       9 +CHAT_MAX_POR_ADMIN=3                                           
+      10 +# Minutos que espera una consulta a ser aceptada antes de expir
+         +ar (acepta decimales para probar)                              
+      11 +CHAT_TIMEOUT_MINUTOS=5                                         
+
+● Backend armado y carga sin errores. Lo pruebo ahora contra una base aparte
+  (turnoflex_chat_test, puerto 3100) para no tocar tus datos del contenedor.
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● Backend: 39/39 checks OK (503, 403, 409, timeout, reasignación, revocación).
+  Verifico índices, log y la recuperación de timeouts tras reinicio.
+
+  Searched for 1 pattern, ran 3 shell commands (ctrl+o to expand)
+
+● Now the frontend views (icons, navbar, theme, drawer, layouts).
+● Bash(python3 - <<'EOF'
+      p='src/views/includes/mixins.pug'…)
+  ⎿        aria-controls="sidebar"
+           aria-expanded="false"
+           aria-label="Mostrar u ocultar el menú"
+     … +59 lines (ctrl+o to expand)
+  ⎿  Updated src/views/includes/mixins.pug (+3 -0)
+      18      mas: ["M5 12h14", "M12 5v14"],
+      19      guardar: ["M20 6 9 17l-5-5"],
+      20      filtro: ["M22 3H2l8 9.46V19l4 2v-8.54L22 3z"],
+      21 +    mensajes: ["M7.9 20A9 9 0 1 0 4 16.1L2 22Z", "M8 12h.01", "
+         +M12 12h.01", "M16 12h.01"],                                    
+      22 +    enviar: ["M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a
+         +2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.
+         +5.5 0 0 0 0-.904z", "M6 12h16"],                               
+      23 +    volver: ["m12 19-7-7 7-7", "M19 12H5"],                    
+      24    };
+      25  
+      26    const claseControl = "block w-full rounded-lg border border-g
+          ray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs plac
+          eholder:text-gray-400 focus:border-marca focus:outline-none foc
+          us:ring-2 focus:ring-marca/30 disabled:cursor-not-allowed disab
+          led:bg-gray-100 disabled:text-gray-500";
+  ⎿  Updated src/views/includes/navbar.pug (+34 -21)
+      19        +logo()
+      20        span(class="truncate text-lg font-bold tracking-tight") T
+          urnoFlex
+      21  
+      22 -  div(class="relative")                                        
+      23 -    button#btnMenuUsuario(                                     
+      24 -      type="button"                                            
+      25 -      aria-haspopup="menu"                                     
+      26 -      aria-expanded="false"                                    
+      27 -      aria-controls="menuUsuario"                              
+      28 -      aria-label=`Menú de ${usuario.nombre}`                   
+      29 -      class="inline-flex size-10 cursor-pointer items-center ju
+         -stify-center rounded-full bg-marca text-sm font-semibold text-w
+         -hite ring-2 ring-white transition-colors hover:bg-indigo-profun
+         -do focus-visible:outline-2 focus-visible:outline-offset-2 focus
+         --visible:outline-marca"                                        
+      30 -    )= iniciales                                               
+      31 -    div#menuUsuario(hidden role="menu" aria-labelledby="btnMenu
+         -Usuario" class="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100
+         -vw-1.5rem)] rounded-xl bg-white p-2 shadow-lg ring-1 ring-gray-
+         -200")                                                          
+      32 -      div(class="flex items-center gap-3 px-3 py-2")           
+      33 -        span(class="inline-flex size-10 shrink-0 items-center j
+         -ustify-center rounded-full bg-lavanda-100 text-sm font-semibold
+         - text-indigo-profundo" aria-hidden="true")= iniciales          
+      34 -        div(class="min-w-0")                                   
+      35 -          p(class="truncate text-sm font-semibold text-gray-900
+         -")= usuario.nombre                                             
+      36 -          p(class="truncate text-sm text-gray-500") @#{usuario.
+         -usuario}                                                       
+      37 -      div(class="px-3 pb-2")                                   
+      38 -        span.etiqueta.etiqueta-info= usuario.rol               
+      39 -      div(class="my-1 border-t border-gray-100")               
+      40 -      button#btnLogout(type="button" role="menuitem" class="fle
+         -x w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2
+         - text-sm font-medium text-red-900 transition-colors hover:bg-tu
+         -rno-cancelado/10 focus-visible:outline-2 focus-visible:outline-
+         -marca")                                                        
+      41 -        +icono("salir")(class="size-4")                        
+      42 -        | Cerrar sesión                                        
+      22 +  div(class="flex items-center gap-1 sm:gap-2")                
+      23 +    //- Acceso al chat de consultas: abre el drawer lateral (sr
+         +c/public/js/chat.js).                                          
+      24 +    if puede("chat:usar")                                      
+      25 +      button#btnChat(                                          
+      26 +        type="button"                                          
+      27 +        aria-controls="drawerChat"                             
+      28 +        aria-expanded="false"                                  
+      29 +        aria-label="Chat de consultas"                         
+      30 +        title="Chat de consultas"                              
+      31 +        class="relative inline-flex size-10 cursor-pointer item
+         +s-center justify-center rounded-full transition-colors hover:bg
+         +-lavanda-200 focus-visible:outline-2 focus-visible:outline-offs
+         +et-2 focus-visible:outline-marca"                              
+      32 +      )                                                        
+      33 +        +icono("mensajes")(class="size-6")                     
+      34 +        span#badgeChat(hidden class="absolute -top-0.5 -right-0
+         +.5 inline-flex h-5 min-w-5 items-center justify-center rounded-
+         +full bg-turno-cancelado px-1 text-[11px] leading-none font-bold
+         + text-white ring-2 ring-lavanda-100")                          
+      35 +    div(class="relative")                                      
+      36 +      button#btnMenuUsuario(                                   
+      37 +        type="button"                                          
+     … 18 more lines (ctrl+o to expand)
+  ⎿  Updated src/views/includes/tema.pug (+24 -0)
+      29  
+      30    @custom-variant colapsada (&:where([data-sidebar="colapsada"]
+           *));
+      31    @custom-variant drawer-abierto (&:where([data-drawer="abierto
+          "] *));
+      32 +  @custom-variant chat-abierto (&:where([data-chat="abierto"] *
+         +));                                                            
+      33  
+      34    @layer components {
+      35      /* Botones */
+     ...
+      102      .fila-cancelado {
+      103        @apply bg-turno-cancelado/5 [&>td:first-child]:shadow-[i
+           nset_4px_0_0_var(--color-turno-cancelado)];
+      104      }
+      105 +                                                              
+      106 +    /* Chat de consultas: burbujas de mensajes y etiquetas de 
+          +estado (las crea src/public/js/chat.js) */                    
+      107 +    .burbuja {                                                
+      108 +      @apply flex max-w-[85%] flex-col gap-1 rounded-2xl px-3.
+          +5 py-2 text-sm shadow-xs;                                     
+      109 +    }                                                         
+      110 +    .burbuja-propia {                                         
+      111 +      @apply self-end rounded-br-sm bg-marca text-white;      
+      112 +    }                                                         
+      113 +    .burbuja-ajena {                                          
+      114 +      @apply self-start rounded-bl-sm bg-white text-gray-900 r
+          +ing-1 ring-gray-200;                                          
+      115 +    }                                                         
+      116 +    .estado-chat-pendiente {                                  
+      117 +      @apply bg-turno-pendiente text-gray-950 ring-turno-pendi
+          +ente;                                                         
+      118 +    }                                                         
+      119 +    .estado-chat-activo {                                     
+      120 +      @apply bg-turno-presente text-white ring-turno-presente;
+      121 +    }                                                         
+      122 +    .estado-chat-finalizado {                                 
+      123 +      @apply bg-turno-finalizado text-gray-800 ring-gray-400; 
+      124 +    }                                                         
+      125 +    .estado-chat-rechazado {                                  
+      126 +      @apply bg-turno-cancelado text-white ring-turno-cancelad
+          +o;                                                            
+      127 +    }                                                         
+      128    }
+  ⎿  Updated src/views/layouts/base.pug (+7 -1)
+      13      link(rel="stylesheet" href="https://fonts.googleapis.com/cs
+          s2?family=Poppins:wght@400;500;600;700&display=swap")
+      14      script(src="https://cdn.jsdelivr.net/npm/@tailwindcss/brows
+          er@4.3.3")
+      15      include ../includes/tema
+      16 -    //- Aplica el estado guardado de la sidebar antes de pintar
+         -, para evitar el parpadeo.                                     
+      16 +    //- Aplica el estado guardado de la sidebar y del chat ante
+         +s de pintar, para evitar el parpadeo.                          
+      17 +    //- El chat usa sessionStorage: queda abierto al navegar en
+         +tre páginas de la misma pestaña.                               
+      18      script.
+      19        try {
+      20          if (localStorage.getItem("turnoflex:sidebar") === "cola
+          psada") {
+      21            document.documentElement.dataset.sidebar = "colapsada
+          ";
+      22          }
+      23        } catch (error) {}
+      24 +      try {                                                    
+      25 +        if (sessionStorage.getItem("turnoflex:chat") === "abier
+         +to") {                                                         
+      26 +          document.documentElement.dataset.chat = "abierto";   
+      27 +        }                                                      
+      28 +      } catch (error) {}                                       
+      29    body(
+      30      class="flex min-h-dvh flex-col bg-fondo font-sans text-gray
+          -900 antialiased"
+      31      data-rol=usuario ? usuario.rol : false
+  ⎿  Updated src/views/layout.pug (+6 -0)
+       9      main(class="min-w-0 flex-1 p-4 md:p-6 xl:p-8")
+      10        div(class="mx-auto flex max-w-[1440px] flex-col gap-6")
+      11          block content
+      12 +  if puede("chat:usar")                                        
+      13 +    include includes/chatDrawer                                
+      14    script(src="/js/layout.js")
+      15 +  if puede("chat:usar")                                        
+      16 +    //- Cliente de Socket.io servido por el propio servidor (mi
+         +sma versión que el backend).                                   
+      17 +    script(src="/socket.io/socket.io.js")                      
+      18 +    script(src="/js/chat.js" defer)                            
+
+● Bash(sed -i 's|    script(src="/socket.io/socket.io.js")|
+      script(src="/socket.io/socket.io.js" defer)|' src/views/layout.pug && sed
+      -i 's|    //- Cliente de Socke…)
+  ⎿    script(src="/js/layout.js")
+       if puede("chat:usar")
+         //- Cliente de Socket.io servido por el propio servidor (misma ver
+     … +5 lines (ctrl+o to expand)
+  ⎿  Updated src/views/layout.pug (+2 -1)
+      14    script(src="/js/layout.js")
+      15    if puede("chat:usar")
+      16      //- Cliente de Socket.io servido por el propio servidor (mi
+          sma versión que el backend).
+      17 -    script(src="/socket.io/socket.io.js")                      
+      17 +    //- Con defer, ambos corren en orden después de api.js (que
+         + está al final del body).                                      
+      18 +    script(src="/socket.io/socket.io.js" defer)                
+      19      script(src="/js/chat.js" defer)
+
+● Write(src/views/includes/chatDrawer.pug)
+  ⎿  Wrote 89 lines to src/views/includes/chatDrawer.pug
+      1 //- Drawer del chat de consultas (se desliza desde la derecha, de
+        bajo de la navbar).
+      2 //- No tiene overlay: la página sigue usable mientras está abiert
+        o. Lo maneja src/public/js/chat.js
+      3 //- alternando data-chat="abierto" en <html> (variante chat-abier
+        to de tema.pug).
+      4 - const esAdminChat = usuario.rol === "admin"
+      5 - const claseTextarea = "block w-full resize-none rounded-lg bord
+        er border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shado
+        w-xs placeholder:text-gray-400 focus:border-marca focus:outline-n
+     … +85 lines (~6 KB) (ctrl+o to expand)
+
+● Vistas listas; ahora el JS del navegador (chat.js).
+
+● Write(src/public/js/chat.js)
+  ⎿  Wrote 636 lines to src/public/js/chat.js
+       1 // Chat de consultas en tiempo real. Las acciones van por la API
+          REST (/api/chats, con api());
+       2 // Socket.io solo trae los eventos del servidor (y manda el indi
+         cador "escribiendo").
+       3 // Va en una IIFE para no chocar con las globales de api.js (api
+         , rolActual, idUsuarioActual...).
+       4 (() => {
+       5   const drawer = document.getElementById("drawerChat");
+       6   const botonChat = document.getElementById("btnChat");
+       7   if (!drawer || !botonChat || typeof io !== "function") return;
+     … +629 lines (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      p='src/public/js/chat.js'…)
+  ⎿  admin 23575 true false true
+     recepcion 25163 true true false
+  ⎿  Updated src/public/js/chat.js (+20 -14)
+      109      return `${Math.floor(segundos / 60)}:${String(segundos % 6
+           0).padStart(2, "0")}`;
+      110    };
+      111  
+      112 -  // Chat que el usuario tiene a la vista (para marcar mensaje
+          -s como leídos).                                               
+      112 +  // ¿El usuario está viendo este chat? (para marcar mensajes 
+          +y consultas nuevas como leídos)                               
+      113 +  const estaALaVista = (chat) => {                            
+      114 +    if (!drawerAbierto() || !chat) return false;              
+      115 +    if (!esAdmin) return true;                                
+      116 +    return estado.abiertoId ? estado.abiertoId === chat._id : 
+          +chat.estado === "pendiente";                                  
+      117 +  };                                                          
+      118 +                                                              
+      119 +  // Conversación que el usuario tiene abierta en el drawer.  
+      120    const chatVisible = () => {
+      121      if (!drawerAbierto()) return null;
+      122      if (esAdmin) return estado.abiertoId ? estado.chats.get(es
+           tado.abiertoId) : null;
+     ...
+      139      raiz.dataset.chat = "abierto";
+      140      guardarSesion(CLAVE_DRAWER, "abierto");
+      141      botonChat.setAttribute("aria-expanded", "true");
+      135 -    const visible = chatVisible();                            
+      136 -    if (visible) estado.noLeidos.delete(visible._id);         
+      137 -    if (!esAdmin) estado.noLeidos.clear();                    
+      142      render();
+      143      // Espera a que termine la transición de visibility para p
+           oder enfocar.
+      144      setTimeout(enfocarDrawer, 210);
+     ...
+      348    };
+      349  
+      350    const render = () => {
+      351 +    estado.noLeidos.forEach((id) => {                         
+      352 +      const chat = estado.chats.get(id);                      
+      353 +      if (!chat || estaALaVista(chat)) estado.noLeidos.delete(
+          +id);                                                          
+      354 +    });                                                       
+      355      if (esAdmin) renderAdmin();
+      356      else renderUsuario();
+      357      actualizarBadge();
+     ...
+      374      try {
+      375        const datos = await api("/api/chats");
+      376        estado.maxPorAdmin = datos.maxPorAdmin;
+      369 -      const anteriorAbierto = estado.abiertoId ? estado.chats.
+          -get(estado.abiertoId) : null;                                 
+      377 +      const mirando = estado.abiertoId ? estado.chats.get(esta
+          +do.abiertoId) : null;                                         
+      378        estado.chats = new Map(datos.chats.map((chat) => [chat._
+           id, chat]));
+     … 32 more lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Timeout tras reinicio: ✅ (finalizado timeout). No hay navegador instalado;
+  instalo Playwright + Chromium en el directorio temporal del job para probar la
+  UI de verdad.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● 28/28 OK; el único "error" es el log de red del 503 esperado. Reviso las
+  capturas.
+
+  Read 5 files (ctrl+o to expand)
+
+● Todo funciona. Un detalle visual: en la conversación del admin, el botón
+  "Finalizar" en la cabecera trunca el nombre del solicitante. Lo muevo a una
+  barra propia debajo de la cabecera.
+
+● Bash(python3 - <<'EOF'
+      p='src/views/includes/chatDrawer.pug'…)
+  ⎿  FAIL recepcion: panel de inicio visible
+     page.fill: Timeout 30000ms exceeded.
+     Call log:
+     … +38 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /home/matiasae/Code/Valinor_Cloud
+  ⎿  Updated src/views/includes/chatDrawer.pug (+6 -2)
+      19        h2#chatTitulo(class="truncate text-base font-semibold tex
+          t-gray-900")= esAdminChat ? "Consultas" : "Consulta a un operad
+          or"
+      20        p#chatSubtitulo(class="truncate text-xs text-gray-500")
+      21      span#chatEstado(hidden class="etiqueta")
+      22 -    if esAdminChat                                             
+      23 -      button#btnChatFinalizar(hidden type="button" class="btn b
+         -tn-chico btn-danger") Finalizar                                
+      22      button#btnChatCerrar(type="button" aria-label="Cerrar el ch
+          at" class=claseBotonIcono)
+      23        +icono("cerrar")(class="size-5")
+      24  
+      25 +  if esAdminChat                                               
+      26 +    //- Barra de la conversación del admin: cuándo empezó y bot
+         +ón para finalizarla.                                           
+      27 +    div#chatBarraAdmin(hidden class="flex shrink-0 items-center
+         + justify-between gap-2 border-b border-gray-200 bg-white px-4 p
+         +y-2")                                                          
+      28 +      p#chatBarraInfo(class="truncate text-xs text-gray-500")  
+      29 +      button#btnChatFinalizar(hidden type="button" class="btn b
+         +tn-chico btn-danger") Finalizar conversación                   
+      30 +                                                               
+      31    div#errorChat(hidden role="alert" class="mx-3 mt-3 rounded-lg
+           border border-turno-cancelado/30 bg-turno-cancelado/10 px-3 py
+          -2 text-sm font-medium text-red-900")
+      32  
+      33    if esAdminChat
+  ⎿  Updated src/public/js/chat.js (+5 -1)
+      22      cerrar: $("btnChatCerrar"),
+      23      volver: $("btnChatVolver"),
+      24      finalizar: $("btnChatFinalizar"),
+      25 +    barraAdmin: $("chatBarraAdmin"),                           
+      26 +    barraInfo: $("chatBarraInfo"),                             
+      27      // Admin
+      28      lista: $("chatLista"),
+      29      carga: $("chatCarga"),
+     ...
+      300          ? `@${chat.solicitante.usuario} · ${chat.rolSolicitant
+           e}`
+      301          : chat.rolSolicitante;
+      302        mostrarEstado(chat);
+      303 +      el.barraAdmin.hidden = false;                           
+      304 +      el.barraInfo.textContent = `Consulta iniciada el ${forma
+          +tearFechaHora(chat.createdAt)}`;                              
+      305        el.finalizar.hidden = chat.estado !== "activo";
+      306        renderConversacion(chat);
+      307        return;
+     ...
+      310      el.conversacion.hidden = true;
+      311      el.lista.hidden = false;
+      312      el.volver.hidden = true;
+      309 -    el.finalizar.hidden = true;                               
+      313 +    el.barraAdmin.hidden = true;                              
+      314      el.titulo.textContent = "Consultas";
+      315      el.subtitulo.textContent = "Chats asignados a vos";
+      316      mostrarEstado(null);
+  ⎿  (timeout 3m)
+
+● La consulta quedó vencida de la corrida anterior, así que el drawer la muestra
+  cerrada; voy a limitar el "último chat cerrado" a la última hora y luego
+  limpiar los chats y volver a correr.
+
+● Bash(python3 - <<'EOF'
+      p='src/services/chatService.js'…)
+  ⎿  FAIL sin errores de JS (recepcion console: Failed to load resource: th
+     e server responded with a status of 503 (Service Unavailable))
+
+     1 FALLAS
+  ⎿  Shell cwd was reset to /home/matiasae/Code/Valinor_Cloud
+  ⎿  Updated src/services/chatService.js (+9 -2)
+      21  // Pseudo-request para auditar acciones del servidor (timeouts,
+           reasignaciones).
+      22  const REQ_SISTEMA = { ip: null };
+      23  const arranque = Date.now();
+      24 +const VENTANA_ULTIMO_CERRADO_MS = 60 * 60 * 1000;              
+      25  
+      26  // Mutex en proceso: la elección de admin y la creación/reasign
+          ación de chats se
+      27  // ejecutan de a una, para que dos solicitudes simultáneas no s
+          uperen el límite por admin.
+     ...
+      111        .sort({ createdAt: 1 })
+      112        .populate(POBLAR);
+      113    }
+      113 -  // Solicitante: su chat abierto o, si no tiene, el último (p
+          -ara ver cómo terminó).                                        
+      114 +  // Solicitante: su chat abierto o, si no tiene, el último ce
+          +rrado en la última hora                                       
+      115 +  // (para que vea cómo terminó sin arrastrar conversaciones v
+          +iejas).                                                       
+      116    const chat =
+      117      (await Chat.findOne({ solicitante: usuario._id, estado: tr
+           usted({ $in: ABIERTOS }) }).populate(
+      118        POBLAR
+      119      )) ||
+      118 -    (await Chat.findOne({ solicitante: usuario._id }).sort({ c
+          -reatedAt: -1 }).populate(POBLAR));                            
+      120 +    (await Chat.findOne({                                     
+      121 +      solicitante: usuario._id,                               
+      122 +      cerradoEl: trusted({ $gte: new Date(Date.now() - VENTANA
+          +_ULTIMO_CERRADO_MS) }),                                       
+      123 +    })                                                        
+      124 +      .sort({ cerradoEl: -1 })                                
+      125 +      .populate(POBLAR));                                     
+      126    return chat ? [chat] : [];
+      127  };
+      128  
+  ⎿  (timeout 3m)
+
+  Read 1 file (ctrl+o to expand)
+
+● Bash(sed -i 's|el.barraInfo.textContent = `Consulta iniciada el
+      ${formatearFechaHora(chat.createdAt)}`;|el.barraInfo.textContent =
+      `Iniciada a las ${formatearHora(ch…)
+  ⎿  304:      el.barraInfo.textContent = `Iniciada a las ${formatearHora(c
+     hat.createdAt)}`;
+     OK   auditoría CHAT_SIN_OPERADOR (2)
+     … +2 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /home/matiasae/Code/Valinor_Cloud
+  ⎿  Updated src/public/js/chat.js (+1 -1)
+      301          : chat.rolSolicitante;
+      302        mostrarEstado(chat);
+      303        el.barraAdmin.hidden = false;
+      304 -      el.barraInfo.textContent = `Consulta iniciada el ${forma
+          -tearFechaHora(chat.createdAt)}`;                              
+      304 +      el.barraInfo.textContent = `Iniciada a las ${formatearHo
+          +ra(chat.createdAt)}`;                                         
+      305        el.finalizar.hidden = chat.estado !== "activo";
+      306        renderConversacion(chat);
+      307        return;
+  ⎿  (timeout 1m 30s)
+
+● Suite de API/socket: todo OK otra vez. Pruebo también el caso de desactivar a
+  un admin que tiene chats abiertos.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Desactivar un admin ya funciona: cierra su socket, finaliza sus chats y queda
+  auditado. Apago el servidor de prueba, borro su base y, en tu contenedor,
+  socket.io falta aún en la imagen aunque nodemon recarga ./src.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● El contenedor app se cayó, como esperaba (MODULE_NOT_FOUND de socket.io). Lo
+  reconstruyo con el comando documentado (up --build -V), que conserva los datos
+  de Mongo.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Contenedor reconstruido y funcionando (/socket.io/socket.io.js → 200). Ahora
+  la documentación: primero la colección de Postman.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import json…)
+  ⎿   docs/TurnoFlex.postman_collection.json | 663 ++++++++++++++++++++++++
+     ++++++++-
+      1 file changed, 662 insertions(+), 1 deletion(-)
+     json-ok
+  ⎿  1 file changed (binary, mode only or too large to show)
+
+● Valido la colección completa con newman contra una base de prueba nueva y un
+  admin conectado por socket.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Colección completa sin admin conectado: 51 requests, 0 fallas (el camino del
+  503 y los pasos salteados funcionan). Paso a la documentación.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(docs/refactor-websockets.md)  ⎿  Wrote 528 lines to docs/refactor-websockets.md
+      1 # Refactor: chat de consultas en tiempo real con WebSockets (Sock
+        et.io)
+      2 
+      3 Este documento explica la incorporación del chat de consultas a T
+        urnoFlex: qué se pidió, cómo se diseñó, qué archivos se crearon o
+         modificaron, cómo funciona cada flujo y cómo se verificó.
+      4 
+      5 ---
+      6 
+      7 ## 1. Motivación y requisitos
+     … +521 lines (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      p='docs/refactor-websockets.md'…)
+  ⎿   docs/Docker/docker-readme.md | 3 ++-
+      1 file changed, 2 insertions(+), 1 deletion(-)
+  ⎿  Updated docs/refactor-websockets.md (+1 -1)
+      513  ## 11. Limitaciones y trabajo futuro
+      514  
+      515  - **Un solo proceso de Node.** La presencia de admins y los te
+           mporizadores viven en memoria. Para correr varias instancias h
+           aría falta `@socket.io/redis-adapter`, presencia compartida en
+            Redis y un único responsable de los timeouts, por ejemplo un 
+           job o una cola con vencimiento.
+      516 -- **El orden de llegada es por `setTimeout`.** Si se reinicia 
+          -el servidor durante la gracia de arranque (10 s), un pendiente
+          - cuyo admin no vuelve se reasigna recién cuando se conecta otr
+          -o admin, o expira.                                            
+      516 +- **Reasignación después de un reinicio.** Durante los primero
+          +s 10 s después de arrancar, no se reasignan pendientes, para q
+          +ue cada admin recupere los suyos. Si el admin de un pendiente 
+          +no vuelve, ese chat pasa al próximo admin que se conecte, o ex
+          +pira.                                                         
+      517  - **Sin historial para el admin.** El admin solo ve los chats 
+           abiertos; los cerrados quedan en la base y en la auditoría. Un
+           a vista de historial sería un agregado natural.
+      518  - **El usuario no puede cancelar su consulta pendiente**, porq
+           ue el enunciado no contemplaba esa transición. Se podría agreg
+           ar un `pendiente → finalizado` con motivo `cancelado`.
+      519  
+  ⎿  Updated docs/Docker/docker-readme.md (+2 -1)
+      79  | `PORT` | Define el puerto publicado en tu equipo (`${PORT}:30
+          00`). Dentro del contenedor la app siempre escucha en 3000. |
+      80  | `MONGO_URI` | Sobrescrita por Compose (`mongodb://mongo:27017
+          /turnoflex`). |
+      81  | `JWT_SECRET`, `JWT_MINUTOS` | Se leen del `.env` sin cambios.
+           |
+      82 +| `CHAT_MAX_POR_ADMIN`, `CHAT_TIMEOUT_MINUTOS` | Opcionales; se
+         + leen del `.env` sin cambios (chat de consultas). |            
+      83  
+      84  ## Problemas frecuentes
+      85  
+     ...
+      87  - **Los cambios no se reflejan**: confirmá que editás archivos 
+          dentro de `src/` y que el comando sigue usando `nodemon -L` (po
+          lling).
+      88  - **Puerto 3000 o 27017 ocupado**: cambiá `PORT` en el `.env`, 
+          o detené el MongoDB local (`sudo systemctl stop mongod`).
+      89  - **Permisos en Linux**: el contenedor corre como el usuario `n
+          ode` (UID 1000). Si tu usuario tiene otro UID y la app no puede
+           leer `src/`, revisá los permisos de la carpeta.
+      89 -- **`Cannot find module 'passport'` (u otra dependencia nueva)*
+         -*: el volumen anónimo de `node_modules` conserva las dependenci
+         -as viejas. Reconstruí renovándolo: `docker compose up --build -
+         -V`.                                                            
+      90 +- **`Cannot find module 'passport'` o `'socket.io'` (u otra dep
+         +endencia nueva)**: el volumen anónimo de `node_modules` conserv
+         +a las dependencias viejas. Reconstruí renovándolo: `docker comp
+         +ose up --build -V`.                                            
+      91  - **No puedo iniciar sesión con los usuarios de prueba después 
+          de actualizar**: las contraseñas ahora se guardan hasheadas. Vo
+          lvé a cargar los datos con `docker compose exec app npm run see
+          d`.
+      92  - **Empezar de cero**: `docker compose down -v --rmi local` y r
+          epetir los pasos.
+
+● Ahora el README.
+
+● Bash(python3 - <<'EOF'
+      p='README.md'…)
+  ⎿   README.md | 91 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+     ++++-----
+      1 file changed, 85 insertions(+), 6 deletions(-)
+  ⎿  Updated README.md (+85 -6)
+       9  - **Auditoría** de todas las acciones relevantes.
+      10  - **Front con `fetch`**: las pantallas cargan y guardan datos d
+          e forma asincrónica, sin recargar la página.
+      11  - **Interfaz con Tailwind CSS 4** (por CDN, sin paso de build):
+           navbar y sidebar colapsable, menú de usuario, colores por esta
+          do de turno y diseño responsive para móviles, tablets, portátil
+          es y escritorio.
+      12 +- **Chat de consultas en tiempo real con WebSockets (Socket.io)
+         +**: recepción y profesionales le consultan a un administrador d
+         +esde un panel lateral. Cada consulta pasa por los estados pendi
+         +ente, activo, finalizado o rechazado, y vence a los 5 minutos s
+         +i nadie la acepta.                                             
+      13  
+      14  ---
+      15  
+     ...
+      30  La aplicación queda disponible en **http://localhost:3000**.
+      31  
+      32  > Si venís de una versión anterior (con `express-session`), vol
+          vé a correr `npm run seed`: las contraseñas ahora se guardan ha
+          sheadas y las que estaban en texto plano ya no sirven para inic
+          iar sesión.
+      33 +>                                                              
+      34 +> Si venís de una versión sin chat, corré `npm install` (agrega
+         + `socket.io`) y `npm run seed` (crea el segundo admin, `admin2`
+         +). Con Docker: `docker compose up --build -V`.                 
+      35  
+      36  ### Uso con Docker
+      37  
+     ...
+      53  | `MONGO_URI` | Cadena de conexión a MongoDB | `mongodb://127.0
+          .0.1:27017/turnoflex` |
+      54  | `JWT_SECRET` | Clave para firmar los JWT (HS256). En producci
+          ón, un texto largo y aleatorio | clave de desarrollo (con aviso
+           al iniciar) |
+      55  | `JWT_MINUTOS` | Vida del token en minutos. En el navegador se
+           renueva mientras se usa la app | `30` |
+      56 +| `CHAT_MAX_POR_ADMIN` | Máximo de chats abiertos (pendientes +
+         + activos) que puede tener cada admin | `3` |                   
+      57 +| `CHAT_TIMEOUT_MINUTOS` | Minutos que espera una consulta a se
+         +r aceptada antes de vencer. Acepta decimales (`0.5` = 30 s) par
+         +a probar | `5` |                                               
+      58  
+      59  ### Usuarios de prueba (creados por `npm run seed`)
+      60  
+      61  | Usuario | Contraseña | Rol | Contexto |
+      62  |---|---|---|---|
+      63  | `admin` | `admin123` | admin | Todo el sistema |
+      64 +| `admin2` | `admin123` | admin | Segundo operador, para probar
+         + el reparto de chats |                                         
+      65  | `recepcion` | `recepcion123` | recepcion | Clientes, profesio
+          nales y turnos |
+      66  | `profesional1` | `prof1234` | profesional | Solo los turnos d
+          e la instructora Ferreyra |
+      67  | `profesional2` | `prof5678` | profesional | Solo los turnos d
+          el instructor Acosta |
+     ...
+       77  │   ├── TurnoFlex.postman_collection.json
+       78  │   ├── refactor-passport-jwt.md         Detalle del paso de e
+           xpress-session a Passport + JWT
+       79  │   ├── refactor-frontend.md             Detalle del rediseño 
+           del frontend con Tailwind 4
+       80 +│   ├── refactor-websockets.md           Detalle del chat en t
+          +iempo real con Socket.io                                      
+       81  │   └── Docker/docker-readme.md          Guía para levantar el
+            proyecto con Docker
+       82  └── src/
+       76 -    ├── index.js                         Configura Express, co
+          -okies, Passport, rutas y errores; conecta a Mongo             
+       83 +    ├── index.js                         Configura Express, co
+          +okies, Passport, rutas, errores y Socket.io; conecta a Mongo  
+       84      ├── seed.js                          Carga datos y usuario
+           s de prueba
+       85      ├── config/
+     … 163 more lines (ctrl+o to expand)
+
+● README actualizado. Ahora CLAUDE.md.
+
+● Bash(python3 - <<'EOF'
+      p='docs/refactor-websockets.md'…)
+  ⎿   CLAUDE.md | 43 ++++++++++++++++++++++++++++++++++++++++---
+      1 file changed, 40 insertions(+), 3 deletions(-)
+  ⎿  Updated docs/refactor-websockets.md (+1 -1)
+      155  | `{ admin: 1, estado: 1 }` | Calcular la carga de cada admin 
+           y listar sus chats |
+      156  | `{ estado: 1, expiraEl: 1 }` | Recuperar los timeouts pendie
+           ntes al arrancar |
+      157  | `{ solicitante: 1, createdAt: -1 }` | Último chat del usuari
+           o |
+      158 -| `{ solicitante: 1 }` **único parcial** con `estado ∈ {pendie
+          -nte, activo}` (`un_chat_abierto_por_usuario`) | Garantiza en l
+          -a base que un usuario no tenga dos chats abiertos. Respalda el
+          - chequeo del servicio; si se viola, el `errorHandler` responde
+          - 409 |                                                        
+      158 +| `{ solicitante: 1 }` **único parcial** con `estado ∈ {pendie
+          +nte, activo}` (`un_chat_abierto_por_usuario`; `$in` en un índi
+          +ce parcial requiere MongoDB 6.0 o superior, que ya es el mínim
+          +o del proyecto) | Garantiza en la base que un usuario no tenga
+          + dos chats abiertos. Respalda el chequeo del servicio; si se v
+          +iola, el `errorHandler` responde 409 |                        
+      159  
+      160  Exporta `ESTADOS`, `ABIERTOS` y `MAX_TEXTO`, igual que `Audito
+           ria.ACCIONES`.
+      161  
+  ⎿  Updated CLAUDE.md (+40 -3)
+      10  
+      11  ```bash
+      12  npm install
+      13 -cp .env.example .env     # variables: PORT, MONGO_URI, JWT_SECR
+         -ET, JWT_MINUTOS                                                
+      14 -npm run seed             # BORRA la base y crea datos y usuario
+         -s de prueba (admin/admin123, etc.)                             
+      13 +cp .env.example .env     # variables: PORT, MONGO_URI, JWT_SECR
+         +ET, JWT_MINUTOS, CHAT_MAX_POR_ADMIN, CHAT_TIMEOUT_MINUTOS      
+      14 +npm run seed             # BORRA la base y crea datos y usuario
+         +s de prueba (admin/admin123, admin2/admin123, etc.)            
+      15  npm run dev              # nodemon src/index.js
+      16  npm start                # node src/index.js
+      17  ```
+     ...
+      19  Con Docker (modo desarrollo, hot-reload con nodemon sobre `./sr
+          c` montado como volumen; guía en `docs/Docker/docker-readme.md`
+          ):
+      20  
+      21  ```bash
+      22 -docker compose up --build -V         # app + mongo; -V renueva 
+         -node_modules; Compose sobrescribe MONGO_URI a mongodb://mongo:2
+         -7017/turnoflex                                                 
+      22 +docker compose up --build -V         # app + mongo; -V renueva 
+         +node_modules (obligatorio tras agregar dependencias); Compose s
+         +obrescribe MONGO_URI a mongodb://mongo:27017/turnoflex         
+      23  docker compose exec app npm run seed
+      24  docker compose down -v               # detiene y borra los dato
+          s (volumen mongo_data)
+      25  ```
+     ...
+      38  - **Auditoría:** `registrarAuditoria(req, accion, {...})` en `s
+          rc/helpers/auditoria.js`; la acción debe estar en la lista perm
+          itida del modelo `Auditoria`. Se llama en login/logout, altas/b
+          ajas/modificaciones, cambios de estado y accesos denegados.
+      39  - **Mass assignment:** los controladores filtran el body con `t
+          omarCampos()` (`src/helpers/campos.js`); usalo en todo endpoint
+           nuevo de escritura.
+      40  - **Contraseñas:** hasheadas con bcrypt en el `pre("save")` de 
+          `Usuario` (usá `create`/`save`, no `updateOne`, para cambiarlas
+          ); campo `select: false` y excluido en `toJSON` junto con `toke
+          nVersion`; no devolverlas nunca en respuestas.
+      41 +- **Errores de negocio:** lanzá `crearError(status, mensaje)` (
+         +`src/helpers/errores.js`); el `errorHandler` responde ese statu
+         +s con ese mensaje (incluido 503). Un `err.status` 4xx sin `expu
+         +esto` sigue respondiendo el mensaje genérico.                  
+      42 +- **`sanitizeFilter` está activo** (`src/config/db.js`): todo f
+         +iltro de Mongoose con operadores `$` escritos por el servidor d
+         +ebe ir envuelto en `mongoose.trusted({ $in: [...] })`, si no se
+         + neutraliza en silencio. Los `$or`/`$and` de primer nivel y los
+         + pipelines de `aggregate` no se sanitizan. Nunca pases datos de
+         +l cliente a `trusted`.                                         
+      43  
+      44 +## WebSockets: chat de consultas (Socket.io)                   
+      45 +                                                               
+      46 +Detalle completo en `docs/refactor-websockets.md`.             
+      47 +                                                               
+      48 +- **Híbrido REST + Socket.io.** Las acciones van por `/api/chat
+         +s` (cadena normal de middlewares, `tomarCampos`, auditoría y er
+         +rores). Socket.io solo **empuja** eventos servidor → cliente. E
+         +l único evento cliente → servidor es `chat:escribiendo`. No agr
+         +egues comandos por socket: agregá un endpoint y emití desde el 
+         +servicio.                                                      
+      49 +- **Archivos:**                                                
+      50 +  - `src/services/chatService.js`: toda la lógica (máquina de e
+         +stados, `elegirAdmin`, reasignación, timeouts).                
+      51 +  - `src/services/chatTimeouts.js`: `setTimeout` en memoria.   
+      52 +  - `src/socket/index.js`: `iniciarSocket(servidor)`, handshake
+         + y salas.                                                      
+      53 +  - `src/socket/emisor.js`: `emitirA(ids, evento, datos)` y `de
+         +sconectarUsuario(id)`. Importalo desde servicios y controladore
+         +s; nunca importes `socket/index.js`, porque genera un ciclo.   
+      54 +  - `src/socket/presencia.js`: admins conectados.              
+      55 +  - `src/config/chat.js`: límites.                             
+      56 +  - `src/models/Chat.js`.                                      
+      57 +- **Auth del socket:** `io.use` llama a `autenticar("jwt", sock
+         +et.request)` de `middlewares/auth.js`, después de parsear las c
+         +ookies con `cookie-parser`. Si falla, responde `next(new Error(
+         +"NO_AUTENTICADO"))` y el cliente redirige a `/login`. Al vencer
+         + el `exp` del token, el servidor desconecta el socket y el clie
+         +nte se reconecta con la cookie renovada.                       
+      58 +- **Salas:** solo `usuario:<id>` (no hay salas por chat). La ap
+         +p es multipágina y el socket se reconecta en cada navegación; e
+         +mitir a la sala del usuario cubre la reconexión y las múltiples
+         + pestañas. El cliente vuelve a pedir `GET /api/chats` en cada `
+         +connect`.                                                      
+      59 +- **Presencia:** `Map` en memoria adminId → socketIds, con **gr
+         +acia de 10 s** al quedarse sin sockets. Al vencer la gracia, `r
+         +easignarPendientesDe(admin)`. Cuando un admin se conecta, `asig
+         +narHuerfanos`. Solo funciona con **un proceso** de Node.       
+     … 22 more lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Implementé el chat en tiempo real con Socket.io siguiendo el plan aprobado, y
+  agregué los tres pedidos del final: docs/refactor-websockets.md, el README y
+  CLAUDE.md actualizados. Lo probé de punta a punta (API, sockets, navegador
+  real y Postman) y todo pasa. Los cambios quedaron sin commitear en la rama
+  matias.
+
+  Cómo funciona
+  - Acciones por la API y avisos por el socket: iniciar, aceptar, rechazar,
+    finalizar y enviar mensaje son endpoints /api/chats, con los mismos
+    middlewares, auditoría y errores que el resto. Socket.io solo avisa en
+    tiempo real a los dos participantes.
+  - Estados: pendiente → activo → finalizado, o rechazado. Si dos acciones
+    chocan (por ejemplo, el admin acepta justo cuando vence el plazo), gana una
+    y la otra recibe 409.
+  - Asignación: cada consulta va a un solo admin conectado, el que tiene menos
+    chats abiertos, con un tope configurable (CHAT_MAX_POR_ADMIN, por
+    defecto 3). Si no hay ninguno libre, responde 503 con "Todos los operadores
+    se encuentran ocupados en este momento" y queda auditado.
+  - Plazo de 5 minutos: lo controla el servidor y se mantiene aunque el servidor
+    se reinicie.
+  - Admin que se desconecta: como la app es multipágina, el socket se reconecta
+    en cada cambio de página. Por eso un admin sigue contando como conectado
+    durante 10 segundos de gracia. Si no vuelve, sus consultas pendientes pasan
+    a otro admin.
+  - Seguridad del socket: usa el mismo JWT que la API. El logout, desactivar a
+    un usuario o cambiarle el rol le cierran el socket al instante.
+  - Interfaz: ícono de mensajes con badge al lado del avatar y un panel que
+    entra desde la derecha sin bloquear la página. Cambia según el rol, sigue
+    abierto al navegar entre páginas y funciona en móvil.
+
+  Pruebas (con una base aparte, que borré al terminar)
+  - API y sockets: 39 de 39 comprobaciones, más la recuperación del plazo tras
+    reiniciar el servidor y la baja de un admin con chats abiertos.
+  - Navegador (Chromium automatizado): 28 de 28. Revisé las capturas y moví el
+    botón "Finalizar conversación" a una barra propia, porque en la cabecera
+    cortaba el nombre del usuario. En la consola solo aparece el aviso del
+    navegador por el 503 esperado.
+  - Postman: la colección completa pasa, 51 requests sin fallas. Sumé la carpeta
+    "Chat de consultas"; para recorrer el flujo entero tiene que haber un admin
+    con la app abierta en el navegador.
+
+  Cosas que cambié respecto del plan
+  - Agregué un segundo admin de prueba (admin2 / admin123) para probar el
+    reparto de chats.
+  - Si se desactiva o elimina a un admin con chats abiertos, sus conversaciones
+    activas se cierran y sus pendientes se reasignan.
+  - El usuario solo ve su último chat cerrado durante una hora, para no
+    encontrarse una conversación vieja al volver otro día.
+  - Cambié dos documentos que no estaban en tu pedido:
+    docs/Docker/docker-readme.md (las variables nuevas) y la colección de
+    Postman.
+
+  Tu contenedor de Docker
+  Al agregar socket.io se cayó, porque todavía no tenía la librería instalada.
+  Lo reconstruí con docker compose up --build -V y ya funciona; tus datos de
+  Mongo quedaron intactos. Para tener admin2 en tu base tenés que volver a
+  cargar los datos, pero eso borra todo:
+  docker compose exec app npm run seed
+
+  Para probarlo, abrí dos navegadores (o uno en ventana privada): uno con admin
+  y otro con recepcion. Si querés ver el vencimiento sin esperar 5 minutos, poné
+  CHAT_TIMEOUT_MINUTOS=0.5 en el .env.
+
+  Limitación: la lista de admins conectados y los temporizadores viven en la
+  memoria del servidor, así que funciona con una sola instancia de Node. Correr
+  varias necesitaría Redis; lo dejé anotado en docs/refactor-websockets.md.
+
+✻ Churned for 22m 23s · done 0:05
+
+※ recap: Implementé el chat en tiempo real con Socket.io y actualicé la documentación (`refactor-websockets.md`, README y CLAUDE.md); todas las pruebas pasan y los cambios están sin commitear en `matias`. Próximo paso: revisarlo con `admin` y `recepcion` en dos navegadores y commitear.

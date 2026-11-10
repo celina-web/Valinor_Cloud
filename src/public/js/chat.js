@@ -433,8 +433,14 @@
       abrirConversacion(actualizado._id);
     });
 
-  const rechazarChat = (chat) => {
-    if (!confirm(`¿Rechazar la consulta de ${nombreDe(chat.solicitante)}?`)) return;
+  const rechazarChat = async (chat) => {
+    const confirmado = await confirmar({
+      titulo: "Rechazar consulta",
+      mensaje: `¿Rechazar la consulta de ${nombreDe(chat.solicitante)}?`,
+      textoConfirmar: "Rechazar",
+      variante: "peligro",
+    });
+    if (!confirmado) return;
     ejecutar(async () => {
       await api(`/api/chats/${chat._id}/rechazar`, { method: "POST" });
       estado.chats.delete(chat._id);
@@ -442,9 +448,15 @@
     });
   };
 
-  const finalizarChat = () => {
+  const finalizarChat = async () => {
     const chat = estado.chats.get(estado.abiertoId);
-    if (!chat || !confirm(`¿Finalizar la conversación con ${nombreDe(chat.solicitante)}?`)) return;
+    if (!chat) return;
+    const confirmado = await confirmar({
+      titulo: "Finalizar conversación",
+      mensaje: `¿Finalizar la conversación con ${nombreDe(chat.solicitante)}? No se van a poder enviar más mensajes.`,
+      textoConfirmar: "Finalizar",
+    });
+    if (!confirmado) return;
     ejecutar(async () => {
       guardarChat(await api(`/api/chats/${chat._id}/finalizar`, { method: "POST" }));
       render();

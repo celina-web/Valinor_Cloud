@@ -92,8 +92,9 @@ const requierePermiso = (permiso) => async (req, res, next) => {
     return res.status(403).json({ error: "No tenés permiso para realizar esta acción" });
   }
   return res.status(403).render("error", {
+    codigo: 403,
     titulo: "Acceso denegado",
-    mensaje: "No tenés permiso para ver esta página.",
+    mensaje: "No tenés permiso para ver esta página. Si creés que es un error, consultá con un administrador.",
   });
 };
 

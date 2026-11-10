@@ -11,6 +11,7 @@ block cuerpo
         block content
   if puede("chat:usar")
     include includes/chatDrawer
+  +modalConfirmacion
   script(src="/js/layout.js")
   if puede("chat:usar")
     //- Cliente de Socket.io servido por el propio servidor (misma versión que el backend).

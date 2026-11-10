@@ -1,16 +1,34 @@
 const cambiarEstadoTurno = async (turno, estado) => {
-  const accion = estado === "atendido" ? "marcar como atendido" : "cancelar";
-  if (!confirm(`¿Seguro que querés ${accion} el turno del ${turno.fecha} a las ${turno.hora}?`)) {
-    return false;
-  }
+  const atender = estado === "atendido";
+  const confirmado = await confirmar(
+    atender
+      ? {
+          titulo: "Marcar turno como atendido",
+          mensaje: `¿Seguro que querés marcar como atendido el turno del ${turno.fecha} a las ${turno.hora}?`,
+          textoConfirmar: "Marcar como atendido",
+          variante: "exito",
+        }
+      : {
+          titulo: "Cancelar turno",
+          mensaje: `¿Seguro que querés cancelar el turno del ${turno.fecha} a las ${turno.hora}? Esta acción no se puede deshacer.`,
+          textoConfirmar: "Cancelar turno",
+          textoCancelar: "Volver",
+          variante: "peligro",
+        }
+  );
+  if (!confirmado) return false;
   await api(`/api/turnos/${turno._id}/estado`, { method: "PATCH", body: { estado } });
   return true;
 };
 
 const eliminarTurno = async (turno) => {
-  if (!confirm(`¿Eliminar definitivamente el turno del ${turno.fecha} a las ${turno.hora}?`)) {
-    return false;
-  }
+  const confirmado = await confirmar({
+    titulo: "Eliminar turno",
+    mensaje: `¿Eliminar definitivamente el turno del ${turno.fecha} a las ${turno.hora}? Esta acción no se puede deshacer.`,
+    textoConfirmar: "Eliminar",
+    variante: "peligro",
+  });
+  if (!confirmado) return false;
   await api(`/api/turnos/${turno._id}`, { method: "DELETE" });
   return true;
 };

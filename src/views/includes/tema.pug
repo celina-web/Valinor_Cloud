@@ -51,6 +51,10 @@ style(type="text/tailwindcss").
     .btn-atender {
       @apply bg-turno-presente text-white hover:bg-turno-presente/90;
     }
+    /* Botón sólido para confirmar acciones destructivas en el modal de confirmación */
+    .btn-peligro {
+      @apply bg-turno-cancelado text-white shadow-sm hover:bg-turno-cancelado/90;
+    }
     .btn-cancelar,
     .btn-danger {
       @apply bg-turno-cancelado/10 text-red-900 ring-1 ring-turno-cancelado/40 ring-inset hover:bg-turno-cancelado/20;
